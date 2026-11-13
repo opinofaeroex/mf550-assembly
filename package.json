@@ -1,8 +1,8 @@
 {
   "name": "mf550-webar",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "WebAR interactive assembly instructions (exploded view, animated assembly sequence, BOM) generated from a STEP CAD file.",
+  "description": "WebAR interactive, voice-guided assembly instructions (manual step navigation, 3x exploded view, BOM) generated from a STEP CAD file.",
   "license": "UNLICENSED",
   "engines": { "node": ">=18" },
   "scripts": {
