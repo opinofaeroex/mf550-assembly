@@ -35,6 +35,10 @@
     <symbol id="i-isolate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5"/></symbol>
     <symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
     <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1.9-1.1 1.8v.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-volume-off" viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-replay" viewBox="0 0 24 24"><path d="M5 12a7 7 0 1 0 2.1-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M6.5 3.5v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.5 9.2v5.6l4.6-2.8z" fill="currentColor"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21M5.6 5.6l1.8 1.8M16.6 16.6l1.8 1.8M5.6 18.4l1.8-1.8M16.6 7.4l1.8-1.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.4" fill="currentColor"/><circle cx="4.5" cy="12" r="1.4" fill="currentColor"/><circle cx="4.5" cy="18" r="1.4" fill="currentColor"/></symbol>
   </svg>
 
@@ -71,6 +75,19 @@
           <h2 class="step-title" id="step-title">Loading…</h2>
           <p class="step-desc" id="step-desc"></p>
           <div class="step-note" id="step-note" hidden></div>
+          <div class="narration" id="narration" role="group" aria-label="Voice narration">
+            <button class="nbtn nbtn-main" id="nar-play" aria-label="Play narration"><svg><use href="#i-play"/></svg><span id="nar-play-label">Play</span></button>
+            <button class="nbtn" id="nar-replay" title="Replay narration and step animation" aria-label="Replay narration and step animation"><svg><use href="#i-replay"/></svg><span>Replay</span></button>
+            <button class="nbtn" id="nar-mute" aria-pressed="false" aria-label="Mute narration"><svg><use href="#i-volume"/></svg><span id="nar-mute-label">Mute</span></button>
+            <button class="nbtn nbtn-icon" id="nar-settings" title="Voice settings" aria-label="Voice settings" aria-expanded="false" aria-controls="nar-pop"><svg><use href="#i-gear"/></svg></button>
+            <span class="nar-status" id="nar-status" aria-live="polite"></span>
+          </div>
+          <div class="nar-pop" id="nar-pop" hidden>
+            <label>Voice <select id="nar-voice"></select></label>
+            <label>Speed <select id="nar-rate"></select></label>
+            <p class="nar-kind" id="nar-voice-kind"></p>
+            <p class="nar-kind">Voices come from your browser (Web Speech API). Microsoft Edge offers Microsoft's online "Natural" neural voices.</p>
+          </div>
         </div>
 
         <div class="viewport-tools" role="toolbar" aria-label="View options">
@@ -100,15 +117,14 @@
               <span class="progress-sub" id="progress-sub"></span>
             </div>
             <div class="transport-buttons">
-              <button class="tbtn" id="btn-restart" title="Restart (R)" aria-label="Restart"><svg><use href="#i-restart"/></svg></button>
-              <button class="tbtn" id="btn-prev" title="Previous step (←)" aria-label="Previous step"><svg><use href="#i-prev"/></svg></button>
-              <button class="tbtn tbtn-main" id="btn-play" title="Play / pause (Space)" aria-label="Play"><svg><use href="#i-play"/></svg></button>
-              <button class="tbtn" id="btn-next" title="Next step (→)" aria-label="Next step"><svg><use href="#i-next"/></svg></button>
+              <button class="tbtn" id="btn-restart" title="Back to the overview (R)" aria-label="Back to the overview"><svg><use href="#i-restart"/></svg></button>
+              <button class="tbtn tbtn-nav" id="btn-prev" title="Previous step (←)"><svg><use href="#i-prev"/></svg><span>Previous<b> step</b></span></button>
+              <button class="tbtn tbtn-nav tbtn-primary" id="btn-next" title="Next step (→)"><span>Next<b> step</b></span><svg><use href="#i-next"/></svg></button>
               <button class="tbtn tbtn-toggle" id="btn-explode" title="Exploded view (E)" aria-pressed="false" aria-label="Exploded view"><svg><use href="#i-explode"/></svg></button>
             </div>
             <div class="transport-right">
-              <label class="speed" title="Playback speed">
-                <span>Speed</span>
+              <label class="speed" title="Animation speed">
+                <span>Animation</span>
                 <select id="speed">
                   <option value="0.5">0.5×</option>
                   <option value="1" selected>1×</option>
@@ -178,8 +194,9 @@
     </div>
     <div class="ar-bottom" id="ar-controls" hidden>
       <button class="ar-btn" id="ar-prev" aria-label="Previous step"><svg><use href="#i-prev"/></svg></button>
-      <button class="ar-btn ar-btn-main" id="ar-play" aria-label="Play"><svg><use href="#i-play"/></svg></button>
-      <button class="ar-btn" id="ar-next" aria-label="Next step"><svg><use href="#i-next"/></svg></button>
+      <button class="ar-btn" id="ar-voice" aria-label="Play narration"><svg><use href="#i-play"/></svg></button>
+      <button class="ar-btn ar-btn-main" id="ar-next" aria-label="Next step"><svg><use href="#i-next"/></svg></button>
+      <button class="ar-btn" id="ar-mute" aria-label="Mute narration"><svg><use href="#i-volume"/></svg></button>
       <button class="ar-btn" id="ar-explode" aria-label="Exploded view"><svg><use href="#i-explode"/></svg></button>
       <button class="ar-btn ar-scale-btn" id="ar-scale-toggle" aria-label="Toggle scale">1:1</button>
     </div>
@@ -197,12 +214,14 @@
     <form method="dialog">
       <header><h3>How to use</h3><button class="btn btn-ghost icon-only" value="close" aria-label="Close"><svg><use href="#i-close"/></svg></button></header>
       <div class="help-body">
-        <p><b>Play</b> runs the full sequence: assembled overview → exploded parts kit → every assembly step → completed product. The highlighted part, the BOM row and the step card always refer to the same step.</p>
+        <p>You control the progression: press <b>NEXT STEP</b> to continue and <b>PREVIOUS STEP</b> to go back (overview → exploded parts kit → steps 1 to the final step). Nothing advances automatically. Each step is explained aloud; the highlighted part, the BOM row, the step card and the narration always refer to the same step.</p>
         <table class="kbd-table">
-          <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
-          <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next step</td></tr>
+          <tr><td><kbd>→</kbd> <kbd>←</kbd></td><td>Next / previous step</td></tr>
+          <tr><td><kbd>Space</kbd></td><td>Play / pause / resume narration</td></tr>
+          <tr><td><kbd>M</kbd></td><td>Mute / unmute narration</td></tr>
+          <tr><td><kbd>P</kbd></td><td>Replay narration and step animation</td></tr>
           <tr><td><kbd>E</kbd></td><td>Toggle exploded view</td></tr>
-          <tr><td><kbd>R</kbd></td><td>Restart</td></tr>
+          <tr><td><kbd>R</kbd></td><td>Back to the overview</td></tr>
           <tr><td><kbd>F</kbd></td><td>Frame model</td></tr>
           <tr><td><kbd>G</kbd></td><td>Ghost parts not yet installed</td></tr>
           <tr><td><kbd>I</kbd></td><td>Isolate selection</td></tr>
