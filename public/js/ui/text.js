@@ -24,14 +24,14 @@ export function positionText(model, pos) {
     return {
       badge: 'Overview', kind: 'Complete product',
       title: `<span class="pn">${esc(m.product)}</span> — assembled`,
-      desc: `${m.partInstances} part instances in ${m.assemblies - 1} sub-assemblies, at their original CAD positions. Press Play to run the exploded view and the ${N}-step assembly sequence.`,
+      desc: `${m.partInstances} part instances in ${m.assemblies - 1} sub-assemblies, at their original CAD positions. Press NEXT STEP to see the parts kit and then go through the ${N} assembly steps at your own pace.`,
     };
   }
   if (pos === EXPLODED) {
     return {
       badge: 'Parts kit', kind: 'Exploded view',
       title: 'All components separated',
-      desc: 'Each component is moved away along the removal direction found by collision analysis of the CAD geometry. Nested sub-assemblies are exploded inside their parent. Assembly starts with step 1.',
+      desc: 'Each component is moved away along the removal direction found by collision analysis of the CAD geometry. Nested sub-assemblies are exploded inside their parent. Press NEXT STEP to start with step 1.',
     };
   }
   if (pos >= N) {
@@ -72,9 +72,10 @@ export function positionText(model, pos) {
       desc = `Install ${perAsm} × ${s.name}${dirText ? ' ' + dirText : ''} into ${assemblyLabel(model, asm)}.`;
   }
   if (s.set) desc += ` Batch ${s.set[0]} of ${s.set[1]} for this part number.`;
-  if (s.assemblyInstances.length > 1) desc += ` Done on all ${s.assemblyInstances.length} identical ${asm.name} sub-assemblies at once (${s.qty} pcs in total).`;
+  if (s.assemblyInstances.length > 1) desc += ` Done on ${s.assemblyInstances.length === 2 ? 'both' : `all ${s.assemblyInstances.length}`} identical ${asm.name} sub-assemblies at once (${s.qty} pcs in total).`;
   if (!s.partNumber) desc += ' No part number in the CAD data — the CAD component name is shown.';
   desc += ` BOM item ${s.item}.`;
+  if (pos === N - 1) desc += ` This is the final step: the ${m.product} assembly is complete.`;
   let note = null;
   if (s.flag) note = 'Geometry check: ' + s.flag.charAt(0).toUpperCase() + s.flag.slice(1) + '.';
   return { badge: `Step ${pos + 1} / ${N}`, kind, title, desc, note };
