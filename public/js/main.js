@@ -1,12 +1,16 @@
 /**
  * MF-550 WebAR assembly instructions — application bootstrap.
  *
- * Data flow (single direction, so 3D, BOM and step card always agree):
+ * Data flow (single direction, so 3D, BOM, step card and voice always agree):
  *
- *   Sequencer.pos ──► ExplodeController (component positions)
- *        │        ──► Appearance (active / ghost / selected materials)
- *        │        ──► BomPanel, step card, progress bar, callout, AR overlay
- *   Selection ──────► Appearance, BomPanel, Details, callout
+ *   NEXT / PREVIOUS ─► Sequencer.pos ──► ExplodeController (component positions, ×CONFIG.explodeScale)
+ *                           │        ──► Appearance (active / ghost / selected materials)
+ *                           │        ──► BomPanel, step card, progress bar, callout, AR overlay
+ *                           │        ──► Narrator (stop previous, speak this step's script)
+ *   Selection ──────────────────────► Appearance, BomPanel, Details, callout
+ *   AppState mirrors position / animating / narration / muted / voice / selection for the controls.
+ *
+ * v1.1: navigation is manual only — nothing (animation end, narration end) advances a step.
  */
 import * as THREE from 'three';
 import { loadAssembly } from './data/AssemblyModel.js';
@@ -19,15 +23,15 @@ import { Picker } from './scene/Picker.js';
 import { Callout } from './scene/Callout.js';
 import { BomPanel } from './ui/BomPanel.js';
 import { Details } from './ui/Details.js';
+import { NarrationControls } from './ui/NarrationControls.js';
 import { positionText, esc, displayId } from './ui/text.js';
 import { detectAR } from './ar/ARSupport.js';
 import { WebXRSession } from './ar/WebXRSession.js';
 import { QuickLook } from './ar/QuickLook.js';
-
-const CONFIG = {
-  assemblyUrl: 'assets/model/assembly.json',
-  modelDir: 'assets/model/',
-};
+import { Narrator } from './audio/Narrator.js';
+import { narrationText } from './audio/narrationScript.js';
+import { AppState } from './state/AppState.js';
+import { CONFIG } from './config.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -36,6 +40,9 @@ class App {
     this.opts = { ghost: true, edges: true, focus: true, isolate: false };
     this.selection = null;
     this.inAR = false;
+    this.state = new AppState({
+      position: ASSEMBLED, animating: false, narration: 'idle', muted: false, voice: null, selection: null,
+    });
   }
 
   // ------------------------------------------------------------------ boot
@@ -56,7 +63,7 @@ class App {
     const { model, loaded, viewer } = this;
     viewer.setModel(loaded.root);
     this.appearance = new Appearance(loaded);
-    this.explode = new ExplodeController(model, loaded.objects);
+    this.explode = new ExplodeController(model, loaded.objects, CONFIG.explodeScale);
     this.seq = new Sequencer(model, this.explode);
     this.picker = new Picker(viewer, this.appearance);
     this.stepCallout = new Callout($('callout-layer'), 'step');
@@ -77,16 +84,17 @@ class App {
     this.#initTransport();
     this.#initViewportInput();
     this.#initKeyboard();
+    this.#initNarration();
 
     this.seq.addEventListener('change', () => this.#onPosition());
     this.seq.addEventListener('stepstart', () => this.#focusCamera());
-    this.seq.addEventListener('playstate', () => this.#updatePlayButtons());
-    this.seq.addEventListener('ended', () => this.#toast('Assembly sequence complete.'));
+    this.seq.addEventListener('animstate', () => this.state.set({ animating: this.seq.animating }));
+    this.state.addEventListener('change', () => this.#renderNavigation());
+    this.#trackInsets();
 
     const startStep = this.#deepLinkStep();
     this.seq.goTo(ASSEMBLED, { animate: false });
     if (startStep !== null) this.seq.goTo(startStep);
-    this.#updatePlayButtons();
 
     // CAD edges are built after the first frame so the model appears quickly
     setTimeout(() => {
@@ -97,7 +105,6 @@ class App {
     this.#loader('Ready', 1);
     setTimeout(() => $('loader').classList.add('is-done'), 150);
     this.#initAR();
-    if (new URLSearchParams(location.search).has('autoplay')) this.seq.play();
     window.app = this; // handy for debugging / automation
   }
 
@@ -201,13 +208,12 @@ class App {
     const ticks = [];
     for (let k = 0; k < N; k++) {
       const s = this.model.steps[k];
-      const left = ((k + 2) / (N + 2)) * 100;
+      const left = ((k + 2) / (N + 1)) * 100;
       ticks.push(`<i data-k="${k}" class="${s.kind === 'base' || s.assembly === this.model.rootId ? '' : 'sub'}" style="left:${left}%"></i>`);
     }
     $('progress-ticks').innerHTML = ticks.join('');
     this.tickEls = [...$('progress-ticks').children];
 
-    $('btn-play').addEventListener('click', () => this.seq.toggle());
     $('btn-next').addEventListener('click', () => this.seq.next());
     $('btn-prev').addEventListener('click', () => this.seq.prev());
     $('btn-restart').addEventListener('click', () => { this.seq.restart(); });
@@ -218,7 +224,7 @@ class App {
     const seek = (clientX) => {
       const r = prog.getBoundingClientRect();
       const frac = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
-      this.seq.goTo(Math.round(frac * (N + 2)) - 2);
+      this.seq.goTo(Math.round(frac * (N + 1)) - 2);
     };
     prog.addEventListener('click', (e) => seek(e.clientX));
     prog.addEventListener('keydown', (e) => {
@@ -228,17 +234,76 @@ class App {
   }
 
   #toggleExplode() {
-    this.seq.pause();
     this.seq.goTo(this.seq.pos === EXPLODED ? ASSEMBLED : EXPLODED);
   }
 
-  #updatePlayButtons() {
-    const icon = this.seq.playing ? '#i-pause' : '#i-play';
-    for (const id of ['btn-play', 'ar-play']) {
-      const b = $(id);
-      b.querySelector('use').setAttribute('href', icon);
-      b.setAttribute('aria-label', this.seq.playing ? 'Pause' : 'Play');
-    }
+  /** Keep the model framed beside (desktop) or below (phone) the step card. */
+  #trackInsets() {
+    let raf = 0;
+    const update = () => {
+      raf = 0;
+      if (this.inAR) return;
+      const vp = $('viewport').getBoundingClientRect();
+      const c = $('step-card').getBoundingClientRect();
+      if (!vp.width || !c.width) return;
+      const beside = c.width < vp.width * 0.6;
+      this.viewer.setInsets(beside
+        ? { left: c.right - vp.left + 8, top: 0 }
+        : { left: 0, top: Math.round((c.bottom - vp.top + 8) / 24) * 24 });   // quantised: no jitter per step
+    };
+    const ro = new ResizeObserver(() => { if (!raf) raf = requestAnimationFrame(update); });
+    ro.observe($('viewport'));
+    ro.observe($('step-card'));
+    update();
+  }
+
+  /** Enable/disable PREVIOUS / NEXT (step card, transport and AR overlay) from the state. */
+  #renderNavigation() {
+    const { seq } = this;
+    for (const id of ['btn-prev', 'ar-prev']) $(id).disabled = !seq.canPrev;
+    for (const id of ['btn-next', 'ar-next']) $(id).disabled = !seq.canNext;
+    const N = this.model.stepCount;
+    $('btn-next').setAttribute('aria-label', seq.canNext
+      ? `Next step (${seq.isStep ? `step ${seq.pos + 2} of ${N}` : seq.pos === ASSEMBLED ? 'parts kit' : `step 1 of ${N}`})`
+      : 'Next step (final step reached)');
+    $('btn-prev').setAttribute('aria-label', seq.canPrev ? 'Previous step' : 'Previous step (first position)');
+  }
+
+  // -------------------------------------------------------------- narration
+  #initNarration() {
+    this.narrator = new Narrator(CONFIG.narration);
+    let lastVoice = null;
+    const sync = (d) => {
+      const v = d.voice;
+      if (!v) lastVoice = null;
+      else if (!lastVoice || lastVoice.name !== v.name) lastVoice = v;
+      this.state.set({ narration: d.status, muted: d.muted, voice: lastVoice });
+    };
+    this.narrator.addEventListener('state', (e) => sync(e.detail));
+    sync({ status: this.narrator.status, muted: this.narrator.muted, voice: null });
+    this.narrationControls = new NarrationControls({
+      narrator: this.narrator,
+      state: this.state,
+      rates: CONFIG.narration.rates,
+      isLastStep: () => this.seq.pos === this.seq.last,
+      onReplay: () => this.seq.replay(),
+      els: {
+        root: $('narration'), play: $('nar-play'), playLabel: $('nar-play-label'), replay: $('nar-replay'),
+        mute: $('nar-mute'), muteLabel: $('nar-mute-label'), status: $('nar-status'), settings: $('nar-settings'),
+        pop: $('nar-pop'), voiceSel: $('nar-voice'), rateSel: $('nar-rate'), voiceKind: $('nar-voice-kind'),
+        arVoice: $('ar-voice'), arMute: $('ar-mute'),
+      },
+    });
+  }
+
+  /** Stop the previous narration at once; start this position's script after a short debounce. */
+  #narrate(pos) {
+    clearTimeout(this.narrationTimer);
+    this.narrator.stop();
+    this.narrationTimer = setTimeout(() => {
+      if (this.seq.pos !== pos) return;            // user moved on in the meantime
+      this.narrator.load(pos, narrationText(this.model, pos));
+    }, CONFIG.narration.startDelayMs);
   }
 
   // ------------------------------------------------------- position change
@@ -266,13 +331,11 @@ class App {
       el.classList.toggle('cur', k === pos);
     });
     const installed = model.partsInstalledBefore(pos >= N ? N : Math.max(0, pos) + (seq.isStep ? 1 : 0));
-    $('progress-label').textContent = seq.isStep ? `Step ${pos + 1} / ${N}` : pos === ASSEMBLED ? 'Overview' : pos === EXPLODED ? 'Exploded view' : 'Complete';
+    $('progress-label').textContent = seq.isStep ? `Step ${pos + 1} / ${N}` : pos === ASSEMBLED ? `Overview · 0 / ${N}` : `Parts kit · 0 / ${N}`;
     const where = seq.isStep ? ` · in ${model.node(model.steps[pos].assembly).name}` : '';
     $('progress-sub').textContent = `${pos === ASSEMBLED ? model.meta.partInstances : installed} / ${model.meta.partInstances} parts placed${where}`;
     $('progress').setAttribute('aria-valuenow', String(pos + 2));
     $('progress').setAttribute('aria-valuetext', $('progress-label').textContent);
-    $('btn-prev').disabled = pos <= ASSEMBLED;
-    $('btn-next').disabled = pos >= N;
     const exploded = pos === EXPLODED;
     $('btn-explode').setAttribute('aria-pressed', exploded);
     $('ar-explode').classList.toggle('is-on', exploded);
@@ -281,7 +344,10 @@ class App {
 
     const hash = seq.isStep ? `#step=${pos + 1}` : '';
     if (location.hash !== hash) history.replaceState(null, '', location.pathname + location.search + hash);
+    this.state.set({ position: pos });
+    this.#renderNavigation();
     this.#updateAROverlay();
+    this.#narrate(pos);
   }
 
   /** Step balloon; hidden when the selection balloon already points at the same BOM item. */
@@ -340,6 +406,7 @@ class App {
       this.bom.setSelected(null);
       this.details.show(null);
       this.selCallout.hide();
+      this.state.set({ selection: null });
       if (this.opts.isolate) this.#setOpt('isolate', false);
       this.#syncStepCallout();
       this.#refreshAppearance();
@@ -349,6 +416,7 @@ class App {
     const nodeIds = sel.nodeIds ?? (sel.partId ? [sel.partId] : sel.row.nodes);
     const partSet = new Set(nodeIds.flatMap((id) => m.partsUnder(id)));
     this.selection = { ...sel, nodeIds, partSet };
+    this.state.set({ selection: sel.row.item });
     this.details.show(this.selection);          // first: it changes the BOM panel height
     this.bom.setSelected(sel.row.item);
     this.selCallout.set(nodeIds.map((id) => this.loaded.objects.get(id)), sel.row.item, displayId(sel.row));
@@ -391,9 +459,11 @@ class App {
       if (e.target.closest && e.target.closest('input, select, textarea, dialog')) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key;
-      if (k === ' ') { this.seq.toggle(); e.preventDefault(); }
-      else if (k === 'ArrowRight') { this.seq.next(); e.preventDefault(); }
-      else if (k === 'ArrowLeft') { this.seq.prev(); e.preventDefault(); }
+      if (k === ' ') { this.narrator.toggle(); e.preventDefault(); }
+      else if (k === 'ArrowRight' || k === 'PageDown') { this.seq.next(); e.preventDefault(); }
+      else if (k === 'ArrowLeft' || k === 'PageUp') { this.seq.prev(); e.preventDefault(); }
+      else if (k === 'm' || k === 'M') this.narrator.setMuted(!this.narrator.muted);
+      else if (k === 'p' || k === 'P') this.seq.replay();
       else if (k === 'e' || k === 'E') this.#toggleExplode();
       else if (k === 'r' || k === 'R') this.seq.restart();
       else if (k === 'f' || k === 'F') this.viewer.frame();
@@ -476,7 +546,6 @@ class App {
     });
     $('ar-prev').addEventListener('click', () => this.seq.prev());
     $('ar-next').addEventListener('click', () => this.seq.next());
-    $('ar-play').addEventListener('click', () => this.seq.toggle());
     $('ar-explode').addEventListener('click', () => this.#toggleExplode());
     $('ar-scale-toggle').addEventListener('click', () => {
       const steps = [1, 0.5, 0.25];
@@ -521,25 +590,48 @@ class App {
     const caps = this.arCaps;
     const body = $('ar-dialog-body');
     const li = (ok, text) => `<li class="${ok ? 'yes' : 'no'}"><span class="dot"></span>${text}</li>`;
+    const pos = this.seq.pos;
+    const posName = this.seq.isStep ? `step ${pos + 1}` : pos === ASSEMBLED ? 'the overview' : 'the parts kit';
+    const product = this.model.meta.product;
+    const status = (t) => { $('ql-status').textContent = t; };
+    /** Two-tap flow: Safari only opens Quick Look from a tap, so generate first, then open. */
+    const wire = (btnId, opts, openLabel, fileName, download) => {
+      const b = $(btnId);
+      b.onclick = async () => {
+        if (b.dataset.url) {
+          if (download) { const a = document.createElement('a'); a.href = b.dataset.url; a.download = fileName; a.click(); }
+          else this.quickLook.open(b.dataset.url, fileName);
+          return;
+        }
+        b.disabled = true;
+        try {
+          const url = await this.quickLook.prepare(status, opts);
+          b.dataset.url = url;
+          status(`Ready (${(this.quickLook.size / 1e6).toFixed(1)} MB USDZ). Tap "${openLabel}".`);
+          b.textContent = openLabel;
+        } catch (err) { status(`USDZ export failed: ${err.message}`); }
+        b.disabled = false;
+      };
+    };
     if (caps.mode === 'quicklook') {
       body.innerHTML = `
-        <p>This device uses <b>AR Quick Look</b> (ARKit). Safari on iOS/iPadOS does not support WebXR, so the assembly is exported to a USDZ file in your browser. The exploded view and the full ${this.model.stepCount}-step assembly animation play on a detected surface; tap and pinch to place and scale. The interactive BOM stays in this page.</p>
-        <p class="muted" id="ql-status">Preparing…</p>
-        <div class="ar-dialog-actions"><button type="button" class="btn btn-accent" id="ql-open" disabled>Open AR Quick Look</button></div>`;
+        <p>This device uses <b>AR Quick Look</b> (ARKit). Safari on iOS/iPadOS does not support WebXR, so the model is exported to a USDZ file in your browser, with the same ${CONFIG.explodeScale}× exploded view as this page.</p>
+        <p>Quick Look is a separate viewer: it cannot show the BOM, the narration or the step buttons. Use <b>${posName}</b> to stay in step-by-step mode, then come back here and press NEXT STEP.</p>
+        <p class="muted" id="ql-status">Choose what to place in your room.</p>
+        <div class="ar-dialog-actions">
+          <button type="button" class="btn btn-accent" id="ql-step">Prepare ${posName}</button>
+          <button type="button" class="btn" id="ql-full">Prepare full sequence</button>
+        </div>`;
       $('ar-dialog').showModal();
-      this.quickLook.prepare((s) => { $('ql-status').textContent = s; }).then(() => {
-        $('ql-status').textContent = `Ready (${(this.quickLook.size / 1e6).toFixed(1)} MB USDZ).`;
-        const b = $('ql-open');
-        b.disabled = false;
-        b.onclick = () => this.quickLook.open();
-      }).catch((err) => { $('ql-status').textContent = `USDZ export failed: ${err.message}`; });
+      wire('ql-step', { kind: 'step', pos }, `Open ${posName} in AR`, `${product}-${this.seq.isStep ? `step-${pos + 1}` : 'overview'}.usdz`);
+      wire('ql-full', { kind: 'full' }, 'Open full sequence in AR', `${product}-assembly.usdz`);
       return;
     }
     body.innerHTML = `
-      <p>Markerless AR is not available in this browser. The full 3D viewer, exploded view, assembly sequence and BOM work here; for AR open this page on:</p>
+      <p>Markerless AR is not available in this browser. The full 3D viewer, exploded view, assembly steps, narration and BOM work here; for AR open this page on:</p>
       <ul class="ar-support">
         ${li(true, 'Android phone/tablet with ARCore — Chrome (WebXR, full interactive AR)')}
-        ${li(true, 'iPhone / iPad — Safari (AR Quick Look with the assembly animation)')}
+        ${li(true, 'iPhone / iPad — Safari (AR Quick Look)')}
       </ul>
       <p>Checks for this browser:</p>
       <ul class="ar-support">
@@ -551,19 +643,14 @@ class App {
       <div class="url-box">${esc(location.href)}</div>
       <div class="ar-dialog-actions">
         <button type="button" class="btn" id="ar-copy">Copy link</button>
-        <button type="button" class="btn" id="ar-usdz">Download animated USDZ</button>
+        <button type="button" class="btn" id="ar-usdz-step">USDZ of ${posName}</button>
+        <button type="button" class="btn" id="ar-usdz">USDZ full sequence</button>
       </div>
       <p class="muted" id="ql-status"></p>`;
     $('ar-dialog').showModal();
     $('ar-copy').onclick = () => navigator.clipboard?.writeText(location.href).then(() => this.#toast('Link copied'));
-    $('ar-usdz').onclick = async () => {
-      try {
-        const url = await this.quickLook.prepare((s) => { $('ql-status').textContent = s; });
-        $('ql-status').textContent = `USDZ ready (${(this.quickLook.size / 1e6).toFixed(1)} MB).`;
-        const a = document.createElement('a');
-        a.href = url; a.download = this.quickLook.fileName; a.click();
-      } catch (err) { $('ql-status').textContent = `USDZ export failed: ${err.message}`; }
-    };
+    wire('ar-usdz-step', { kind: 'step', pos }, 'Download', `${product}-${this.seq.isStep ? `step-${pos + 1}` : 'overview'}.usdz`, true);
+    wire('ar-usdz', { kind: 'full' }, 'Download', `${product}-assembly.usdz`, true);
   }
 
   #toast(msg) {
