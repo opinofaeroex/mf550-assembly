@@ -111,12 +111,31 @@ export class Viewer {
     this.frame(undefined, false);
   }
 
+  /**
+   * Screen areas covered by overlay UI (px from the left / top of the viewport).
+   * The projection is shifted with a view offset so the model is centred, and
+   * framed, in the part of the viewport that is not covered by the step card.
+   */
+  setInsets({ left = 0, top = 0 } = {}) {
+    left = Math.round(left); top = Math.round(top);
+    if (this.insets && this.insets.left === left && this.insets.top === top) return;
+    this.insets = { left, top };
+    this.resize();
+  }
+
   resize() {
     const w = this.container.clientWidth || 1;
     const h = this.container.clientHeight || 1;
     if (this.renderer.xr.isPresenting) return;
     this.renderer.setSize(w, h, false);
-    this.camera.aspect = w / h;
+    const { left, top } = this.insets || { left: 0, top: 0 };
+    if (left > 0 || top > 0) {
+      this.camera.aspect = (w + left) / (h + top);
+      this.camera.setViewOffset(w + left, h + top, 0, 0, w, h);
+    } else {
+      this.camera.clearViewOffset();
+      this.camera.aspect = w / h;
+    }
     this.camera.updateProjectionMatrix();
   }
 
@@ -136,14 +155,19 @@ export class Viewer {
     if (box.isEmpty()) return;
     // the model is lifted smoothly to stay on the floor: aim at where it will settle
     if (!this.renderer.xr.isPresenting) {
-      const dy = ((this.liftTarget ?? this.#lift) - this.#lift) * this.stage.scale.y;
+      this.modelRoot.updateMatrixWorld(true);
+      const dy = (this.#measureLift() - this.#lift) * this.stage.scale.y;
       box = box.clone().translate(new THREE.Vector3(0, dy, 0));
     }
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    const fov = THREE.MathUtils.degToRad(this.camera.fov);
-    const fitH = sphere.radius / Math.sin(fov / 2);
-    const fitW = sphere.radius / Math.sin(Math.atan(Math.tan(fov / 2) * this.camera.aspect));
-    const dist = Math.max(fitH, fitW) * padding;
+    // fit inside the uncovered part of the viewport (see setInsets)
+    const w = this.container.clientWidth || 1;
+    const h = this.container.clientHeight || 1;
+    const { left, top } = this.insets || { left: 0, top: 0 };
+    const fullH = h + top;
+    const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2);
+    const avail = Math.max(80, Math.min(w - left, h - top));
+    const dist = (sphere.radius / Math.sin(Math.atan(tanV * avail / fullH))) * padding;
     let dir = this.camera.position.clone().sub(this.controls.target);
     if (dir.lengthSq() < 1e-8) dir.set(1, 0.6, 1.3);
     dir.normalize();
@@ -162,16 +186,24 @@ export class Viewer {
     };
   }
 
-  /** Keep the (possibly exploded) model standing on the floor. */
-  #updateLift(dt) {
-    if (!this.model) return;
+  /** Lift needed (stage space) so that the current pose of the model stands on y = 0. */
+  #measureLift() {
+    const y = this.modelRoot.position.y;
     this.modelRoot.position.y = 0;
     this.modelRoot.updateMatrixWorld(true);
     const box = this.#box.setFromObject(this.model);
     const stageY = this.stage.position.y;
     const scale = this.stage.scale.y || 1;
     const minY = (box.min.y - stageY) / scale;   // in stage space
-    this.liftTarget = Math.max(0, -minY);
+    this.modelRoot.position.y = y;
+    this.modelRoot.updateMatrixWorld(true);
+    return Math.max(0, -minY);
+  }
+
+  /** Keep the (possibly exploded) model standing on the floor. */
+  #updateLift(dt) {
+    if (!this.model) return;
+    this.liftTarget = this.#measureLift();
     const k = 1 - Math.exp(-dt * 6);
     this.#lift += (this.liftTarget - this.#lift) * k;
     this.modelRoot.position.y = this.#lift;
