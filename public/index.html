@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>MF-550-210-B · Interactive Assembly Instructions</title>
+  <meta name="description" content="Interactive exploded-view assembly instructions and BOM with WebAR for the MF-550-210-B assembly.">
+  <meta name="theme-color" content="#10151b">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff7a1a'/%3E%3Cpath d='M9 22V10l7 5 7-5v12' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/app.css">
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
+  </script>
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <!-- SVG icon sprite -->
+  <svg class="sprite" aria-hidden="true">
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></symbol>
+    <symbol id="i-prev" viewBox="0 0 24 24"><path d="M6 5h2v14H6zM19 5.5v13L9.5 12z" fill="currentColor"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM5 5.5v13L14.5 12z" fill="currentColor"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M12 5a7 7 0 1 1-6.6 4.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4v6h6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-explode" viewBox="0 0 24 24"><rect x="9" y="9" width="6" height="6" rx="1" fill="currentColor"/><path d="M4 4l3 3M20 4l-3 3M4 20l3-3M20 20l-3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 4h3M4 4v3M20 4h-3M20 4v3M4 20h3M4 20v-3M20 20h-3M20 20v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-ar" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M4 7.5l8 4.5 8-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-frame" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-ghost" viewBox="0 0 24 24"><rect x="3.5" y="7" width="10" height="10" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-dasharray="2.4 2"/><rect x="10.5" y="4" width="10" height="10" rx="1.5" fill="currentColor"/></symbol>
+    <symbol id="i-edges" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM4 7.5l8 4.5 8-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.5" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 15l5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="7.5" r="1.3" fill="currentColor"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3.5l9.5 16.5h-19z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-isolate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="2.5 2.5"/></symbol>
+    <symbol id="i-move" viewBox="0 0 24 24"><path d="M12 3v18M3 12h18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9.5 9.5a2.6 2.6 0 1 1 3.6 2.4c-.8.4-1.1.9-1.1 1.8v.3" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="17" r="1.2" fill="currentColor"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.4" fill="currentColor"/><circle cx="4.5" cy="12" r="1.4" fill="currentColor"/><circle cx="4.5" cy="18" r="1.4" fill="currentColor"/></symbol>
+  </svg>
+
+  <div id="app" class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32"><path d="M9 22V10l7 5 7-5v12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title" id="product-title">Assembly</span>
+          <span class="brand-sub">Interactive assembly instructions · BOM · WebAR</span>
+        </div>
+      </div>
+      <div class="meta-chips" id="meta-chips"></div>
+      <div class="topbar-actions">
+        <button class="btn btn-ghost icon-only" id="btn-help" title="Help &amp; shortcuts" aria-label="Help"><svg><use href="#i-help"/></svg></button>
+        <button class="btn btn-accent" id="btn-ar" title="View in augmented reality" disabled>
+          <svg><use href="#i-ar"/></svg><span>View in AR</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="viewport" aria-label="3D assembly view">
+       <div class="view-area" id="viewport">
+        <div class="callout-layer" id="callout-layer" aria-hidden="true"></div>
+
+        <div class="step-card" id="step-card" aria-live="polite">
+          <div class="step-card-head">
+            <span class="step-badge" id="step-badge">Overview</span>
+            <span class="step-kind" id="step-kind"></span>
+          </div>
+          <h2 class="step-title" id="step-title">Loading…</h2>
+          <p class="step-desc" id="step-desc"></p>
+          <div class="step-note" id="step-note" hidden></div>
+        </div>
+
+        <div class="viewport-tools" role="toolbar" aria-label="View options">
+          <button class="tool" id="tool-frame" title="Frame model (F)" aria-label="Frame model"><svg><use href="#i-frame"/></svg></button>
+          <button class="tool is-on" id="tool-focus" title="Auto-focus camera on each step" aria-pressed="true" aria-label="Auto-focus"><svg><use href="#i-focus"/></svg></button>
+          <button class="tool is-on" id="tool-ghost" title="Ghost parts not yet installed (G)" aria-pressed="true" aria-label="Ghost future parts"><svg><use href="#i-ghost"/></svg></button>
+          <button class="tool is-on" id="tool-edges" title="Show CAD edges" aria-pressed="true" aria-label="Edges"><svg><use href="#i-edges"/></svg></button>
+          <button class="tool" id="tool-isolate" title="Isolate selection (I)" aria-pressed="false" aria-label="Isolate selection"><svg><use href="#i-isolate"/></svg></button>
+        </div>
+
+        <div class="loader" id="loader" role="status">
+          <div class="loader-box">
+            <div class="loader-ring"></div>
+            <div class="loader-text" id="loader-text">Loading assembly…</div>
+            <div class="loader-bar"><div class="loader-bar-fill" id="loader-bar"></div></div>
+          </div>
+        </div>
+       </div>
+
+        <div class="transport" id="transport">
+          <div class="progress" id="progress" role="slider" aria-label="Assembly progress" tabindex="0">
+            <div class="progress-track"><div class="progress-fill" id="progress-fill"></div><div class="progress-ticks" id="progress-ticks"></div></div>
+          </div>
+          <div class="transport-row">
+            <div class="transport-left">
+              <span class="progress-label" id="progress-label">—</span>
+              <span class="progress-sub" id="progress-sub"></span>
+            </div>
+            <div class="transport-buttons">
+              <button class="tbtn" id="btn-restart" title="Restart (R)" aria-label="Restart"><svg><use href="#i-restart"/></svg></button>
+              <button class="tbtn" id="btn-prev" title="Previous step (←)" aria-label="Previous step"><svg><use href="#i-prev"/></svg></button>
+              <button class="tbtn tbtn-main" id="btn-play" title="Play / pause (Space)" aria-label="Play"><svg><use href="#i-play"/></svg></button>
+              <button class="tbtn" id="btn-next" title="Next step (→)" aria-label="Next step"><svg><use href="#i-next"/></svg></button>
+              <button class="tbtn tbtn-toggle" id="btn-explode" title="Exploded view (E)" aria-pressed="false" aria-label="Exploded view"><svg><use href="#i-explode"/></svg></button>
+            </div>
+            <div class="transport-right">
+              <label class="speed" title="Playback speed">
+                <span>Speed</span>
+                <select id="speed">
+                  <option value="0.5">0.5×</option>
+                  <option value="1" selected>1×</option>
+                  <option value="1.5">1.5×</option>
+                  <option value="2">2×</option>
+                  <option value="3">3×</option>
+                </select>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="sidebar" id="sidebar" aria-label="Bill of materials">
+        <button class="sheet-handle" id="sheet-handle" aria-label="Show or hide the BOM panel"><span></span><em>Bill of materials · steps</em></button>
+        <nav class="tabs" role="tablist">
+          <button class="tab is-active" role="tab" data-tab="bom" aria-selected="true">Indented BOM</button>
+          <button class="tab" role="tab" data-tab="parts" aria-selected="false">Parts list</button>
+          <button class="tab" role="tab" data-tab="steps" aria-selected="false">Steps</button>
+        </nav>
+        <div class="search">
+          <svg><use href="#i-search"/></svg>
+          <input id="search" type="search" placeholder="Filter by part number or name" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="panel-scroll" id="panel-scroll">
+          <table class="bom" id="bom-table" data-panel="bom">
+            <thead><tr><th class="c-item">Item</th><th class="c-pn">Part number / name</th><th class="c-qty">Qty</th><th class="c-step">Step</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <table class="bom" id="parts-table" data-panel="parts" hidden>
+            <thead><tr><th class="c-pn">Part number / name</th><th class="c-qty">Total</th><th class="c-step">Used in</th></tr></thead>
+            <tbody></tbody>
+          </table>
+          <ol class="steps-list" id="steps-list" data-panel="steps" hidden></ol>
+        </div>
+        <section class="details" id="details" hidden>
+          <header class="details-head">
+            <div>
+              <div class="details-item" id="details-item"></div>
+              <h3 class="details-title" id="details-title"></h3>
+            </div>
+            <button class="btn btn-ghost icon-only" id="details-close" aria-label="Clear selection"><svg><use href="#i-close"/></svg></button>
+          </header>
+          <dl class="details-grid" id="details-grid"></dl>
+          <div class="details-actions">
+            <button class="btn btn-small" id="details-goto">Go to step</button>
+            <button class="btn btn-small" id="details-zoom">Zoom to</button>
+            <button class="btn btn-small" id="details-isolate">Isolate</button>
+          </div>
+        </section>
+        <footer class="sidebar-foot" id="sidebar-foot"></footer>
+      </aside>
+    </main>
+  </div>
+
+  <!-- DOM overlay used during the WebXR AR session -->
+  <div id="ar-overlay" class="ar-overlay" hidden>
+    <div class="ar-top">
+      <button class="ar-btn" id="ar-exit" aria-label="Exit AR"><svg><use href="#i-close"/></svg></button>
+      <div class="ar-hint" id="ar-hint">Move your phone slowly to detect the floor</div>
+      <button class="ar-btn" id="ar-reposition" aria-label="Reposition"><svg><use href="#i-move"/></svg></button>
+    </div>
+    <div class="ar-info" id="ar-info" hidden>
+      <div class="ar-info-head"><span class="step-badge" id="ar-step-badge"></span><span id="ar-scale"></span></div>
+      <div class="ar-info-title" id="ar-step-title"></div>
+      <div class="ar-info-sel" id="ar-selection" hidden></div>
+    </div>
+    <div class="ar-bottom" id="ar-controls" hidden>
+      <button class="ar-btn" id="ar-prev" aria-label="Previous step"><svg><use href="#i-prev"/></svg></button>
+      <button class="ar-btn ar-btn-main" id="ar-play" aria-label="Play"><svg><use href="#i-play"/></svg></button>
+      <button class="ar-btn" id="ar-next" aria-label="Next step"><svg><use href="#i-next"/></svg></button>
+      <button class="ar-btn" id="ar-explode" aria-label="Exploded view"><svg><use href="#i-explode"/></svg></button>
+      <button class="ar-btn ar-scale-btn" id="ar-scale-toggle" aria-label="Toggle scale">1:1</button>
+    </div>
+    <div class="ar-gesture-hint" id="ar-gesture-hint" hidden>1 finger: rotate · 2 fingers: move &amp; pinch to scale · tap a part for its BOM data</div>
+  </div>
+
+  <dialog class="dialog" id="ar-dialog">
+    <form method="dialog">
+      <header><h3>Augmented reality</h3><button class="btn btn-ghost icon-only" value="close" aria-label="Close"><svg><use href="#i-close"/></svg></button></header>
+      <div id="ar-dialog-body"></div>
+    </form>
+  </dialog>
+
+  <dialog class="dialog" id="help-dialog">
+    <form method="dialog">
+      <header><h3>How to use</h3><button class="btn btn-ghost icon-only" value="close" aria-label="Close"><svg><use href="#i-close"/></svg></button></header>
+      <div class="help-body">
+        <p><b>Play</b> runs the full sequence: assembled overview → exploded parts kit → every assembly step → completed product. The highlighted part, the BOM row and the step card always refer to the same step.</p>
+        <table class="kbd-table">
+          <tr><td><kbd>Space</kbd></td><td>Play / pause</td></tr>
+          <tr><td><kbd>←</kbd> <kbd>→</kbd></td><td>Previous / next step</td></tr>
+          <tr><td><kbd>E</kbd></td><td>Toggle exploded view</td></tr>
+          <tr><td><kbd>R</kbd></td><td>Restart</td></tr>
+          <tr><td><kbd>F</kbd></td><td>Frame model</td></tr>
+          <tr><td><kbd>G</kbd></td><td>Ghost parts not yet installed</td></tr>
+          <tr><td><kbd>I</kbd></td><td>Isolate selection</td></tr>
+          <tr><td><kbd>Esc</kbd></td><td>Clear selection</td></tr>
+        </table>
+        <p>Click a part in 3D or a row in the BOM to select it. Drag to orbit, right-drag / two-finger drag to pan, scroll / pinch to zoom.</p>
+        <p class="muted" id="help-data-note"></p>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>

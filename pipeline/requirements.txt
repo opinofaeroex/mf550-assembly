@@ -1,0 +1,6 @@
+# STEP -> GLB conversion pipeline (Python 3.10+)
+cadquery-ocp>=7.8      # OpenCascade Technology bindings (STEP reading, B-rep, tessellation)
+numpy>=1.24
+trimesh>=4.0           # ray casting for the disassembly analysis
+embreex>=2.17          # optional: Intel Embree ray engine (≈50x faster ray casting)
+rtree>=1.0             # trimesh fallback ray engine when embreex is unavailable

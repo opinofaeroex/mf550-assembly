@@ -1,0 +1,46 @@
+{
+  "_comment": "Conversion settings for convert_step.py. All lengths in millimetres unless noted.",
+  "productName": null,
+  "tessellation": {
+    "relativeDeflection": 0.0015,
+    "minLinearDeflection": 0.02,
+    "maxLinearDeflection": 0.6,
+    "angularDeflectionDeg": 20
+  },
+  "instancing": {
+    "enabled": true,
+    "maxVertexDeviationMm": 0.001
+  },
+  "treatAsUnit": {
+    "_comment": "Sub-assemblies whose CAD component name matches one of these regexes are handled as a single purchased/imported unit: not exploded internally and installed in one step.",
+    "patterns": [
+      "(?i)\\.(stp|step)$"
+    ]
+  },
+  "partNumberPattern": "^[A-Z0-9]+(?:-[A-Z0-9]+)+-?$",
+  "explode": {
+    "radialFactor": 0.75,
+    "minDistanceFraction": 0.12,
+    "nestedRadialFactor": 0.6,
+    "axisSnapCosine": 0.82,
+    "fastenerMaxSizeFraction": 0.3,
+    "fastenerPullFactor": 2.5,
+    "fastenerExtraFraction": 0.05,
+    "stackGapFraction": 0.04
+  },
+  "materials": {
+    "metallic": 0.35,
+    "roughness": 0.55
+  },
+  "disassembly": {
+    "_comment": "Ray-cast collision analysis used to choose removal directions and the assembly order (requires trimesh; embreex recommended).",
+    "enabled": true,
+    "raysPerItem": 300,
+    "insetMm": 0.2,
+    "contactEpsMm": 0.05,
+    "freeTolerance": 0.02,
+    "fastenersAxialOnly": true,
+    "upBias": 0.15,
+    "hardwareMaxSizeFraction": 0.06
+  }
+}
