@@ -17,7 +17,14 @@
  *     animation or the narration, navigation during animation, rapid clicks.
  * [5] Narration: auto-start on step entry, previous narration cancelled, pause / resume /
  *     replay / mute via the UI, blocked-until-gesture, unsupported browser fallback.
- * [6] WebXR AR flow under the Immersive Web Emulation Runtime (IWER + SEM), incl. NEXT in AR.
+ * [6] WebXR AR flow under the Immersive Web Emulation Runtime (IWER + SEM), incl. NEXT in AR
+ *     and the gesture camera being released during the AR session.
+ * [7] New STEP integration: names from MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP, structure
+ *     map provenance, concise step instructions (card text == spoken text), step loop.
+ * [8] Right-hand gestures: classifier on real MediaPipe landmarks (tests/fixtures), trigger
+ *     state machine, and end-to-end with a fake camera + scripted tracker: thumbs up / down
+ *     navigate exactly once, left hand ignored, boundaries, disable, permission denied.
+ *     (The real MediaPipe model is checked on the live site, see README § Tests.)
  */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -31,7 +38,8 @@ let server;
 let failures = 0;
 const check = (ok, msg) => { console.log(`${ok ? '  ✓' : '  ✗'} ${msg}`); if (!ok) failures++; };
 
-/** In-page Web Speech API mock. opts.requireGesture: refuse ('not-allowed') until a pointerdown. */
+/** In-page Web Speech API mock. opts.requireGesture: refuse ('not-allowed') until a pointerdown;
+ *  opts.msPerChar: speaking time per character (default 10 ms). */
 const speechMock = (opts = {}) => `(() => {
   const log = []; let queue = []; let cur = null; let speaking = false; let gesture = ${opts.requireGesture ? 'false' : 'true'};
   addEventListener('pointerdown', () => { gesture = true; }, true);
@@ -41,7 +49,7 @@ const speechMock = (opts = {}) => `(() => {
     cur = queue.shift(); speaking = true;
     const u = cur;
     setTimeout(() => { if (cur === u) { log.push({ t: 'start', text: u.text }); fire(u, 'start'); } }, 5);
-    setTimeout(() => { if (cur !== u) return; cur = null; log.push({ t: 'end', text: u.text }); fire(u, 'end'); pump(); }, 30 + u.text.length * 10);
+    setTimeout(() => { if (cur !== u) return; cur = null; log.push({ t: 'end', text: u.text }); fire(u, 'end'); pump(); }, 30 + u.text.length * ${opts.msPerChar || 10});
   };
   class Utterance extends EventTarget {
     constructor(text) { super(); this.text = text; this.lang = ''; this.rate = 1; this.voice = null;
@@ -84,7 +92,10 @@ async function startServer() {
 }
 
 async function launch() {
-  return chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  return chromium.launch({
+    args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
+      '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+  });
 }
 
 async function openApp(browser, init, viewport = { width: 1280, height: 800 }) {
@@ -96,6 +107,37 @@ async function openApp(browser, init, viewport = { width: 1280, height: 800 }) {
   await page.goto(`${BASE}/`);
   await page.waitForFunction(() => window.app && window.app.seq && window.app.narrator, null, { timeout: 120000 });
   return { page, errors };
+}
+
+/** Scripted stand-in for MediaPipe: returns whatever window.__fakeHands holds for each frame. */
+const fakeTracker = `(() => {
+  window.__fakeHands = [];
+  window.__detectCalls = 0;
+  window.__MF550_TEST_TRACKER__ = () => ({
+    landmarker: null, delegate: null,
+    async init() { await new Promise((r) => setTimeout(r, 50)); this.landmarker = {}; this.delegate = 'TEST'; },
+    detect() { window.__detectCalls++; return { hands: window.__fakeHands }; },
+    close() { this.landmarker = null; },
+  });
+})();`;
+
+/** Real Hand Landmarker output (fixtures) + exact image transforms for the other cases. */
+const FIX = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'hand-landmarks.json'), 'utf8')).hands;
+function hand(name, { rot = 0, mirror = false } = {}) {
+  const f = FIX.find((h) => h.img === name);
+  const r = (rot * Math.PI) / 180, cs = Math.cos(r), sn = Math.sin(r);
+  const lm = [], wl = [];
+  for (let i = 0; i < 21; i++) {
+    let x = f.lm[i * 3] / 1000, y = f.lm[i * 3 + 1] / 1000;
+    let X = f.wl[i * 3] / 1000, Y = f.wl[i * 3 + 1] / 1000;
+    if (mirror) { x = 1 - x; X = -X; }
+    // rotate the picture about its centre (in pixels, so the aspect ratio is respected)
+    const px = (x - 0.5) * f.w, py = (y - 0.5) * f.h;
+    lm.push({ x: 0.5 + (px * cs - py * sn) / f.w, y: 0.5 + (px * sn + py * cs) / f.h, z: f.lm[i * 3 + 2] / 1000 });
+    wl.push({ x: X * cs - Y * sn, y: X * sn + Y * cs, z: f.wl[i * 3 + 2] / 1000 });
+  }
+  const label = mirror ? (f.label === 'Right' ? 'Left' : 'Right') : f.label;
+  return { label, score: 0.98, landmarks: lm, world: wl, w: f.w, h: f.h };
 }
 
 const waitFor = (page, fn, arg, timeout = 30000) => page.waitForFunction(fn, arg, { timeout, polling: 100 }).then(() => true, () => false);
@@ -185,7 +227,9 @@ async function testViewer(browser) {
       const card = document.getElementById('step-badge').textContent;
       if (card !== `Step ${k + 1} / ${model.stepCount}`) problems.push(`step ${k + 1}: card shows ${card}`);
       const script = narrationText(model, k);
-      if (!script.startsWith(`Step ${k + 1} of ${model.stepCount}.`) || !script.includes(`BOM item`)) problems.push(`step ${k + 1}: narration script`);
+      const desc = document.getElementById('step-desc').textContent;
+      const title = document.getElementById('step-title').textContent;
+      if (script !== `Step ${k + 1}. ${title}. ${desc}`) problems.push(`step ${k + 1}: narration differs from the card`);
     }
     return { problems, steps: model.stepCount };
   });
@@ -195,7 +239,7 @@ async function testViewer(browser) {
 
 async function testNavigationAndVoice(browser) {
   console.log('\n[4] manual navigation');
-  const { page, errors } = await openApp(browser, speechMock());
+  const { page, errors } = await openApp(browser, speechMock({ msPerChar: 40 }));
   const st = () => page.evaluate(() => ({
     pos: app.seq.pos, animating: app.seq.animating, status: app.narrator.status, id: app.narrator.id,
     prev: document.getElementById('btn-prev').disabled, next: document.getElementById('btn-next').disabled,
@@ -220,12 +264,18 @@ async function testNavigationAndVoice(browser) {
   s = await st();
   check(s.pos === 68, 'clicking the disabled NEXT on the final step does nothing');
 
-  // no automatic advance after the animation and the narration
+  // no automatic advance; the step's motion loops, the narration is not repeated
   await page.evaluate(() => app.seq.goTo(10));
   const ended = await waitFor(page, () => app.narrator.status === 'ended' && !app.seq.animating, null, 60000);
-  await page.waitForTimeout(2500);
+  const loops = await waitFor(page, () => app.seq.loopCount >= 2, null, 90000);
   s = await st();
-  check(ended && s.pos === 10, `animation + narration finished, still on step 11 after waiting (status ${s.status})`);
+  const loopInfo = await page.evaluate(() => {
+    const first = app.narrator.chunks[0];
+    return { loops: app.seq.loopCount, spoken: __speechLog.filter((x) => x.t === 'speak' && x.text === first).length, first,
+      log: __speechLog.filter((x) => x.text === first).map((x) => x.t).join(',') };
+  });
+  check(ended && loops && s.pos === 10 && loopInfo.spoken === 1,
+    `step 11: animation repeated ${loopInfo.loops}× without changing step; narration spoken once (status ${s.status}${loopInfo.spoken === 1 ? '' : `; "${loopInfo.first}": ${loopInfo.log}`})`);
 
   // navigation during animation, and rapid clicks
   await page.evaluate(() => { app.seq.speed = 0.25; app.seq.goTo(20); });
@@ -247,24 +297,27 @@ async function testNavigationAndVoice(browser) {
   check(overlap.after.every((t) => overlap.current.includes(t)), 'after rapid clicks only the current step is narrated (stale narrations cancelled)');
 
   console.log('\n[5] voice narration');
+  // DOM clicks: same click event on the same buttons, without Playwright's actionability round-trips
+  // (headless SwiftShader is slow enough for a short sentence to end in between)
+  const domClick = (sel) => page.evaluate((q) => document.querySelector(q).click(), sel);
   await page.evaluate(() => app.seq.goTo(30));
   await waitFor(page, () => app.narrator.id === 30 && app.narrator.status === 'speaking' && window.__speechActive());
   s = await st();
   check(s.status === 'speaking' && s.id === 30, 'narration starts automatically when entering a step');
-  const spoken = await page.evaluate(() => { const t = __speechLog.filter((x) => x.t === 'start').slice(-1)[0].text; return { t, ok: app.narrator.text.startsWith('Step 31 of 69.') && app.narrator.text.includes(t) }; });
+  const spoken = await page.evaluate(() => { const t = __speechLog.filter((x) => x.t === 'start').slice(-1)[0].text; return { t, ok: app.narrator.text.startsWith('Step 31.') && app.narrator.text.includes(t) }; });
   check(spoken.ok, `the sentence being spoken belongs to step 31: "${spoken.t.slice(0, 70)}"`);
-  await page.click('#nar-play');
+  await domClick('#nar-play');
   s = await st();
   const label1 = await page.textContent('#nar-play-label');
   check(s.status === 'paused' && label1 === 'Resume', `Pause → status ${s.status}, button "${label1}"`);
   const paused = await page.evaluate(() => ({ idx: app.narrator.index, text: app.narrator.chunks[app.narrator.index], n: __speechLog.length }));
-  await page.click('#nar-play');
+  await domClick('#nar-play');
   s = await st();
   await waitFor(page, (n) => __speechLog.slice(n).some((x) => x.t === 'speak'), paused.n, 10000);
   const resumed = await page.evaluate((n) => __speechLog.slice(n).find((x) => x.t === 'speak').text, paused.n);
   check(s.status === 'speaking' && resumed === paused.text, `Resume → continues from the interrupted sentence ("${paused.text.slice(0, 50)}")`);
   await waitFor(page, () => app.narrator.index >= 1);
-  await page.click('#nar-replay');
+  await domClick('#nar-replay');
   s = await st();
   check(s.pos === 30 && s.animating, 'Replay → same step, animation restarts');
   const replayed = await waitFor(page, () => app.narrator.index === 0 && app.narrator.status === 'speaking' && app.narrator.id === 30, null, 10000);
@@ -315,6 +368,225 @@ async function testNavigationAndVoice(browser) {
   await u.page.close();
 }
 
+async function testIntegration(browser) {
+  console.log('\n[7] new STEP integration, instructions, step loop');
+  const { page, errors } = await openApp(browser, speechMock());
+  const d = await page.evaluate(async () => {
+    const { model } = window.app;
+    const { positionText } = await import('./js/ui/text.js');
+    const m = model.meta;
+    const parts = model.partIds.map((id) => model.node(id));
+    const texts = model.steps.map((s, k) => positionText(model, k));
+    return {
+      source: m.sourceFile, structure: m.structureSource,
+      labelled: parts.filter((n) => n.label).length, parts: parts.length,
+      names: new Set(parts.map((n) => n.label)).size,
+      bomLabelled: model.bom.filter((r) => r.label || r.insideUnit).length, bom: model.bom.length,
+      bomCell: document.querySelector('#bom-table tr[data-item="1.1.2"] .pn-label')?.textContent,
+      longestTitle: Math.max(...texts.map((t) => t.title.length)),
+      longestDesc: Math.max(...texts.map((t) => t.desc.length)),
+      longestSpeechWords: Math.max(...texts.map((t) => t.speech.split(/\s+/).length)),
+      sample: texts[17].speech,
+      noPartNumbersSpoken: texts.every((t) => !/[A-Z0-9]{3,}-[A-Z0-9]{3,}/.test(t.speech)),
+    };
+  });
+  check(d.source === 'MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP' && d.structure && d.structure.verification.otherDifferences === 0
+    && d.structure.verification.renamedBodies === 220,
+  `model converted from ${d.source}; hierarchy/part numbers from ${d.structure && d.structure.structureFrom} (verified identical geometry)`);
+  check(d.labelled === d.parts && d.names === 46 && d.bomLabelled === d.bom && d.bomCell === 'Back Panel',
+    `all ${d.parts} parts carry their STEP name (${d.names} distinct); BOM shows names (item 1.1.2 = "${d.bomCell}")`);
+  check(d.longestTitle <= 60 && d.longestDesc <= 170 && d.longestSpeechWords <= 40 && d.noPartNumbersSpoken,
+    `instructions are short: title ≤ ${d.longestTitle} chars, instruction ≤ ${d.longestDesc} chars, speech ≤ ${d.longestSpeechWords} words, no part numbers read aloud — e.g. "${d.sample}"`);
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+}
+
+async function testGestures(browser) {
+  console.log('\n[8] right-hand gesture navigation');
+  // ---- pure modules on real MediaPipe landmarks ---------------------------------
+  const { page, errors } = await openApp(browser, speechMock({ msPerChar: 60 }) + fakeTracker);
+  const cases = {
+    'thumbs up (photo)': [hand('thumb_up.jpg'), 'up'],
+    'thumbs up tilted +25°': [hand('thumb_up.jpg', { rot: 25 }), 'up'],
+    'thumbs up tilted −25°': [hand('thumb_up.jpg', { rot: -25 }), 'up'],
+    'thumbs down (rotated photo)': [hand('thumb_up.jpg', { rot: 180 }), 'down'],
+    'thumbs down tilted': [hand('thumb_up.jpg', { rot: 155 }), 'down'],
+    'left-hand thumbs up (mirrored)': [hand('thumb_up.jpg', { mirror: true }), 'up'],
+    'fist': [hand('fist.jpg'), 'none'],
+    'fist rotated 90°': [hand('fist.jpg', { rot: 90 }), 'none'],
+    'pointing up': [hand('pointing_up.jpg'), 'none'],
+    'pointing down': [hand('pointing_up.jpg', { rot: 180 }), 'none'],
+    'victory': [hand('victory.jpg'), 'none'],
+    'open hand': [hand('right_hands.jpg'), 'none'],
+    'open hand upside down': [hand('right_hands.jpg', { rot: 180 }), 'none'],
+  };
+  const cls = await page.evaluate(async (cases) => {
+    const { classifyGesture } = await import('./js/gesture/GestureClassifier.js');
+    const out = {};
+    for (const [k, [h, want]] of Object.entries(cases)) {
+      const r = classifyGesture(h.landmarks, h.world, { aspect: h.w / h.h });
+      out[k] = { got: r.gesture, want, reason: r.reason };
+    }
+    return out;
+  }, cases);
+  const bad = Object.entries(cls).filter(([, v]) => v.got !== v.want);
+  check(bad.length === 0, `classifier on real landmarks: ${Object.keys(cls).length} poses correct ${bad.map(([k, v]) => `${k}: ${v.got} (${v.reason})`).join('; ')}`);
+
+  const unit = await page.evaluate(async () => {
+    const { GestureTrigger } = await import('./js/gesture/GestureTrigger.js');
+    const { physicalHand } = await import('./js/gesture/HandTracker.js');
+    const T = new GestureTrigger({ stableFrames: 5, minHoldMs: 300, cooldownMs: 1000, neutralFrames: 4, maxGapFrames: 1 });
+    const fires = [];
+    let t = 0;
+    const feed = (g, n, dt = 66) => { for (let i = 0; i < n; i++) { t += dt; const r = T.update(g, t); if (r.fire) fires.push([r.fire, t]); } };
+    feed('up', 1); const single = fires.length;
+    feed('none', 3);
+    feed('up', 4); const four = fires.length;            // 4 frames: not stable yet
+    feed('up', 40); const held = fires.length;           // held ~3 s: exactly one
+    feed('down', 20); const otherWhileLocked = fires.length; // switching gesture without neutral: ignored
+    feed('none', 4); feed('down', 6); const rearmed = fires.length;
+    feed(null, 20); feed('up', 2); feed(null, 1); feed('up', 4); const gap = fires.length;  // 1-frame gap tolerated
+    return {
+      single, four, held, otherWhileLocked, rearmed, gap, fires: fires.map((f) => f[0]).join(','),
+      hands: [physicalHand('Right'), physicalHand('Right', { inputMirrored: true }), physicalHand('Right', { swap: true }),
+        physicalHand('Right', { inputMirrored: true, swap: true }), physicalHand('Left')].join(','),
+    };
+  });
+  check(unit.single === 0 && unit.four === 0 && unit.held === 1 && unit.otherWhileLocked === 1 && unit.rearmed === 2 && unit.gap === 3,
+    `trigger: 1 frame / 4 frames do not fire, a 3 s hold fires once, re-armed only after neutral, 1-frame drop-out tolerated (${unit.fires})`);
+  check(unit.hands === 'Right,Left,Left,Right,Left', `handedness: raw frames = physical hand, mirrored input or swap option invert it (${unit.hands})`);
+
+  // ---- end to end: fake camera (Chromium) + scripted tracker -----------------------
+  const set = (h) => page.evaluate((h) => { window.__fakeHands = h; }, h);
+  const pos = () => page.evaluate(() => app.seq.pos);
+  const UP = [hand('thumb_up.jpg')], DOWN = [hand('thumb_up.jpg', { rot: 180 })];
+  const LEFT_UP = [hand('thumb_up.jpg', { mirror: true })], LEFT_DOWN = [hand('thumb_up.jpg', { mirror: true, rot: 180 })];
+  const OPEN = [hand('right_hands.jpg')];
+  // headless SwiftShader renders slowly, so waits count processed camera frames, not seconds
+  const frames = async (n) => {
+    const c0 = await page.evaluate(() => window.__detectCalls);
+    await waitFor(page, (c) => window.__detectCalls >= c, c0 + n, 60000);
+  };
+  const neutral = async () => {
+    await set(OPEN); await frames(3); await set([]);
+    await waitFor(page, () => app.gestures.trigger.state === 'ready', null, 30000);
+  };
+
+  if (process.env.GESTURE_DEBUG) {
+    page.on('console', (m) => { if (m.text().startsWith('[dbg]')) console.log('    ' + m.text()); });
+    await page.evaluate(() => {
+      app.gestures.addEventListener('trigger', (e) => console.log(`[dbg] trigger ${e.detail.gesture} at pos ${app.seq.pos}`));
+      app.gestures.addEventListener('status', (e) => console.log(`[dbg] status ${JSON.stringify(e.detail)}`));
+    });
+  }
+  await page.click('#btn-gestures');
+  const off = await page.evaluate(() => ({ panel: !document.getElementById('gesture-panel').hidden, cam: !!app.gestures.camera.stream }));
+  check(off.panel && !off.cam, 'Gesture Control panel opens; the camera stays off until the user enables it');
+  await page.click('#gp-toggle');
+  const on = await waitFor(page, () => app.gestures.status.phase === 'on' && app.gestures.camera.active, null, 15000);
+  const ui = await page.evaluate(() => ({ cam: document.getElementById('gp-camera').textContent, chip: !document.getElementById('gesture-chip').hidden }));
+  check(on && ui.chip, `enable → camera permission, tracker loaded, status "${ui.cam}", status chip on the 3D view`);
+
+  await page.evaluate(() => app.seq.goTo(4));
+  await waitFor(page, () => app.narrator.id === 4 && app.narrator.status === 'speaking');
+  const logBefore = await page.evaluate(() => __speechLog.length);
+  await set(UP);
+  const moved = await waitFor(page, () => app.seq.pos === 5, null, 30000);
+  const toast = await page.textContent('#gesture-toast');
+  await frames(30);                                      // keep holding the thumbs up (~2 s at 15 fps)
+  const held = await pos();
+  const nar = await page.evaluate((n) => ({ id: app.narrator.id, cancelled: __speechLog.slice(n).some((x) => x.t === 'cancel'), src: app.state.get('lastNavigation').source }), logBefore);
+  check(moved && held === 5 && toast.includes('NEXT STEP ACTIVATED') && nar.src === 'gesture',
+    `right thumbs up → NEXT once (step 6), held 2 s → still step ${held + 1}; feedback "${toast}"`);
+  check(nar.id === 5 && nar.cancelled, 'gesture during narration: previous narration stopped, step 6 narration started');
+  await neutral();
+  await set(UP);
+  const second = await waitFor(page, () => app.seq.pos === 6, null, 30000);
+  await neutral();
+  await set(DOWN);
+  const back = await waitFor(page, () => app.seq.pos === 5, null, 30000);
+  const toast2 = await page.textContent('#gesture-toast');
+  check(second && back && toast2.includes('PREVIOUS STEP ACTIVATED'), `after returning to neutral: thumbs up → step 7, thumbs down → step 6 ("${toast2}")`);
+  await neutral();
+  await set(LEFT_UP);
+  await frames(20);
+  const leftHand = await page.evaluate(() => ({ pos: app.seq.pos, hand: app.gestures.status.hand }));
+  await set(LEFT_DOWN);
+  await frames(20);
+  const leftDown = await pos();
+  await set([...LEFT_UP, ...OPEN]);
+  await frames(15);
+  const both = await page.evaluate(() => ({ pos: app.seq.pos, hand: app.gestures.status.hand }));
+  check(leftHand.pos === 5 && leftHand.hand === 'left' && leftDown === 5 && both.pos === 5 && both.hand === 'both',
+    'left-hand thumbs up / down never navigate (also with the right hand in view)');
+  await page.check('#gp-swap');
+  await neutral();
+  await set(LEFT_UP);
+  const swapped = await waitFor(page, () => app.seq.pos === 6, null, 30000);
+  await page.uncheck('#gp-swap');
+  check(swapped, '"Swap left / right" option: a hand labelled Left is then treated as the right hand');
+  await neutral();
+
+  // during an animation, and at the boundaries
+  await page.evaluate(() => { app.seq.speed = 0.25; app.seq.goTo(20); });
+  await set(UP);
+  const anim = await waitFor(page, () => app.seq.pos === 21 && app.seq.animating, null, 30000);
+  await page.evaluate(() => { app.seq.speed = 1; });
+  check(anim, 'thumbs up during an animation: transitions to the next step and animates it');
+  await neutral();
+  await page.evaluate(() => app.seq.goTo(app.seq.last));
+  await set(UP);
+  await waitFor(page, () => !document.getElementById('gesture-toast').hidden && document.getElementById('gesture-toast').textContent.includes('Final'), null, 30000);
+  const atEnd = await page.evaluate(() => ({ pos: app.seq.pos, last: app.seq.last, toast: document.getElementById('gesture-toast').textContent }));
+  await neutral();
+  await page.evaluate(() => app.seq.goTo(-2));
+  await set(DOWN);
+  await waitFor(page, () => document.getElementById('gesture-toast').textContent.includes('first'), null, 30000);
+  const atStart = await page.evaluate(() => ({ pos: app.seq.pos, toast: document.getElementById('gesture-toast').textContent }));
+  check(atEnd.pos === atEnd.last && atStart.pos === -2, `boundaries: thumbs up on the final step ("${atEnd.toast}") and thumbs down on the overview ("${atStart.toast}") are ignored`);
+  await neutral();
+
+  // button and gesture share one navigation function
+  await page.evaluate(() => app.seq.goTo(8));
+  await page.click('#btn-next');
+  const viaButton = await page.evaluate(() => ({ pos: app.seq.pos, src: app.state.get('lastNavigation').source, nar: app.narrator.id }));
+  await set(UP);
+  await waitFor(page, () => app.seq.pos === 10, null, 30000);
+  const viaGesture = await page.evaluate(() => ({ pos: app.seq.pos, src: app.state.get('lastNavigation').source }));
+  check(viaButton.pos === 9 && viaButton.src === 'button' && viaGesture.pos === 10 && viaGesture.src === 'gesture',
+    'NEXT STEP button and thumbs up use the same App.next() (step 9 → 10 → 11)');
+  await neutral();
+
+  // disable: camera released, gestures ignored
+  await page.click('#gp-toggle');
+  const calls = await page.evaluate(() => window.__detectCalls);
+  await set(UP);
+  await page.waitForTimeout(1500);
+  const dis = await page.evaluate((c) => ({ pos: app.seq.pos, cam: app.gestures.camera.stream, calls: window.__detectCalls - c, phase: app.gestures.status.phase, chip: document.getElementById('gesture-chip').hidden }), calls);
+  check(dis.pos === 10 && dis.cam === null && dis.calls === 0 && dis.phase === 'off' && dis.chip,
+    'disable → camera released, no tracking, thumbs up ignored');
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+
+  // permission denied / no camera API: manual navigation unaffected
+  const deny = `navigator.mediaDevices.getUserMedia = () => Promise.reject(new DOMException('Permission denied', 'NotAllowedError'));`;
+  const p2 = await openApp(browser, speechMock() + fakeTracker + deny);
+  await p2.page.click('#btn-gestures');
+  await p2.page.click('#gp-toggle');
+  await waitFor(p2.page, () => app.gestures.status.phase === 'error');
+  const msg = await p2.page.textContent('#gp-msg');
+  await p2.page.click('#btn-next');
+  const mpos = await p2.page.evaluate(() => app.seq.pos);
+  check(/denied/i.test(msg) && mpos === -1 && p2.errors.length === 0, `camera permission denied → "${msg.slice(0, 60)}…"; NEXT STEP button still works`);
+  await p2.page.close();
+  const p3 = await openApp(browser, speechMock() + 'Object.defineProperty(navigator, "mediaDevices", { value: undefined });');
+  const un = await p3.page.evaluate(() => ({ dis: document.getElementById('gp-toggle').disabled, msg: document.getElementById('gp-msg').textContent }));
+  await p3.page.click('#btn-next');
+  const upos = await p3.page.evaluate(() => app.seq.pos);
+  check(un.dis && un.msg.length > 10 && upos === -1, 'browser without camera access: gesture control disabled with an explanation, buttons work');
+  await p3.page.close();
+}
+
 async function testAR(browser) {
   console.log('\n[6] WebXR AR flow (IWER emulation)');
   const nm = (p) => path.join(ROOT, 'node_modules', p);
@@ -323,7 +595,7 @@ async function testAR(browser) {
     return;
   }
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
-  await page.addInitScript(speechMock());
+  await page.addInitScript(speechMock() + fakeTracker);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await page.route('**/__iwer/iwer.js', (r) => r.fulfill({ path: nm('iwer/build/iwer.module.js'), contentType: 'text/javascript' }));
@@ -348,10 +620,14 @@ async function testAR(browser) {
   const caps = await page.evaluate(() => window.app.arCaps.mode);
   check(caps === 'webxr', `AR method detected: ${caps}`);
   await page.evaluate(() => window.xrDevice.quaternion.set(-0.5, 0, 0, 0.866));
+  await page.evaluate(() => app.gestures.enable());
+  const gOn = await waitFor(page, () => app.gestures.status.phase === 'on', null, 10000);
   await page.click('#btn-ar');
   await page.waitForFunction(() => window.app.xr && window.app.xr.reticle.visible, null, { timeout: 20000 }).catch(() => {});
   let s = await page.evaluate(() => ({ presenting: app.viewer.renderer.xr.isPresenting, reticle: app.xr.reticle.visible }));
   check(s.presenting && s.reticle, 'immersive-ar session started, floor found by hit-test');
+  const gAR = await page.evaluate(() => ({ phase: app.gestures.status.phase, reason: app.gestures.status.reason, cam: app.gestures.camera.stream }));
+  check(gOn && gAR.phase === 'paused' && gAR.reason === 'ar' && gAR.cam === null, 'gesture camera released while WebXR owns the camera (tracking paused)');
   await page.evaluate(async () => { const c = window.xrDevice.controllers.right; c.updateButtonValue('trigger', 1); await new Promise((r) => setTimeout(r, 300)); c.updateButtonValue('trigger', 0); });
   await page.waitForFunction(() => !window.app.xr.placing, null, { timeout: 10000 }).catch(() => {});
   s = await page.evaluate(() => ({ placed: !app.xr.placing, visible: app.viewer.stage.visible, y: app.viewer.stage.position.y }));
@@ -368,6 +644,8 @@ async function testAR(browser) {
   await page.waitForFunction(() => !window.app.inAR, null, { timeout: 10000 }).catch(() => {});
   s = await page.evaluate(() => ({ inAR: app.inAR, stage: app.viewer.stage.position.length() }));
   check(!s.inAR && s.stage === 0, 'session ends cleanly and the 3D viewer is restored');
+  const gBack = await waitFor(page, () => app.gestures.status.phase === 'on' && app.gestures.camera.active, null, 10000);
+  check(gBack, 'gesture tracking resumes automatically after the AR session');
   check(errors.length === 0, `no page errors during AR ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
 }
@@ -376,9 +654,13 @@ async function testAR(browser) {
   await startServer();
   const browser = await launch();
   try {
-    await testViewer(browser);
-    await testNavigationAndVoice(browser);
-    await testAR(browser);
+    const only = process.env.ONLY;     // e.g. ONLY=gestures npm test
+    const run = (name) => !only || only.split(',').includes(name);
+    if (run('viewer')) await testViewer(browser);
+    if (run('navigation')) await testNavigationAndVoice(browser);
+    if (run('integration')) await testIntegration(browser);
+    if (run('gestures')) await testGestures(browser);
+    if (run('ar')) await testAR(browser);
   } finally {
     await browser.close();
     if (server) server.kill();
