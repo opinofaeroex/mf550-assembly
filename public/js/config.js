@@ -15,6 +15,32 @@ export const CONFIG = {
    */
   explodeScale: 3,
 
+  /** Continuous animation of the current step (v1.2). Never changes the step. */
+  animation: {
+    loop: true,
+    timing: { loopHold: 1.2, loopReset: 0.6, loopGap: 0.3 },   // seconds, × animation speed
+  },
+
+  /**
+   * Hands-free navigation (v1.2): right-hand thumbs up = NEXT STEP, thumbs down = PREVIOUS STEP.
+   * MediaPipe Tasks Vision is loaded only when the user enables gesture control.
+   * To self-host, copy the package's vision_bundle.mjs + wasm/ and the .task model into
+   * public/vendor/mediapipe/ and point these three URLs there (see README).
+   */
+  gestures: {
+    visionBundle: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/vision_bundle.mjs',
+    wasmBase: 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.2.3/wasm',
+    model: 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task',
+    delegate: 'GPU',              // falls back to CPU automatically
+    fps: 15,                      // hand-tracking rate (the 3D view keeps its own frame rate)
+    camera: { width: 640, height: 480, facingMode: 'user' },
+    detection: { minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.6, minTrackingConfidence: 0.5 },
+    minHandScore: 0.7,            // handedness confidence required to accept a hand as left/right
+    inputMirrored: false,         // raw camera frames are analysed; the preview is mirrored by CSS only
+    trigger: { stableFrames: 5, minHoldMs: 300, cooldownMs: 1000, neutralFrames: 4, maxGapFrames: 1 },
+    classifier: {},               // overrides of DEFAULT_CLASSIFIER (gesture/GestureClassifier.js)
+  },
+
   narration: {
     lang: 'en',            // narration scripts are written in English
     startDelayMs: 150,     // debounce: rapid step changes never queue several narrations
