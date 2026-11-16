@@ -1,11 +1,12 @@
 # MF-550-210-B — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.1** (voice-guided, manual navigation, 3× exploded view — see [§ 0](#0-whats-new-in-version-11))
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.2** (hands-free right-hand gesture navigation, named components from the new STEP file, short instructions, looping step animation — see [§ 0](#0-whats-new-in-version-12))
 
 Interactive, browser-based assembly instructions generated directly from the CAD model
-`MF-550-210-B.STEP`: animated exploded view, step-by-step assembly sequence explained by
-voice, an indented Bill of Materials synchronised with the 3D view, and an
-augmented-reality mode for phones and tablets.
+`MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP`: animated exploded view, step-by-step assembly
+sequence explained by voice, an indented Bill of Materials synchronised with the 3D view,
+hands-free navigation with a right-hand thumbs up / down, and an augmented-reality mode
+for phones and tablets.
 
 ![Overview](docs/screenshots/01-overview.png)
 
@@ -17,16 +18,69 @@ augmented-reality mode for phones and tablets.
 |---|---|
 | ![Details](docs/screenshots/04-selection-details.png) | ![Mobile](docs/screenshots/05-mobile.png) |
 
-*Screenshots show version 1.0; v1.1 replaces the Play button with **PREVIOUS STEP / NEXT STEP**, adds the narration bar to the step card and uses a 3× exploded distance.*
+*Screenshots show version 1.0; v1.1 replaces the Play button with **PREVIOUS STEP / NEXT STEP**, adds the narration bar to the step card and uses a 3× exploded distance; v1.2 adds component names, the **Gestures** panel and the status chip.*
 
 ---
 
-## 0. What's new in version 1.1
+## 0. What's new in version 1.2
+
+| Feature | Behaviour |
+|---|---|
+| **New STEP file** | The app is converted from `MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP`. Its geometry is identical to the earlier export, its 220 solids now carry descriptive names (46 distinct, e.g. *Blind Rivet*, *Unit Body*, *Impeller Drive Motor*). The names appear in the BOM, step card, balloons, details and narration; part numbers stay in their own column. See [§ 2.1](#21-the-new-step-file-v12). |
+| **Short instructions** | Every step has a short title and a one-line instruction, generated from the data (`public/js/ui/text.js`), e.g. *Step 18 – Install the Access Door: "Fit the access door to the door frame."* The components line shows quantity, name, part number and BOM item. The voice says exactly the title and the instruction — no part numbers read aloud, no torques, tools or safety statements (not in the data). |
+| **Looping step animation** | While you stay on a step, its motion repeats (hold → parts move back out → assemble again). The loop never changes the step and never restarts the narration; the narration plays once when you enter a step (or when you press Replay). |
+| **Right-hand gesture navigation** | Open **Gestures** (top bar) → **Enable gesture control**. Show a **right-hand thumbs up 👍** for NEXT STEP or a **thumbs down 👎** for PREVIOUS STEP. Hold it briefly (≈ 0.3 s); each gesture acts once; return your hand to neutral (open hand, or hand out of view) before the next one. The left hand is ignored. Gestures, buttons, keys and the AR overlay call the same `App.next()` / `App.prev()`. |
+| **Gesture feedback** | Gesture panel with camera / hand / gesture status, a hold meter, an optional mirrored camera preview with the tracked hand, a status chip on the 3D view, and a short toast *👍 NEXT STEP ACTIVATED* / *👎 PREVIOUS STEP ACTIVATED* that does not block the model. |
+
+### Gesture recognition — how it works
+
+* **Technology: MediaPipe Hand Landmarker** (`@mediapipe/tasks-vision` 1.2.3, Apache-2.0) — 21 hand
+  landmarks and a left/right classification per hand, in the browser (WebAssembly + WebGL), 15 analysed
+  frames per second. The library and the 7.5 MB model are downloaded **only when you enable gesture
+  control** (from jsDelivr and Google's model storage). The video never leaves the device.
+  *Evaluated alternatives:* a YOLO detector would need a custom-trained thumbs-up/down model and has no
+  handedness output; OpenCV adds nothing MediaPipe does not already do (camera, preprocessing) — neither
+  is used.
+* **Classification** (`public/js/gesture/GestureClassifier.js`) uses several landmarks, never one:
+  ≥ 3 of the 4 fingers curled (3D world landmarks), thumb extended and straight, thumb within 65° of
+  vertical, and the thumb tip the highest (up) / lowest (down) point of the hand. Thresholds were tuned
+  on real Hand Landmarker output (`tests/fixtures/hand-landmarks.json`).
+* **Right hand only, mirroring-safe:** the raw camera frames are analysed (the preview is mirrored with
+  CSS only), and MediaPipe ≥ 1.2 labels the *subject's* hands for non-mirrored frames — verified with
+  MediaPipe's own `right_hands.jpg` / `thumb_up.jpg` test images. `inputMirrored` in `config.js` and the
+  panel option *Swap left / right* cover cameras that deliver mirrored frames.
+* **One action per gesture** (`public/js/gesture/GestureTrigger.js`): the same gesture for ≥ 5 frames and
+  ≥ 300 ms → one NEXT / PREVIOUS → locked until the hand has been neutral for 4 frames and ≥ 1 s has
+  passed. Holding the thumb up never advances twice.
+* **Configuration:** `CONFIG.gestures` in `public/js/config.js` (URLs, frame rate, confidence, trigger and
+  classifier thresholds).
+* **Camera lifecycle** (`public/js/gesture/CameraManager.js`, `GestureController.js`): the camera starts
+  only after you press *Enable gesture control* (browser permission prompt), and is released when you
+  disable it, when the page goes to the background, and **during a WebXR AR session** (ARCore needs the
+  camera; tracking resumes automatically afterwards). On iPhone/iPad, AR Quick Look is a separate app:
+  tracking pauses while it is open.
+* **Fallbacks:** permission denied, no camera, camera busy, no HTTPS, library/model not loadable,
+  unsupported browser → a clear message in the panel; NEXT / PREVIOUS, narration and animation keep working.
+
+| Gesture control | Works with |
+|---|---|
+| Desktop | Chrome / Edge 90+, Firefox 115+, Safari 16.4+ with a webcam (HTTPS or localhost) |
+| Android | Chrome 90+ (front camera). Not while a WebXR AR session runs (camera in use by ARCore) |
+| iPhone / iPad | Safari 16.4+ (front camera). Paused while AR Quick Look is open |
+| Performance | GPU (WebGL) inference, CPU fallback; ≈ 15 analysed frames/s; the 3D view keeps its own frame rate |
+
+**Self-hosting MediaPipe** (offline / intranet): copy `vision_bundle.mjs` and the `wasm/` folder of
+`@mediapipe/tasks-vision@1.2.3` and `hand_landmarker.task` into `public/vendor/mediapipe/` and set
+`visionBundle`, `wasmBase` and `model` in `CONFIG.gestures` to `./vendor/mediapipe/…`.
+
+---
+
+## 0.1 What's new in version 1.1
 
 | Feature | Behaviour |
 |---|---|
 | **Manual step navigation** | The app never advances on its own. **NEXT STEP** / **PREVIOUS STEP** (transport bar, AR overlay, `→` / `←`) move along the track *Overview → Parts kit → Step 1 … Step 69*. PREVIOUS is disabled on the overview, NEXT on the final step. You can navigate while an animation or a narration is running: the running animation is replaced (never queued) and the narration is cancelled. The former Play/autoplay mode and `?autoplay` were removed. |
-| **Voice narration** | Every position has a spoken explanation (`public/js/audio/narrationScript.js`): operation, components and quantities, install direction, BOM item / part number / quantity, the step's purpose in the assembly structure (which sub-assembly it builds and in which step that sub-assembly is installed) and the documented geometry notes. It starts automatically when you enter a step; changing step stops it immediately. **Play / Pause / Resume** (one button, `Space`), **Replay** (`P`, replays narration *and* the step animation), **Mute / Unmute** (`M`, remembered), voice and speed selector (⚙). The end of the narration never changes the step. |
+| **Voice narration** | Every position has a spoken explanation (`public/js/audio/narrationScript.js`): operation, components and quantities, install direction, BOM item / part number / quantity, the step's purpose in the assembly structure (which sub-assembly it builds and in which step that sub-assembly is installed) and the documented geometry notes. It starts automatically when you enter a step; changing step stops it immediately. **Play / Pause / Resume** (one button, `Space`), **Replay** (`P`, replays narration *and* the step animation), **Mute / Unmute** (`M`, remembered), voice and speed selector (⚙). The end of the narration never changes the step. *(Since v1.2 the voice says only the short step title and instruction.)* |
 | **3× exploded view** | Every displacement vector — hardware, parts and sub-assemblies — is multiplied by `explodeScale = 3` (`public/js/config.js`). Directions, removal order and assembly relationships are unchanged; the assembled state is still the exact CAD position. The camera frames the larger exploded view beside the step card. |
 | **iOS AR Quick Look** | Choose **this step** (loops the current step's motion, consistent with manual navigation) or the **full sequence**; both use the 3× vectors and are generated on the device. |
 
@@ -88,6 +142,19 @@ Keyboard: `→` / `←` (or `PageDown` / `PageUp`) next / previous step · `Spac
 
 ## 2. What was found in the STEP file
 
+### 2.1 The new STEP file (v1.2)
+
+| Check | Result |
+|---|---|
+| File | `MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP`, 73.55 MB, AP214, SolidWorks 2022 (same header as the earlier export) |
+| Compared with `MF-550-210-B.STEP` | **Same model.** 769,206 entities in both, all identical — geometry, topology, colours, placements — except the names of the 220 `MANIFOLD_SOLID_BREP` solids |
+| Names | Descriptive component names instead of SolidWorks paths: 46 distinct names for 53 part numbers (each part number maps to exactly one name; e.g. all `099MHM-0001` → *Blind Rivet*, `SCHAUFEL0…7.STP` → *Impeller Blade*) |
+| Hierarchy / part numbers | **Not in the new file** (it is still one multi-body part, and the component paths were replaced by the names). They are taken from the earlier export through `pipeline/structure-map.json`, which `pipeline/structure_map.py` only writes after proving that both files are the same model |
+| Sub-assembly names | Not in either file. Sub-assemblies are labelled after their largest part (*Access Door sub-assembly*, *Unit Body assembly* …) and marked as derived in the BOM details |
+| Result | Same GLB (byte-identical, 0.87 MB), same 69-step sequence and exploded-view vectors; `assembly.json` gains a `label` on every node, BOM row and step, and `meta.structureSource` records the provenance. No geometry was added, removed or moved |
+
+### 2.2 Original analysis (v1.0)
+
 | Item | Finding |
 |---|---|
 | File | `MF-550-210-B.STEP`, 73.6 MB, ISO 10303-21, **AP214** (`AUTOMOTIVE_DESIGN`), written by **SolidWorks 2022** |
@@ -126,7 +193,14 @@ mf550-webar/
 │   │   ├── ui/BomPanel.js          indented BOM, parts list, step list, search
 │   │   ├── ui/NarrationControls.js play/pause/resume, replay, mute, voice settings           (v1.1)
 │   │   ├── ui/Details.js           component data sheet
-│   │   ├── ui/text.js              instruction text generated from data
+│   │   ├── ui/text.js              short step titles / instructions (card, step list, AR, voice) (v1.2)
+│   │   ├── ui/GesturePanel.js      Gesture Control panel, status chip, preview, feedback toast   (v1.2)
+│   │   ├── gesture/
+│   │   │   ├── CameraManager.js    camera on request only; released for AR / background         (v1.2)
+│   │   │   ├── HandTracker.js      MediaPipe Hand Landmarker (lazy-loaded), handedness mapping   (v1.2)
+│   │   │   ├── GestureClassifier.js thumbs up / down / neutral from the 21 landmarks             (v1.2)
+│   │   │   ├── GestureTrigger.js   stabilisation, one action per gesture, cooldown, neutral      (v1.2)
+│   │   │   └── GestureController.js camera → tracker → right hand → classifier → trigger events  (v1.2)
 │   │   └── ar/
 │   │       ├── ARSupport.js        AR capability detection
 │   │       ├── WebXRSession.js     markerless WebXR AR (hit-test, gestures, DOM overlay)
@@ -137,13 +211,16 @@ mf550-webar/
 │       └── assembly.json                  hierarchy, BOM, explode vectors (1×, from the pipeline), 69-step sequence
 ├── pipeline/
 │   ├── convert_step.py             STEP → GLB + assembly.json (OpenCascade)
+│   ├── structure_map.py            proves two STEP exports are the same model; maps names ↔ paths (v1.2)
+│   ├── structure-map.json          verified map for MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP    (v1.2)
 │   ├── disassembly.py              ray-cast disassembly analysis (explode + sequence)
 │   ├── config.json                 tessellation / instancing / explode / sequence settings
 │   └── requirements.txt
 ├── tools/
 │   ├── serve.mjs                   zero-dependency static server (HTTP/HTTPS, correct MIME types)
 │   └── build-usdz.cjs              pre-builds the animated USDZ (headless browser)
-├── tests/smoke.cjs                 end-to-end checks incl. emulated WebXR session
+├── tests/smoke.cjs                 end-to-end checks incl. emulated WebXR session and gestures
+├── tests/fixtures/hand-landmarks.json  real MediaPipe landmarks of public test images (v1.2)
 └── docs/screenshots/
 ```
 
@@ -160,9 +237,18 @@ Technology (the CAD kernel behind FreeCAD/CadQuery) and the app only loads the r
 python3 -m pip install -r pipeline/requirements.txt     # cadquery-ocp, numpy, trimesh, embreex, rtree
 npm install                                              # dev tools: gltfpack, playwright, iwer (tests)
 
-python3 pipeline/convert_step.py path/to/MF-550-210-B.STEP --out public/assets/model
+# v1.2 — the named STEP file + the verified structure map (hierarchy and part numbers):
+python3 pipeline/convert_step.py path/to/MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP \
+        --structure-map pipeline/structure-map.json --out public/assets/model
 npm run build:usdz       # optional: pre-build public/assets/model/<product>-assembly.usdz (full sequence)
+
+# only when a new pair of exports has to be mapped (refuses unless the geometry is identical):
+python3 pipeline/structure_map.py NEW_NAMED.STEP --structure-from OLD_WITH_PATHS.STEP -o pipeline/structure-map.json
 ```
+
+Without `--structure-map`, a STEP whose bodies have descriptive names is converted as a flat list of
+named parts (no sub-assemblies, no part numbers); a STEP with a real product structure (NAUO) or with
+SolidWorks component paths in the body names is converted with its hierarchy as before.
 
 The full conversion of this file takes ≈ 35 s on 2 CPU cores. Without `gltfpack` on the PATH the
 script uses `npx gltfpack`; with `--no-compress` it writes an uncompressed GLB (4.2 MB).
@@ -292,7 +378,7 @@ own sequence, reorder `steps` in `assembly.json` (each step lists its `nodes`) �
 
 | Device / browser | AR method | Experience |
 |---|---|---|
-| **Android** phone/tablet with ARCore (Google Play Services for AR), **Chrome** ≥ 83 (other Chromium browsers with WebXR AR, e.g. Samsung Internet) | **WebXR** `immersive-ar` + `hit-test` + `dom-overlay` | Full: floor/table detection, tap to place at **real size 1:1**, 1-finger rotate, 2-finger move & pinch scale (5–300 %, quick 1:1/1:2/1:4 button), PREVIOUS / NEXT, narration play/pause and mute, explode toggle in AR, tap a part → BOM data in the overlay, re-place button. With the 3× exploded view the parts kit spans several metres at 1:1 — use 1:2 or 1:4 indoors |
+| **Android** phone/tablet with ARCore (Google Play Services for AR), **Chrome** ≥ 83 (other Chromium browsers with WebXR AR, e.g. Samsung Internet) | **WebXR** `immersive-ar` + `hit-test` + `dom-overlay` | Full: floor/table detection, tap to place at **real size 1:1**, 1-finger rotate, 2-finger move & pinch scale (5–300 %, quick 1:1/1:2/1:4 button), PREVIOUS / NEXT, narration play/pause and mute, explode toggle in AR, tap a part → BOM data in the overlay, re-place button. Gesture control pauses during the AR session (ARCore uses the camera) and resumes afterwards. With the 3× exploded view the parts kit spans several metres at 1:1 — use 1:2 or 1:4 indoors |
 | **Meta Quest** Browser (passthrough) | WebXR `immersive-ar` + `hit-test` | Place with the controller trigger; same sequencer. (No DOM overlay on Quest: use the controller to place, the step runs from the page) |
 | **iPhone / iPad**, Safari (iOS 12+) | **AR Quick Look** (ARKit) | Apple does not support WebXR in Safari. The app generates a USDZ on the device: **the current step** (its motion loops — use it to stay step-by-step) or the **full sequence** (≈ 97 s); ARKit handles placement, scaling and rotation. Narration, BOM and NEXT / PREVIOUS stay in the web page |
 | Desktop browsers | — | Full 3D viewer with narration. The AR dialog lists the checks and offers the link and USDZ downloads (current step / full sequence) |
@@ -326,7 +412,7 @@ npm test
 ```
 
 Headless Chromium has no voices, so the suite replaces the Web Speech API with a deterministic in-page
-mock that logs every speak / start / end / cancel (the app code is unchanged). 38 checks:
+mock that logs every speak / start / end / cancel (the app code is unchanged). 61 checks:
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
 * **3× exploded view** — all 208 displacement vectors (hardware, parts, sub-assemblies) are exactly 3× the
@@ -339,7 +425,23 @@ mock that logs every speak / start / end / cancel (the app code is unchanged). 3
   (stops at once, no speech on later steps), unmute, keyboard, voice ranking, blocked-until-gesture,
   browser without Web Speech API.
 * **WebXR AR** under the Immersive Web Emulation Runtime — hit-test, placement, NEXT + narration +
-  scaling inside AR, clean exit.
+  scaling inside AR, clean exit; the gesture camera is released during the session and resumes after it.
+* **New STEP integration (v1.2)** — source file and verified structure map, all 220 parts named, BOM shows
+  names, instruction length limits, card text == spoken text, step loop repeats without changing step or
+  repeating the narration.
+* **Gestures (v1.2)** — classifier on **real MediaPipe landmarks** of public test images (thumbs up, thumbs
+  down, tilted ±25°, left hand, fist, pointing, victory, open hand); trigger state machine (one frame never
+  fires, a held gesture fires once, re-arm only after neutral); handedness mapping incl. mirrored input;
+  end-to-end with Chromium's fake camera and a scripted tracker: right thumbs up / down navigate exactly
+  once and stop the previous narration, left hand ignored, swap option, gesture during an animation,
+  boundaries, button and gesture share `App.next()`, disable releases the camera, permission denied and no
+  camera API leave the buttons working.
+
+`ONLY=gestures npm test` runs one section (`viewer`, `navigation`, `integration`, `gestures`, `ar`).
+The suite replaces MediaPipe with a scripted tracker (real landmark fixtures), so it runs without the
+network. The real library and model are checked on the deployed site in a desktop browser: both load over
+HTTPS, the Hand Landmarker labels MediaPipe's own `thumb_up.jpg` test image as a *Right* hand and the
+classifier returns *thumbs up* for it. A live webcam test needs a person in front of the camera (§ 9).
 
 ---
 
@@ -351,13 +453,28 @@ mock that logs every speak / start / end / cancel (the app code is unchanged). 3
 * Real hardware devices were not available in this environment: the AR flow was verified with WebXR
   emulation (IWER) and the USDZ was generated and inspected, but not opened on a physical iPhone/Android device. Test on target hardware before release.
 * Quick Look shows the animation only; per-step navigation, narration and BOM interaction are web-only on iOS.
-* Narration voice quality depends on the browser (see § 0). Only Microsoft Edge's online "Natural" voices
+* Narration voice quality depends on the browser (see § 0.1). Only Microsoft Edge's online "Natural" voices
   are neural; the app does not include a cloud neural TTS service. The first narration after opening the
   page waits for one click/tap (browser autoplay policy).
 * The README screenshots were taken with version 1.0.
+* Gestures: hand tracking was verified on still images and with an emulated camera, not with a person in
+  front of a physical webcam in this environment — try it on the target device and adjust
+  `CONFIG.gestures.trigger` / `classifier` if needed. Lighting, distance (≈ 0.4–1.5 m) and a visible wrist
+  matter. The thumb direction is judged against the camera image, so keep the phone / webcam upright.
+* Gesture control and WebXR AR do not run at the same time (one camera); Quick Look on iOS pauses it too.
+* MediaPipe and its model are loaded from jsDelivr and Google's model storage on first use (≈ 4 MB library
+  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0).
+* Sub-assembly names are derived from their largest part — the STEP files contain no sub-assembly names.
 
 ## Changelog
 
+* **1.2** — New authoritative STEP `MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP` (same geometry, named
+  components; hierarchy and part numbers kept through a verified structure map); component names in BOM,
+  card, balloons and voice; short step titles and one-line instructions spoken exactly as displayed;
+  continuous loop of the current step's animation; hands-free navigation with right-hand thumbs up / down
+  (MediaPipe Hand Landmarker, stabilised one-shot trigger, camera lifecycle shared with AR); central
+  `App.next()` / `App.prev()` for buttons, keys, AR overlay and gestures; tests extended (real-landmark
+  fixtures, gesture end-to-end).
 * **1.1** — Voice-guided narration for every step (Web Speech API; Play/Pause/Resume, Replay, Mute,
   voice & speed); strictly manual NEXT STEP / PREVIOUS STEP navigation (autoplay removed); exploded-view
   distance ×3 for hardware, parts and sub-assemblies; framing beside the step card; Quick Look of the
@@ -369,4 +486,5 @@ mock that logs every speak / start / end / cancel (the app code is unchanged). 3
 ## 10. Third-party components
 
 three.js r187 (MIT, vendored) · OpenCascade Technology via cadquery-ocp (LGPL-2.1 w/ exception / Apache-2.0) ·
-gltfpack / meshoptimizer (MIT) · trimesh (MIT) · Embree (Apache-2.0) · Playwright, IWER (dev/test only).
+gltfpack / meshoptimizer (MIT) · trimesh (MIT) · Embree (Apache-2.0) · MediaPipe Tasks Vision + Hand
+Landmarker model (Apache-2.0, loaded at runtime when gesture control is enabled) · Playwright, IWER (dev/test only).
