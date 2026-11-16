@@ -10,12 +10,18 @@
  * next()/prev()/goTo() are the only ways to change the position; the end of an
  * animation or of the narration only emits 'idle'.
  *
+ * Step loop (v1.2): while the user stays on an assembly step, that step's motion
+ * repeats (hold → parts move back out → assemble again). The loop only replays the
+ * current step: it never changes `pos`, never emits 'change' and never restarts the
+ * narration. Any navigation replaces the loop immediately.
+ *
  * The exploded factor of every component is a pure function of the position,
  * so the BOM highlight, the step card and the 3D state can never drift apart:
  *   step k → components of steps < k assembled, step k animating, steps > k exploded.
  *
  * Events: 'change' (position), 'stepstart' (position reached, camera may frame),
- *         'animstate' (this.animating changed), 'idle'.
+ *         'animstate' (this.animating changed), 'idle' (entry animation finished),
+ *         'loop' (a repeat of the current step's motion started; this.loopCount).
  */
 export const ASSEMBLED = -2;
 export const EXPLODED = -1;
@@ -31,7 +37,13 @@ export class Sequencer extends EventTarget {
     this.pos = ASSEMBLED;
     this.speed = 1;
     this.animating = false;
-    this.timing = { quick: 0.45, step: 1.6, dwell: 0.4, explode: 2.6, collapse: 1.4, ...opts.timing };
+    this.timing = {
+      quick: 0.45, step: 1.6, dwell: 0.4, explode: 2.6, collapse: 1.4,
+      loopHold: 1.2, loopReset: 0.6, loopGap: 0.3, ...opts.timing,
+    };
+    this.loop = opts.loop !== false;   // repeat the current step's motion
+    this.looping = false;
+    this.loopCount = 0;
     this.queue = [];
   }
 
@@ -79,6 +91,8 @@ export class Sequencer extends EventTarget {
     pos = Math.max(this.first, Math.min(this.last, Math.round(pos)));
     this.pos = pos;
     this.queue = [];
+    this.looping = false;
+    this.loopCount = 0;
     const T = this.timing;
     const { entries, f } = this.explode;
 
@@ -90,6 +104,7 @@ export class Sequencer extends EventTarget {
       this.#setAnimating(false);
       this.#emit('change');
       this.#emit('stepstart');
+      if (this.isStep && this.loop) this.#startLoop();
       return;
     }
 
@@ -115,6 +130,25 @@ export class Sequencer extends EventTarget {
     }
     this.#setAnimating(true);
     this.#emit('change');
+  }
+
+  /** One repeat of the current step: hold assembled, move the step's parts out, assemble again. */
+  #pushLoopCycle() {
+    const T = this.timing;
+    const pos = this.pos;
+    const others = (e) => this.#target(pos, e.step);
+    this.queue.push({ kind: 'dwell', t: 0, total: T.loopHold });
+    this.queue.push(this.#transition((e) => (e.step === pos ? 1 : others(e)), { dur: T.loopReset }));
+    this.queue.push({ kind: 'dwell', t: 0, total: T.loopGap });
+    this.queue.push(this.#transition((e) => (e.step === pos ? 0 : others(e)), { dur: T.step }));
+    this.queue.push({ kind: 'dwell', t: 0, total: T.dwell });
+  }
+
+  #startLoop() {
+    this.looping = true;
+    this.loopCount++;
+    this.#pushLoopCycle();
+    this.#emit('loop');
   }
 
   next() { if (this.canNext) this.goTo(this.pos + 1); return this.canNext; }
@@ -145,8 +179,11 @@ export class Sequencer extends EventTarget {
       if (ph.t < ph.total - 1e-9) break;           // phase still running: frame budget spent
       this.queue.shift();
       if (this.queue.length === 0) {
-        this.#setAnimating(false);
-        this.#emit('idle');                       // never advances: navigation is manual
+        if (this.animating) {
+          this.#setAnimating(false);
+          this.#emit('idle');                     // never advances: navigation is manual
+        }
+        if (this.isStep && this.loop) this.#startLoop();   // repeat this step's motion only
         break;
       }
     }

@@ -3,14 +3,17 @@
  *
  * Data flow (single direction, so 3D, BOM, step card and voice always agree):
  *
- *   NEXT / PREVIOUS ─► Sequencer.pos ──► ExplodeController (component positions, ×CONFIG.explodeScale)
- *                           │        ──► Appearance (active / ghost / selected materials)
- *                           │        ──► BomPanel, step card, progress bar, callout, AR overlay
- *                           │        ──► Narrator (stop previous, speak this step's script)
+ *   buttons · keys · AR overlay · right-hand gestures
+ *        └─► App.next() / App.prev()  (one navigation path for every input)
+ *              └─► Sequencer.pos ──► ExplodeController (positions, ×CONFIG.explodeScale)
+ *                        │        ──► Appearance (active / ghost / selected materials)
+ *                        │        ──► BomPanel, step card, progress bar, callout, AR overlay
+ *                        │        ──► Narrator (stop previous, speak this step once)
+ *                        └── step loop: the current step's motion repeats until the user moves on
  *   Selection ──────────────────────► Appearance, BomPanel, Details, callout
- *   AppState mirrors position / animating / narration / muted / voice / selection for the controls.
+ *   AppState mirrors position / animating / narration / muted / voice / selection / gesture.
  *
- * v1.1: navigation is manual only — nothing (animation end, narration end) advances a step.
+ * Navigation is manual only — nothing (animation loop, narration end) advances a step.
  */
 import * as THREE from 'three';
 import { loadAssembly } from './data/AssemblyModel.js';
@@ -24,13 +27,15 @@ import { Callout } from './scene/Callout.js';
 import { BomPanel } from './ui/BomPanel.js';
 import { Details } from './ui/Details.js';
 import { NarrationControls } from './ui/NarrationControls.js';
-import { positionText, esc, displayId } from './ui/text.js';
+import { positionText, esc, displayName } from './ui/text.js';
 import { detectAR } from './ar/ARSupport.js';
 import { WebXRSession } from './ar/WebXRSession.js';
 import { QuickLook } from './ar/QuickLook.js';
 import { Narrator } from './audio/Narrator.js';
 import { narrationText } from './audio/narrationScript.js';
 import { AppState } from './state/AppState.js';
+import { GestureController } from './gesture/GestureController.js';
+import { GesturePanel } from './ui/GesturePanel.js';
 import { CONFIG } from './config.js';
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +47,7 @@ class App {
     this.inAR = false;
     this.state = new AppState({
       position: ASSEMBLED, animating: false, narration: 'idle', muted: false, voice: null, selection: null,
+      gesture: 'off', lastNavigation: null,
     });
   }
 
@@ -64,7 +70,7 @@ class App {
     viewer.setModel(loaded.root);
     this.appearance = new Appearance(loaded);
     this.explode = new ExplodeController(model, loaded.objects, CONFIG.explodeScale);
-    this.seq = new Sequencer(model, this.explode);
+    this.seq = new Sequencer(model, this.explode, { loop: CONFIG.animation.loop, timing: CONFIG.animation.timing });
     this.picker = new Picker(viewer, this.appearance);
     this.stepCallout = new Callout($('callout-layer'), 'step');
     this.selCallout = new Callout($('callout-layer'), 'sel');
@@ -85,6 +91,7 @@ class App {
     this.#initViewportInput();
     this.#initKeyboard();
     this.#initNarration();
+    this.#initGestures();
 
     this.seq.addEventListener('change', () => this.#onPosition());
     this.seq.addEventListener('stepstart', () => this.#focusCamera());
@@ -214,8 +221,8 @@ class App {
     $('progress-ticks').innerHTML = ticks.join('');
     this.tickEls = [...$('progress-ticks').children];
 
-    $('btn-next').addEventListener('click', () => this.seq.next());
-    $('btn-prev').addEventListener('click', () => this.seq.prev());
+    $('btn-next').addEventListener('click', () => this.next('button'));
+    $('btn-prev').addEventListener('click', () => this.prev('button'));
     $('btn-restart').addEventListener('click', () => { this.seq.restart(); });
     $('btn-explode').addEventListener('click', () => this.#toggleExplode());
     $('speed').addEventListener('change', (e) => { this.seq.speed = parseFloat(e.target.value); });
@@ -228,9 +235,64 @@ class App {
     };
     prog.addEventListener('click', (e) => seek(e.clientX));
     prog.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowRight') { this.seq.next(); e.preventDefault(); }
-      if (e.key === 'ArrowLeft') { this.seq.prev(); e.preventDefault(); }
+      if (e.key === 'ArrowRight') { this.next('key'); e.preventDefault(); }
+      if (e.key === 'ArrowLeft') { this.prev('key'); e.preventDefault(); }
     });
+  }
+
+  // ----------------------------------------------------- central navigation
+  /**
+   * The one NEXT / PREVIOUS used by the buttons, the keyboard, the AR overlay and the
+   * hand gestures. Sequencer.goTo() replaces the running animation; the resulting
+   * 'change' stops the previous narration, updates card / BOM / progress and starts
+   * the new narration and the new step loop (#onPosition).
+   */
+  next(source = 'button') { return this.#navigate(1, source); }
+  prev(source = 'button') { return this.#navigate(-1, source); }
+
+  #navigate(dir, source) {
+    const ok = dir > 0 ? this.seq.canNext : this.seq.canPrev;
+    if (ok) {
+      if (dir > 0) this.seq.next(); else this.seq.prev();
+    }
+    this.state.set({ lastNavigation: { dir, source, ok, pos: this.seq.pos, t: Date.now() } });
+    return ok;
+  }
+
+  // ------------------------------------------------------------- gestures
+  #initGestures() {
+    const store = 'mf550.gestures.';
+    const prefs = {
+      get: (k, d) => { try { const v = localStorage.getItem(store + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+      set: (k, v) => { try { localStorage.setItem(store + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+    };
+    // window.__MF550_TEST_TRACKER__ (set before load) replaces MediaPipe in automated tests only
+    this.gestures = new GestureController(CONFIG.gestures, {
+      video: $('gesture-video'),
+      createTracker: window.__MF550_TEST_TRACKER__,
+    });
+    this.gesturePanel = new GesturePanel({
+      controller: this.gestures,
+      prefs,
+      els: {
+        panel: $('gesture-panel'), open: $('btn-gestures'), close: $('gp-close'), toggle: $('gp-toggle'),
+        preview: $('gp-preview'), canvas: $('gp-canvas'), video: $('gesture-video'), home: $('viewport'),
+        camera: $('gp-camera'), hand: $('gp-hand'), gesture: $('gp-gesture'),
+        meter: $('gp-meter'), meterFill: $('gp-meter-fill'), msg: $('gp-msg'),
+        showPreview: $('gp-show-preview'), swap: $('gp-swap'),
+        chip: $('gesture-chip'), chipText: $('gesture-chip-text'), toast: $('gesture-toast'),
+      },
+    });
+    this.gestures.addEventListener('trigger', (e) => {
+      const up = e.detail.gesture === 'up';
+      const ok = up ? this.next('gesture') : this.prev('gesture');
+      this.gesturePanel.feedback(e.detail.gesture, ok);
+    });
+    this.gestures.addEventListener('status', (e) => this.state.set({ gesture: e.detail.phase }));
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.gestures.suspend('hidden'); else this.gestures.resume('hidden');
+    });
+    window.addEventListener('pagehide', () => this.gestures.dispose());
   }
 
   #toggleExplode() {
@@ -317,6 +379,9 @@ class App {
     $('step-kind').textContent = t.kind;
     $('step-title').innerHTML = t.title;
     $('step-desc').textContent = t.desc;
+    const comps = $('step-components');
+    comps.hidden = !t.components;
+    comps.innerHTML = t.components || '';
     const note = $('step-note');
     note.hidden = !t.note;
     if (t.note) note.innerHTML = `<svg><use href="#i-warn"/></svg><span>${esc(t.note)}</span>`;
@@ -332,7 +397,7 @@ class App {
     });
     const installed = model.partsInstalledBefore(pos >= N ? N : Math.max(0, pos) + (seq.isStep ? 1 : 0));
     $('progress-label').textContent = seq.isStep ? `Step ${pos + 1} / ${N}` : pos === ASSEMBLED ? `Overview · 0 / ${N}` : `Parts kit · 0 / ${N}`;
-    const where = seq.isStep ? ` · in ${model.node(model.steps[pos].assembly).name}` : '';
+    const where = seq.isStep ? ` · in ${displayName(model.node(model.steps[pos].assembly))}` : '';
     $('progress-sub').textContent = `${pos === ASSEMBLED ? model.meta.partInstances : installed} / ${model.meta.partInstances} parts placed${where}`;
     $('progress').setAttribute('aria-valuenow', String(pos + 2));
     $('progress').setAttribute('aria-valuetext', $('progress-label').textContent);
@@ -356,7 +421,7 @@ class App {
     if (!seq.isStep) { this.stepCallout.hide(); return; }
     const s = model.steps[seq.pos];
     if (this.selection && this.selection.row.item === s.item) { this.stepCallout.hide(); return; }
-    this.stepCallout.set(s.nodes.map((id) => this.loaded.objects.get(id)), s.item, `${s.qty > 1 ? s.qty + '× ' : ''}${displayId(s)}`);
+    this.stepCallout.set(s.nodes.map((id) => this.loaded.objects.get(id)), s.item, `${s.qty > 1 ? s.qty + '× ' : ''}${displayName(model.node(s.nodes[0]).kind === 'assembly' ? model.node(s.nodes[0]) : s)}`);
   }
 
   #refreshAppearance() {
@@ -419,7 +484,7 @@ class App {
     this.state.set({ selection: sel.row.item });
     this.details.show(this.selection);          // first: it changes the BOM panel height
     this.bom.setSelected(sel.row.item);
-    this.selCallout.set(nodeIds.map((id) => this.loaded.objects.get(id)), sel.row.item, displayId(sel.row));
+    this.selCallout.set(nodeIds.map((id) => this.loaded.objects.get(id)), sel.row.item, displayName(sel.row));
     this.#syncStepCallout();
     this.#refreshAppearance();
     this.#updateAROverlay();
@@ -460,8 +525,8 @@ class App {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       const k = e.key;
       if (k === ' ') { this.narrator.toggle(); e.preventDefault(); }
-      else if (k === 'ArrowRight' || k === 'PageDown') { this.seq.next(); e.preventDefault(); }
-      else if (k === 'ArrowLeft' || k === 'PageUp') { this.seq.prev(); e.preventDefault(); }
+      else if (k === 'ArrowRight' || k === 'PageDown') { this.next('key'); e.preventDefault(); }
+      else if (k === 'ArrowLeft' || k === 'PageUp') { this.prev('key'); e.preventDefault(); }
       else if (k === 'm' || k === 'M') this.narrator.setMuted(!this.narrator.muted);
       else if (k === 'p' || k === 'P') this.seq.replay();
       else if (k === 'e' || k === 'E') this.#toggleExplode();
@@ -507,6 +572,7 @@ class App {
         onSelect: (id) => this.#onPick(id),
         onStart: () => {
           this.inAR = true;
+          this.gestures.suspend('ar');        // WebXR owns the camera during the session
           this.edgesBeforeAR = this.opts.edges;
           if (this.opts.edges) this.#setOpt('edges', false);
           $('ar-overlay').prepend($('callout-layer'));
@@ -517,6 +583,7 @@ class App {
         },
         onEnd: () => {
           this.inAR = false;
+          this.gestures.resume('ar');
           $('viewport').prepend($('callout-layer'));
           if (this.edgesBeforeAR) this.#setOpt('edges', true);
           setTimeout(() => this.viewer.frame(undefined, false), 50);
@@ -528,10 +595,13 @@ class App {
         },
       });
     }
+    // release the gesture camera before ARCore opens the camera (one camera user at a time)
+    this.gestures.suspend('ar');
     try {
       await this.xr.start();
       this.xr.onScale(this.xr.scale);
     } catch (err) {
+      this.gestures.resume('ar');
       console.error(err);
       this.#toast(`Could not start AR: ${err.message}`);
     }
@@ -544,8 +614,8 @@ class App {
       this.xr && this.xr.reposition();
       $('ar-hint').hidden = false;
     });
-    $('ar-prev').addEventListener('click', () => this.seq.prev());
-    $('ar-next').addEventListener('click', () => this.seq.next());
+    $('ar-prev').addEventListener('click', () => this.prev('ar'));
+    $('ar-next').addEventListener('click', () => this.next('ar'));
     $('ar-explode').addEventListener('click', () => this.#toggleExplode());
     $('ar-scale-toggle').addEventListener('click', () => {
       const steps = [1, 0.5, 0.25];
@@ -579,7 +649,7 @@ class App {
     if (this.selection) {
       const r = this.selection.row;
       const inst = this.selection.partId ? this.model.node(this.selection.partId) : null;
-      selEl.innerHTML = `Item ${esc(r.item)} · <b>${esc(r.partNumber ?? r.name)}</b> · qty ${r.qty}${r.steps.length ? ' · step ' + r.steps.map((s) => s + 1).join(', ') : ''}${inst ? `<br>Instance ${esc(inst.cad)}` : ''}`;
+      selEl.innerHTML = `Item ${esc(r.item)} · <b>${esc(displayName(r))}</b>${r.partNumber && r.label ? ` (${esc(r.partNumber)})` : ''} · qty ${r.qty}${r.steps.length ? ' · step ' + r.steps.map((s) => s + 1).join(', ') : ''}${inst ? `<br>Instance ${esc(inst.cad)}` : ''}`;
       selEl.hidden = false;
     } else {
       selEl.hidden = true;

@@ -97,6 +97,8 @@ class Body:
     axes: np.ndarray = None      # 3x3 rows = principal axes
     brep_vertices: np.ndarray = None
     n_faces: int = 0
+    entity_rank: int | None = None  # rank of the solid's STEP entity in file order (1-based)
+    label: str | None = None      # descriptive component name, when the STEP provides one
 
 
 def load_step(path: str):
@@ -124,6 +126,20 @@ def load_step(path: str):
         except Exception:
             return None
 
+    brep_rank = {}
+
+    def entity_rank(shape):
+        """File-order rank of the MANIFOLD_SOLID_BREP entity a solid was read from."""
+        if not brep_rank:
+            model = reader.Reader().WS().Model()
+            for i in range(1, model.NbEntities() + 1):
+                ent = model.Value(i)
+                if ent.DynamicType().Name() == "StepShape_ManifoldSolidBrep":
+                    brep_rank[id(ent)] = (i, ent)   # keep the wrapper alive: identity lookup below
+        ent = transfer.EntityFromShapeResult(shape, 1)
+        hit = brep_rank.get(id(ent)) if ent is not None else None
+        return hit[0] if hit else None
+
     free = LabelSequence()
     shape_tool.GetFreeShapes(free)
     if free.Length() == 0:
@@ -135,7 +151,7 @@ def load_step(path: str):
         # Real product structure (NAUO). Flatten to bodies with a component path.
         bodies = _bodies_from_xcaf_assembly(shape_tool, free, entity_name)
     else:
-        bodies = _bodies_from_multibody_part(shape_tool, free, entity_name)
+        bodies = _bodies_from_multibody_part(shape_tool, free, entity_name, entity_rank)
     product = getattr(_bodies_from_xcaf_assembly, "root_name", None) if assembly_mode else None
     for i in range(1, free.Length() + 1):
         product = product or entity_name(shape_tool.GetShape_s(free.Value(i)))
@@ -172,7 +188,7 @@ def _solid_face_colors(solid, fmap, fcols, solid_rgb):
     return out
 
 
-def _bodies_from_multibody_part(shape_tool, free, entity_name):
+def _bodies_from_multibody_part(shape_tool, free, entity_name, entity_rank=lambda s: None):
     bodies = []
     for i in range(1, free.Length() + 1):
         label = free.Value(i)
@@ -186,7 +202,8 @@ def _bodies_from_multibody_part(shape_tool, free, entity_name):
             name = entity_name(solid) or f"Body-{k}-solid1"
             sidx = smap.FindIndex(solid)
             srgb = scols[sidx] if sidx > 0 else DEFAULT_COLOR
-            bodies.append(Body(name, solid, _solid_face_colors(solid, fmap, fcols, srgb)))
+            bodies.append(Body(name, solid, _solid_face_colors(solid, fmap, fcols, srgb),
+                               entity_rank=entity_rank(solid)))
             ex.Next()
     return bodies
 
@@ -257,6 +274,41 @@ def parse_body_name(name: str):
         else:
             out.append((seg, seg, None))
     return out
+
+
+def apply_structure_map(bodies: list[Body], map_path: str, step_path: str) -> dict:
+    """Use a verified structure map (pipeline/structure_map.py): keep the descriptive
+    body names of this STEP as labels and take the component path (hierarchy + part
+    numbers) recorded for the identical body of the earlier export."""
+    smap = json.loads(Path(map_path).read_text())
+    recs = {rec[2]: (eid, rec) for eid, rec in smap["bodies"].items()}
+    src = smap.get("source", {})
+    if src.get("bytes") and Path(step_path).stat().st_size != src["bytes"]:
+        raise RuntimeError(f"structure map was made for {src.get('file')} ({src['bytes']} bytes), "
+                           f"not for {Path(step_path).name}")
+    bad = []
+    for b in bodies:
+        eid, rec = recs.get(b.entity_rank, (None, None))
+        if rec is None or rec[0] != b.raw_name:
+            bad.append(f"rank {b.entity_rank} '{b.raw_name}'")
+            continue
+        b.label, b.raw_name = rec[0], rec[1]
+    if bad:
+        raise RuntimeError(f"structure map does not match this STEP ({len(bad)} bodies): " + ", ".join(bad[:5]))
+    return {"names": src.get("file"), "structureFrom": smap["structureFrom"]["file"],
+            "verification": smap["verification"], "map": Path(map_path).name}
+
+
+def descriptive_labels(bodies: list[Body], cfg) -> int:
+    """Bodies named descriptively (no component path, no part number) keep that name as label."""
+    k = 0
+    for b in bodies:
+        nm = re.sub(r"-solid\d+$", "", b.raw_name.strip())
+        if b.label is None and "/" not in nm and not re.match(cfg["partNumberPattern"], nm) \
+                and not re.match(r"^Body-\d+$", nm):
+            b.label = nm
+            k += 1
+    return k
 
 
 # ---------------------------------------------------------------------------
@@ -414,6 +466,7 @@ class Node:
     children: list = field(default_factory=list)
     body: Body | None = None
     unit: bool = False      # purchased/imported sub-assembly handled as one unit
+    label: str | None = None  # descriptive name (parts: from the STEP; assemblies: derived)
     inside_unit: bool = False
     # derived
     volume: float = 0.0
@@ -468,6 +521,7 @@ def build_tree(product: str, bodies: list[Body], cfg) -> Node:
                     parent.children.append(extra)
                     node = extra
                 node.body = b
+                node.label = b.label
             parent = node
     # aggregate geometry bottom-up
     def agg(n: Node):
@@ -642,6 +696,36 @@ def _signature(asm: Node):
             tuple(_signature(c) for c in order if c.kind == "assembly"))
 
 
+def assembly_labels(root: Node, product: str):
+    """A multi-body STEP has no names for sub-assemblies. Label each one after the
+    largest (by volume) non-hardware part it contains: '<part> sub-assembly', or
+    '<part> unit' for purchased units. When an assembly shares that part with one of
+    its own sub-assemblies it becomes '<part> assembly' (e.g. 'Unit Body assembly'
+    contains 'Unit Body sub-assembly'). Assemblies inside purchased units keep their
+    CAD name. Remaining clashes get the CAD name appended."""
+    def stem(n: Node):
+        parts = [p for p in n.iter() if p.kind == "part" and p.label and not getattr(p, "hardware", False)]
+        return max(parts, key=lambda p: p.volume).label if parts else None
+    stems = {}
+    for n in root.iter():
+        if n.kind == "assembly" and n.parent is not None and not n.inside_unit:
+            stems[n.id] = stem(n)
+    root.label = product
+    for n in root.iter():
+        st = stems.get(n.id)
+        if not st:
+            continue
+        nested = any(stems.get(d.id) == st for d in n.iter() if d is not n and d.kind == "assembly")
+        n.label = f"{st} {'unit' if n.unit else ('assembly' if nested else 'sub-assembly')}"
+    owners = defaultdict(set)
+    for n in root.iter():
+        if n.kind == "assembly" and n.parent is not None and n.label:
+            owners[n.label].add(n.name)
+    for n in root.iter():
+        if n.kind == "assembly" and n.parent is not None and n.label and len(owners[n.label]) > 1:
+            n.label = f"{n.label} ({n.name})"
+
+
 def build_sequence(root: Node, cfg):
     """Bottom-up assembly sequence: each sub-assembly is built (in the order it will
     be installed) before the parent's own install batches.  Identical sub-assemblies
@@ -666,7 +750,7 @@ def build_sequence(root: Node, cfg):
                 row_index[item]["nodes"] += [n.id for n in members]
                 continue
             row_index[item] = {
-                "item": item, "level": level, "name": first.name,
+                "item": item, "level": level, "name": first.name, "label": first.label,
                 "partNumber": part_number_of(first.name, cfg), "qty": len(members),
                 "kind": "sub-assembly" if first.kind == "assembly" else "part",
                 "unit": bool(first.unit), "insideUnit": bool(first.inside_unit),
@@ -697,7 +781,8 @@ def build_sequence(root: Node, cfg):
             dn = float(np.linalg.norm(d))
             steps.append({
                 "kind": kind, "assembly": asm.id, "assemblyInstances": [asm.id], "_batch": bi,
-                "item": first.item, "name": first.name, "partNumber": part_number_of(first.name, cfg),
+                "item": first.item, "name": first.name, "label": first.label,
+                "partNumber": part_number_of(first.name, cfg),
                 "nodes": [n.id for n in b], "verb": verb,
                 "set": [seen[first.name], name_batches[first.name]] if name_batches[first.name] > 1 else None,
                 "direction": r3(-d / dn, 4) if dn > 0 else None,   # install direction (model frame)
@@ -854,6 +939,8 @@ def main():
     ap.add_argument("--out", default=str(HERE.parent / "public" / "assets" / "model"))
     ap.add_argument("--config", default=str(HERE / "config.json"))
     ap.add_argument("--no-compress", action="store_true", help="skip gltfpack (meshopt) optimisation")
+    ap.add_argument("--structure-map", help="verified map from pipeline/structure_map.py: descriptive body names "
+                                          "of this STEP + component paths of an earlier export of the same model")
     ap.add_argument("--bom-csv", help="optional ERP/PDM BOM export (CSV with a 'PartNumber' column and any of "
                                       "'Description', 'Material', 'Revision') merged by part number")
     args = ap.parse_args()
@@ -864,6 +951,15 @@ def main():
 
     doc, bodies, assembly_mode, product = load_step(args.step)
     product = cfg.get("productName") or product
+    structure_src = None
+    if args.structure_map:
+        structure_src = apply_structure_map(bodies, args.structure_map, args.step)
+        log(f"structure map {Path(args.structure_map).name}: hierarchy + part numbers from "
+            f"{structure_src['structureFrom']}, names from {structure_src['names']}")
+    else:
+        k = descriptive_labels(bodies, cfg)
+        if k:
+            log(f"{k} bodies have descriptive names (used as component labels)")
     log(f"product '{product}': {len(bodies)} solid bodies "
         f"({'XCAF assembly structure' if assembly_mode else 'multi-body part, hierarchy from body names'})")
 
@@ -936,6 +1032,7 @@ def main():
         f"{plan_stats['rays']:,} rays) in {time.time() - t:.1f}s; flagged: {len(plan_stats['flagged'])}")
     for k, v in plan_stats["flagged"].items():
         log(f"   ! {k}: {v}")
+    assembly_labels(root, product)
     steps, bom_rows = build_sequence(root, cfg)
     log(f"sequence: {len(steps)} steps; indented BOM rows: {len(bom_rows)}")
 
@@ -1030,6 +1127,7 @@ def main():
             "parent": n.parent.id if n.parent else None,
             "children": [c.id for c in n.children],
             "path": n.path,
+            "label": n.label,
             "item": n.item,
             "step": n.step,
             "unit": n.unit,
@@ -1056,7 +1154,8 @@ def main():
         r["volumeMm3"] = round(first.volume, 2)
     flat = OrderedDict()
     for n in parts:
-        f = flat.setdefault(n.name, {"name": n.name, "partNumber": part_number_of(n.name, cfg), "qty": 0,
+        f = flat.setdefault(n.name, {"name": n.name, "label": n.label,
+                                    "partNumber": part_number_of(n.name, cfg), "qty": 0,
                                     "nodes": [], "insideUnit": False})
         f["qty"] += 1; f["nodes"].append(n.id); f["insideUnit"] |= n.inside_unit
 
@@ -1089,6 +1188,9 @@ def main():
         "glb": final.name,
         "glbCompressed": compressed,
         "sequenceSource": "derived: hierarchy from body names + " + plan_stats["method"] + "; STEP carries no assembly order",
+        "labels": ("parts: solid body names of the STEP; sub-assemblies: derived from their base part "
+                   "(the STEP carries no sub-assembly names)") if any(n.label for n in parts) else None,
+        "structureSource": structure_src,
         "planning": {"method": plan_stats["method"], "engine": plan_stats["engine"], "rays": plan_stats["rays"],
                      "flagged": plan_stats["flagged"]},
         "unavailable": ["description", "material", "revision", "mates/constraints", "assembly order"],
