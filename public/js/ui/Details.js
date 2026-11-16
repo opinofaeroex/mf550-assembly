@@ -1,4 +1,4 @@
-import { esc, fmt } from './text.js';
+import { esc, fmt, displayName } from './text.js';
 
 const MISSING = '<dd class="missing">Not in STEP file</dd>';   // optional: pipeline --bom-csv
 
@@ -28,11 +28,14 @@ export class Details {
     const flag = (inst && inst.flag) || first.flag;
 
     this.els.item.textContent = `Item ${row.item}${inst ? ' · instance ' + inst.cad : ''}`;
-    this.els.title.textContent = row.partNumber ?? row.name;
+    this.els.title.textContent = displayName(row);
     const rows = [
+      ['Name', row.label
+        ? `<dd>${esc(row.label)}${row.kind === 'sub-assembly' ? ' <span class="muted">(derived from its largest part — no sub-assembly names in the STEP)</span>' : ''}</dd>`
+        : '<dd class="missing">Not in STEP file</dd>'],
       ['Component (CAD)', `<dd class="mono">${esc(row.name)}</dd>`],
       ['Part number', row.partNumber ? `<dd class="mono">${esc(row.partNumber)}</dd>` : '<dd class="missing">Not in STEP file — CAD name shown</dd>'],
-      ['Quantity', `<dd>${row.qty} in ${esc(parent.name)}${total && row.kind === 'part' && total.qty !== row.qty ? ` · ${total.qty} in product` : ''}</dd>`],
+      ['Quantity', `<dd>${row.qty} in ${esc(displayName(parent))}${total && row.kind === 'part' && total.qty !== row.qty ? ` · ${total.qty} in product` : ''}</dd>`],
       ['Type', `<dd>${esc(type)}</dd>`],
       ['Parent assembly', `<dd class="mono">${esc([...m.assemblyPath(first.id)].join(' › '))}</dd>`],
       ['Assembly step', `<dd>${steps}</dd>`],
