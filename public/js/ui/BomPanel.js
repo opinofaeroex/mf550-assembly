@@ -1,4 +1,17 @@
-import { esc, positionText } from './text.js';
+import { esc, positionText, displayName } from './text.js';
+
+const DERIVED = 'Name derived from its largest part: the STEP file has no sub-assembly names';
+
+/** Name (from the STEP) over part number; the CAD name when there is no part number. */
+function nameCell(r) {
+  const lbl = r.label
+    ? `<span class="pn-label"${r.kind === 'sub-assembly' ? ` title="${DERIVED}"` : ''}>${esc(r.label)}</span>` : '';
+  const pn = r.partNumber
+    ? `<span class="${r.label ? 'pn-sub' : 'pn-main'}">${esc(r.partNumber)}</span>`
+    : r.label ? `<span class="pn-name pn-missing">No part number in CAD data</span>`
+      : `<span class="pn-main">${esc(r.name)}</span><span class="pn-name pn-missing">No part number in CAD data</span>`;
+  return lbl + pn;
+}
 
 /**
  * BomPanel — indented BOM (tree), flat parts list and step list.
@@ -24,9 +37,7 @@ export class BomPanel extends EventTarget {
   #renderBom() {
     const rows = this.model.bom.map((r) => {
       const isAsm = r.kind === 'sub-assembly';
-      const pn = r.partNumber
-        ? `<span class="pn-main">${esc(r.partNumber)}</span>`
-        : `<span class="pn-main">${esc(r.name)}</span><span class="pn-name pn-missing">No part number in CAD data</span>`;
+      const pn = nameCell(r);
       const badges = (r.unit ? '<span class="badge badge-unit">Purchased unit</span>' : isAsm ? '<span class="badge badge-asm">Sub-asm</span>' : '');
       const toggle = isAsm
         ? `<button class="tree-toggle ${this.collapsed.has(r.item) ? '' : 'open'}" data-toggle="${r.item}" aria-label="Expand"><svg><use href="#i-chev"/></svg></button>`
@@ -46,9 +57,7 @@ export class BomPanel extends EventTarget {
   #renderParts() {
     const rows = this.model.partsList.map((p, i) => {
       const items = this.model.bom.filter((r) => r.kind === 'part' && r.name === p.name).map((r) => r.item);
-      const pn = p.partNumber
-        ? `<span class="pn-main">${esc(p.partNumber)}</span>`
-        : `<span class="pn-main">${esc(p.name)}</span><span class="pn-name pn-missing">No part number in CAD data</span>`;
+      const pn = nameCell(p);
       return `<tr data-part="${i}" class="${p.insideUnit ? 'is-unit-child' : ''}"><td class="c-pn"><div class="pn-cell"><div>${pn}${p.insideUnit ? '<span class="badge badge-unit">Unit</span>' : ''}</div></div></td>
         <td class="c-qty">${p.qty}</td><td class="c-step" title="BOM items">${items.slice(0, 3).join(', ')}${items.length > 3 ? '…' : ''}</td></tr>`;
     });
@@ -59,7 +68,7 @@ export class BomPanel extends EventTarget {
     const items = this.model.steps.map((s, i) => {
       const t = positionText(this.model, i);
       const asm = this.model.node(s.assembly);
-      return `<li data-step="${i}"><span class="sn">${String(i + 1).padStart(2, '0')}</span><span class="st">${t.title}<span class="ss">${esc(t.kind)} · in ${esc(asm.name)}${s.assemblyInstances.length > 1 ? ' ×' + s.assemblyInstances.length : ''}${s.flag ? ' · <span class="badge badge-flag">check</span>' : ''}</span></span></li>`;
+      return `<li data-step="${i}"><span class="sn">${String(i + 1).padStart(2, '0')}</span><span class="st">${t.title}<span class="ss">${esc(t.kind)} · in ${esc(displayName(asm))}${s.assemblyInstances.length > 1 ? ' ×' + s.assemblyInstances.length : ''}${s.flag ? ' · <span class="badge badge-flag">check</span>' : ''}</span></span></li>`;
     });
     this.els.stepsList.innerHTML = items.join('');
     this.stepEls = [...this.els.stepsList.querySelectorAll('li')];
@@ -112,7 +121,7 @@ export class BomPanel extends EventTarget {
     const visibleByFilter = new Set();
     if (f) {
       for (const r of this.model.bom) {
-        const hay = `${r.item} ${r.name} ${r.partNumber ?? ''}`.toLowerCase();
+        const hay = `${r.item} ${r.name} ${r.label ?? ''} ${r.partNumber ?? ''}`.toLowerCase();
         if (hay.includes(f)) {
           visibleByFilter.add(r.item);
           // keep ancestors visible for context
@@ -135,7 +144,7 @@ export class BomPanel extends EventTarget {
     }
     for (const tr of this.els.partsBody.querySelectorAll('tr')) {
       const p = this.model.partsList[+tr.dataset.part];
-      tr.hidden = !!f && !`${p.name} ${p.partNumber ?? ''}`.toLowerCase().includes(f);
+      tr.hidden = !!f && !`${p.name} ${p.label ?? ''} ${p.partNumber ?? ''}`.toLowerCase().includes(f);
     }
   }
 
