@@ -62,19 +62,27 @@ export class Sequencer extends EventTarget {
     return step < pos ? 0 : 1;
   }
 
+  /**
+   * An animation phase towards targetFn(entry). Start values are read when the phase
+   * starts (not when it is queued), so chained phases — quick → step, loop out → in —
+   * always continue from where the previous phase left the components.
+   */
   #transition(targetFn, { dur, delayFn, durFn } = {}) {
-    const { entries, f } = this.explode;
-    const items = [];
-    let total = 0;
-    for (let i = 0; i < entries.length; i++) {
-      const to = targetFn(entries[i], i);
-      if (Math.abs(to - f[i]) < 1e-4) continue;
-      const delay = delayFn ? delayFn(entries[i]) : 0;
-      const d = durFn ? durFn(entries[i]) : dur;
-      items.push({ i, from: f[i], to, delay, dur: d });
-      total = Math.max(total, delay + d);
-    }
-    return { kind: 'anim', items, t: 0, total };
+    const build = () => {
+      const { entries, f } = this.explode;
+      const items = [];
+      let total = 0;
+      for (let i = 0; i < entries.length; i++) {
+        const to = targetFn(entries[i], i);
+        if (Math.abs(to - f[i]) < 1e-4) continue;
+        const delay = delayFn ? delayFn(entries[i]) : 0;
+        const d = durFn ? durFn(entries[i]) : dur;
+        items.push({ i, from: f[i], to, delay, dur: d });
+        total = Math.max(total, delay + d);
+      }
+      return { items, total };
+    };
+    return { kind: 'anim', items: [], t: 0, total: 0, build };
   }
 
   #setAnimating(v) {
@@ -163,7 +171,11 @@ export class Sequencer extends EventTarget {
     let guard = 0;
     while (this.queue.length && guard++ < 64) {
       const ph = this.queue[0];
-      if (!ph.started) { ph.started = true; ph.onStart && ph.onStart(); }
+      if (!ph.started) {
+        ph.started = true;
+        if (ph.build) Object.assign(ph, ph.build());
+        ph.onStart && ph.onStart();
+      }
       if (ph.kind === 'mark') { this.queue.shift(); continue; }
       const use = Math.min(budget, ph.total - ph.t);
       ph.t += use;
