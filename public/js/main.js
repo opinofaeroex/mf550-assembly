@@ -34,7 +34,7 @@ import { CameraOverlay } from './ar/CameraOverlay.js';
 import { WebXRSession } from './ar/WebXRSession.js';
 import { QuickLook } from './ar/QuickLook.js';
 import { Narrator } from './audio/Narrator.js';
-import { narrationText } from './audio/narrationScript.js';
+import { narrationText, narrationKeys } from './audio/narrationScript.js';
 import { AppState } from './state/AppState.js';
 import { GestureController } from './gesture/GestureController.js';
 import { GesturePanel } from './ui/GesturePanel.js';
@@ -350,12 +350,13 @@ class App {
   // -------------------------------------------------------------- narration
   #initNarration() {
     this.narrator = new Narrator(CONFIG.narration);
+    this.narrator.addEventListener('notice', (e) => this.#toast(e.detail.message));
     let lastVoice = null;
     const sync = (d) => {
       const v = d.voice;
       if (!v) lastVoice = null;
       else if (!lastVoice || lastVoice.name !== v.name) lastVoice = v;
-      this.state.set({ narration: d.status, muted: d.muted, voice: lastVoice });
+      this.state.set({ narration: d.status, muted: d.muted, voice: lastVoice, narrationEngine: d.engine });
     };
     this.narrator.addEventListener('state', (e) => sync(e.detail));
     sync({ status: this.narrator.status, muted: this.narrator.muted, voice: null });
@@ -369,6 +370,7 @@ class App {
         root: $('narration'), play: $('nar-play'), playLabel: $('nar-play-label'), replay: $('nar-replay'),
         mute: $('nar-mute'), muteLabel: $('nar-mute-label'), status: $('nar-status'), settings: $('nar-settings'),
         pop: $('nar-pop'), voiceSel: $('nar-voice'), rateSel: $('nar-rate'), voiceKind: $('nar-voice-kind'),
+        volume: $('nar-volume'), volumeOut: $('nar-volume-out'), volumeRow: $('nar-volume-row'),
         arVoice: $('ar-voice'), arMute: $('ar-mute'),
       },
     });
@@ -380,7 +382,7 @@ class App {
     this.narrator.stop();
     this.narrationTimer = setTimeout(() => {
       if (this.seq.pos !== pos) return;            // user moved on in the meantime
-      this.narrator.load(pos, narrationText(this.model, pos));
+      this.narrator.load(pos, narrationText(this.model, pos), narrationKeys(this.model, pos));
     }, CONFIG.narration.startDelayMs);
   }
 
