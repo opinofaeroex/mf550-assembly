@@ -21,6 +21,7 @@ import { Viewer } from './scene/Viewer.js';
 import { loadModel } from './scene/ModelLoader.js';
 import { Appearance, STATE } from './scene/Appearance.js';
 import { ExplodeController } from './scene/Explode.js';
+import { CameraController } from './scene/CameraController.js';
 import { Sequencer, ASSEMBLED, EXPLODED } from './scene/Sequencer.js';
 import { Picker } from './scene/Picker.js';
 import { Callout } from './scene/Callout.js';
@@ -28,7 +29,8 @@ import { BomPanel } from './ui/BomPanel.js';
 import { Details } from './ui/Details.js';
 import { NarrationControls } from './ui/NarrationControls.js';
 import { positionText, esc, displayName } from './ui/text.js';
-import { detectAR } from './ar/ARSupport.js';
+import { detectAR, arErrorText } from './ar/ARSupport.js';
+import { CameraOverlay } from './ar/CameraOverlay.js';
 import { WebXRSession } from './ar/WebXRSession.js';
 import { QuickLook } from './ar/QuickLook.js';
 import { Narrator } from './audio/Narrator.js';
@@ -71,6 +73,8 @@ class App {
     this.appearance = new Appearance(loaded);
     this.explode = new ExplodeController(model, loaded.objects, CONFIG.explodeScale);
     this.seq = new Sequencer(model, this.explode, { loop: CONFIG.animation.loop, timing: CONFIG.animation.timing });
+    model.meta.displayName = CONFIG.productName;          // visible product name (internal id stays meta.product)
+    model.root.label = CONFIG.productName;
     this.picker = new Picker(viewer, this.appearance);
     this.stepCallout = new Callout($('callout-layer'), 'step');
     this.selCallout = new Callout($('callout-layer'), 'sel');
@@ -83,7 +87,15 @@ class App {
       this.seq.update(dt);
       this.#updateCallouts();
     });
-    viewer.controls.addEventListener('start', () => viewer.cancelCameraTween());
+    // automatic close-up of each step's components (scene/CameraController.js)
+    this.cameraCtl = new CameraController({
+      viewer, model, loaded, explode: this.explode, cfg: CONFIG.camera,
+      isSolid: (id, pos) => this.#isSolid(id, pos),
+    });
+    viewer.controls.addEventListener('start', () => {   // user orbit / zoom / pan
+      viewer.cancelCameraTween();
+      this.cameraCtl.pauseByUser();
+    });
 
     this.#initHeader();
     this.#initPanels();
@@ -94,11 +106,11 @@ class App {
     this.#initGestures();
 
     this.seq.addEventListener('change', () => this.#onPosition());
-    this.seq.addEventListener('stepstart', () => this.#focusCamera());
     this.seq.addEventListener('animstate', () => this.state.set({ animating: this.seq.animating }));
     this.state.addEventListener('change', () => this.#renderNavigation());
     this.#trackInsets();
 
+    this.#initCameraUI();
     const startStep = this.#deepLinkStep();
     this.seq.goTo(ASSEMBLED, { animate: false });
     if (startStep !== null) this.seq.goTo(startStep);
@@ -140,19 +152,18 @@ class App {
   // ---------------------------------------------------------------- header
   #initHeader() {
     const m = this.model.meta;
-    $('product-title').textContent = m.product;
-    document.title = `${m.product} · Interactive Assembly Instructions`;
+    $('product-title').textContent = CONFIG.productName;
+    document.title = `${CONFIG.productName} · Interactive Assembly Instructions`;
     $('meta-chips').innerHTML = [
       `<span class="chip"><b>${m.partInstances}</b> part instances</span>`,
       `<span class="chip"><b>${this.model.bom.length}</b> BOM lines</span>`,
       `<span class="chip"><b>${this.model.stepCount}</b> steps</span>`,
-      `<span class="chip">Source: ${esc(m.sourceFile)}</span>`,
     ].join('');
     $('btn-help').addEventListener('click', () => $('help-dialog').showModal());
-    const note = `Data source: ${m.sourceFile}, converted with ${m.converter}. The STEP file contains geometry, colours, component names and the hierarchy (encoded in body names). `
+    const note = `Data source: the product's STEP CAD model, converted with ${m.converter}. The STEP file contains geometry, colours, component names and the hierarchy (encoded in body names). `
       + `It does not contain ${m.unavailable.join(', ')}; these are shown as "Not in STEP file"${m.bomSource ? ` unless supplied by the BOM export ${m.bomSource}` : ''}. The assembly order is ${m.sequenceSource}.`;
     $('help-data-note').textContent = note;
-    $('sidebar-foot').textContent = `${m.sourceFile} · ${m.partInstances} instances · ${m.uniqueMeshes} unique meshes · order derived from geometry (STEP has no assembly sequence)`;
+    $('sidebar-foot').textContent = `${m.partInstances} instances · ${m.uniqueMeshes} unique meshes · order derived from geometry (STEP has no assembly sequence)`;
   }
 
   // ---------------------------------------------------------------- panels
@@ -193,9 +204,9 @@ class App {
     };
     tool('tool-ghost', 'ghost');
     tool('tool-edges', 'edges');
-    tool('tool-focus', 'focus', () => this.opts.focus && this.#focusCamera());
+    tool('tool-focus', 'focus');
     tool('tool-isolate', 'isolate');
-    $('tool-frame').addEventListener('click', () => this.viewer.frame());
+    $('tool-frame').addEventListener('click', () => { this.cameraCtl.pauseByUser(); this.viewer.frame(); });
   }
 
   #setOpt(name, value) {
@@ -205,6 +216,11 @@ class App {
     b.classList.toggle('is-on', value);
     b.setAttribute('aria-pressed', value);
     if (name === 'edges') this.appearance.setEdgesVisible(value);
+    if (name === 'focus' && this.cameraCtl) {
+      this.cameraCtl.setEnabled(value);
+      try { localStorage.setItem('mf550.camera.auto', JSON.stringify(value)); } catch { /* storage unavailable */ }
+    }
+    if (name === 'ghost' && this.cameraCtl) this.cameraCtl.invalidate();   // sight lines depend on ghosting
     if (name === 'isolate') $('details-isolate').textContent = value ? 'Show all' : 'Isolate';
     this.#refreshAppearance();
   }
@@ -373,6 +389,7 @@ class App {
     const { seq, model } = this;
     const pos = seq.pos;
     const N = model.stepCount;
+    this.cameraCtl.onPosition(pos);            // close-up of this step's components (smooth move)
     const t = positionText(model, pos);
 
     $('step-badge').textContent = t.badge;
@@ -421,7 +438,7 @@ class App {
     if (!seq.isStep) { this.stepCallout.hide(); return; }
     const s = model.steps[seq.pos];
     if (this.selection && this.selection.row.item === s.item) { this.stepCallout.hide(); return; }
-    this.stepCallout.set(s.nodes.map((id) => this.loaded.objects.get(id)), s.item, `${s.qty > 1 ? s.qty + '× ' : ''}${displayName(model.node(s.nodes[0]).kind === 'assembly' ? model.node(s.nodes[0]) : s)}`);
+    this.stepCallout.set(s.nodes.map((id) => this.loaded.objects.get(id)), null, `${s.qty > 1 ? s.qty + '× ' : ''}${displayName(model.node(s.nodes[0]).kind === 'assembly' ? model.node(s.nodes[0]) : s)}`);
   }
 
   #refreshAppearance() {
@@ -449,15 +466,33 @@ class App {
     }
   }
 
-  #focusCamera() {
-    if (!this.opts.focus || this.inAR) return;
-    const { seq, model, viewer } = this;
-    if (!seq.isStep) { viewer.frame(); return; }
-    const s = model.steps[seq.pos];
-    if (s.assembly === model.rootId) { viewer.frame(); return; }
-    const box = new THREE.Box3();
-    for (const id of s.assemblyInstances) box.union(viewer.boxOf(this.loaded.objects.get(id)));
-    viewer.frame(box, true, 1.2);
+  /** Is a part drawn opaque at a position? (mirrors #refreshAppearance; used for camera sight lines) */
+  #isSolid(id, pos) {
+    if (!this.opts.ghost || pos < 0 || pos >= this.model.stepCount) return true;
+    if (this.activeParts[pos].has(id)) return true;
+    const context = this.stepContext[pos];
+    const s = this.model.node(id).effectiveStep;
+    return !((context && !context.has(id)) || (s !== null && s > pos));
+  }
+
+  /** Auto camera toggle (tool-focus), the "paused" chip with Refocus, and the C key. */
+  #initCameraUI() {
+    let auto = true;
+    try { const v = localStorage.getItem('mf550.camera.auto'); if (v !== null) auto = JSON.parse(v) !== false; } catch { /* default */ }
+    if (!auto) this.#setOpt('focus', false);
+    const chip = $('cam-chip');
+    const render = () => {
+      const mode = this.cameraCtl.mode;
+      chip.hidden = mode !== 'paused';
+      $('tool-focus').classList.toggle('is-paused', mode === 'paused');
+      $('tool-focus').title = mode === 'off' ? 'Automatic camera: off (click to turn on)'
+        : mode === 'paused' ? 'Automatic camera: paused because you moved the view'
+          : 'Automatic camera: follows each step (click to turn off)';
+      this.state.set({ camera: mode });
+    };
+    this.cameraCtl.addEventListener('state', render);
+    $('cam-refocus').addEventListener('click', () => this.cameraCtl.refocus());
+    render();
   }
 
   // -------------------------------------------------------------- selection
@@ -484,7 +519,7 @@ class App {
     this.state.set({ selection: sel.row.item });
     this.details.show(this.selection);          // first: it changes the BOM panel height
     this.bom.setSelected(sel.row.item);
-    this.selCallout.set(nodeIds.map((id) => this.loaded.objects.get(id)), sel.row.item, displayName(sel.row));
+    this.selCallout.set(nodeIds.map((id) => this.loaded.objects.get(id)), null, displayName(sel.row));
     this.#syncStepCallout();
     this.#refreshAppearance();
     this.#updateAROverlay();
@@ -493,6 +528,7 @@ class App {
 
   #zoomToSelection() {
     if (!this.selection) return;
+    this.cameraCtl.pauseByUser();
     const box = new THREE.Box3();
     for (const id of this.selection.nodeIds) box.union(this.viewer.boxOf(this.loaded.objects.get(id)));
     const size = box.getSize(new THREE.Vector3()).length();
@@ -531,7 +567,8 @@ class App {
       else if (k === 'p' || k === 'P') this.seq.replay();
       else if (k === 'e' || k === 'E') this.#toggleExplode();
       else if (k === 'r' || k === 'R') this.seq.restart();
-      else if (k === 'f' || k === 'F') this.viewer.frame();
+      else if (k === 'f' || k === 'F') { this.cameraCtl.pauseByUser(); this.viewer.frame(); }
+      else if (k === 'c' || k === 'C') this.cameraCtl.refocus();
       else if (k === 'g' || k === 'G') this.#setOpt('ghost', !this.opts.ghost);
       else if (k === 'i' || k === 'I') this.#setOpt('isolate', !this.opts.isolate);
       else if (k === 'Escape') this.select(null);
@@ -552,15 +589,60 @@ class App {
     this.arCaps = await detectAR();
     const btn = $('btn-ar');
     btn.disabled = false;
-    const mode = this.arCaps.mode;
-    btn.title = mode === 'webxr' ? 'Start markerless AR (WebXR)' : mode === 'quicklook' ? 'Open in AR Quick Look' : 'AR availability on this device';
-    btn.addEventListener('click', () => (mode === 'webxr' ? this.#startWebXR() : this.#openARDialog()));
+    btn.addEventListener('click', () => this.#onARButton());
+    const slug = CONFIG.productName.replace(/\s+/g, '-');
     this.quickLook = new QuickLook({
       viewer: this.viewer, appearance: this.appearance, model: this.model, explode: this.explode,
-      fileName: `${this.model.meta.product}-assembly.usdz`,
-      staticUrl: `${CONFIG.modelDir}${this.model.meta.product}-assembly.usdz`,
+      fileName: `${slug}-assembly.usdz`,
+      staticUrl: `${CONFIG.modelDir}${this.model.meta.product}-assembly.usdz`,   // optional pre-built file (internal name)
     });
+    // fallback without immersive AR: the camera picture behind the 3D view (not AR)
+    this.cameraView = new CameraOverlay({ container: $('viewport'), video: $('overlay-video') });
+    this.cameraView.addEventListener('state', (e) => {
+      const on = e.detail.active;
+      $('overlay-banner').hidden = !on;
+      if (!on) this.gestures.resume('overlay');
+      if (e.detail.error) this.#toast(e.detail.error.name === 'NotAllowedError'
+        ? 'Camera permission denied: the camera overlay needs the camera. The 3D viewer keeps working.'
+        : `Camera overlay unavailable: ${e.detail.error.message || e.detail.error.name}`);
+      this.#renderARButton();
+    });
+    $('overlay-exit').addEventListener('click', () => this.cameraView.stop());
+    window.addEventListener('pagehide', () => this.cameraView.stop());
+    this.#renderARButton();
     this.#bindAROverlay();
+  }
+
+  /** AR button: state dot + label + tooltip from the capability check (never claims AR it cannot start). */
+  #renderARButton() {
+    const btn = $('btn-ar');
+    const caps = this.arCaps;
+    if (!caps) return;
+    const state = this.inAR ? 'active' : this.cameraView && this.cameraView.active ? 'overlay' : caps.state;
+    btn.dataset.ar = state;
+    const label = {
+      active: 'AR active', overlay: 'Exit camera view', supported: 'View in AR',
+      'needs-permission': 'AR: allow camera', unavailable: 'AR options',
+    }[state] || 'View in AR';
+    $('btn-ar-label').textContent = label;
+    btn.title = state === 'overlay' ? 'Close the camera overlay (not AR)' : caps.reason;
+    btn.setAttribute('aria-label', `${label}. ${caps.reason}`);
+    this.state.set({ ar: state });
+  }
+
+  async #onARButton() {
+    if (this.cameraView.active) { this.cameraView.stop(); return; }
+    // start at once while the click still counts as a user gesture (required by requestSession)
+    if (this.arCaps.mode === 'webxr' && this.arCaps.state === 'supported') { this.#startWebXR(); return; }
+    this.arCaps = await detectAR();            // permissions may have changed since the page loaded
+    this.#renderARButton();
+    this.#openARDialog();
+  }
+
+  async #startCameraView() {
+    $('ar-dialog').close();
+    this.gestures.suspend('overlay');          // one camera user at a time
+    try { await this.cameraView.start(); } catch { /* reported through the 'state' event */ }
   }
 
   async #startWebXR() {
@@ -572,6 +654,8 @@ class App {
         onSelect: (id) => this.#onPick(id),
         onStart: () => {
           this.inAR = true;
+          this.cameraCtl.setAR(true);
+          this.#renderARButton();
           this.gestures.suspend('ar');        // WebXR owns the camera during the session
           this.edgesBeforeAR = this.opts.edges;
           if (this.opts.edges) this.#setOpt('edges', false);
@@ -583,10 +667,15 @@ class App {
         },
         onEnd: () => {
           this.inAR = false;
+          this.cameraCtl.setAR(false);
+          this.#renderARButton();
           this.gestures.resume('ar');
           $('viewport').prepend($('callout-layer'));
           if (this.edgesBeforeAR) this.#setOpt('edges', true);
-          setTimeout(() => this.viewer.frame(undefined, false), 50);
+          setTimeout(() => {
+            if (this.cameraCtl.mode === 'auto') this.cameraCtl.focus(this.seq.pos, { instant: true });
+            else this.viewer.frame(undefined, false);
+          }, 50);
         },
         onScale: (s) => {
           const r = Math.abs(s - 1) < 0.01 ? '1:1' : s < 1 ? `1:${(1 / s).toFixed(1)}` : `${s.toFixed(1)}:1`;
@@ -595,7 +684,8 @@ class App {
         },
       });
     }
-    // release the gesture camera before ARCore opens the camera (one camera user at a time)
+    // release the gesture camera / camera overlay before ARCore opens the camera (one camera user at a time)
+    if (this.cameraView && this.cameraView.active) this.cameraView.stop();
     this.gestures.suspend('ar');
     try {
       await this.xr.start();
@@ -603,7 +693,10 @@ class App {
     } catch (err) {
       this.gestures.resume('ar');
       console.error(err);
-      this.#toast(`Could not start AR: ${err.message}`);
+      if (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')) this.arCaps.state = 'needs-permission';
+      this.arCaps.reason = arErrorText(err, this.arCaps.browser.name);
+      this.#renderARButton();
+      this.#toast(this.arCaps.reason);
     }
   }
 
@@ -649,7 +742,7 @@ class App {
     if (this.selection) {
       const r = this.selection.row;
       const inst = this.selection.partId ? this.model.node(this.selection.partId) : null;
-      selEl.innerHTML = `Item ${esc(r.item)} · <b>${esc(displayName(r))}</b>${r.partNumber && r.label ? ` (${esc(r.partNumber)})` : ''} · qty ${r.qty}${r.steps.length ? ' · step ' + r.steps.map((s) => s + 1).join(', ') : ''}${inst ? `<br>Instance ${esc(inst.cad)}` : ''}`;
+      selEl.innerHTML = `<b>${esc(displayName(r))}</b>${r.partNumber && r.label ? ` (${esc(r.partNumber)})` : ''} · qty ${r.qty}${r.steps.length ? ' · step ' + r.steps.map((s) => s + 1).join(', ') : ''}${inst ? `<br>Instance ${esc(inst.cad)}` : ''}`;
       selEl.hidden = false;
     } else {
       selEl.hidden = true;
@@ -659,11 +752,18 @@ class App {
   #openARDialog() {
     const caps = this.arCaps;
     const body = $('ar-dialog-body');
-    const li = (ok, text) => `<li class="${ok ? 'yes' : 'no'}"><span class="dot"></span>${text}</li>`;
+    const li = (ok, text) => `<li class="${ok ? 'yes' : 'no'}"><span class="dot"></span><span>${text}</span></li>`;
     const pos = this.seq.pos;
     const posName = this.seq.isStep ? `step ${pos + 1}` : pos === ASSEMBLED ? 'the overview' : 'the parts kit';
-    const product = this.model.meta.product;
+    const slug = CONFIG.productName.replace(/\s+/g, '-');
+    const stepFile = `${slug}-${this.seq.isStep ? `step-${pos + 1}` : 'overview'}.usdz`;
     const status = (t) => { $('ql-status').textContent = t; };
+    const stateText = {
+      supported: 'AR available', 'needs-permission': 'AR needs permission', unavailable: 'Immersive AR not available here',
+    }[caps.state];
+    const head = `<p class="ar-state" data-ar="${caps.state}"><b>${stateText}.</b>${esc(caps.reason)}</p>`;
+    const overlayBtn = caps.overlay
+      ? '<button type="button" class="btn" id="ar-overlay-start" title="Camera picture behind the 3D model — no tracking">Camera overlay (not AR)</button>' : '';
     /** Two-tap flow: Safari only opens Quick Look from a tap, so generate first, then open. */
     const wire = (btnId, opts, openLabel, fileName, download) => {
       const b = $(btnId);
@@ -683,9 +783,11 @@ class App {
         b.disabled = false;
       };
     };
+    const bindOverlay = () => { const o = $('ar-overlay-start'); if (o) o.onclick = () => this.#startCameraView(); };
+
     if (caps.mode === 'quicklook') {
-      body.innerHTML = `
-        <p>This device uses <b>AR Quick Look</b> (ARKit). Safari on iOS/iPadOS does not support WebXR, so the model is exported to a USDZ file in your browser, with the same ${CONFIG.explodeScale}× exploded view as this page.</p>
+      body.innerHTML = `${head}
+        <p>Safari on iOS/iPadOS has no WebXR, so the model is exported to a USDZ file in your browser, with the same ${CONFIG.explodeScale}× exploded view as this page.</p>
         <p>Quick Look is a separate viewer: it cannot show the BOM, the narration or the step buttons. Use <b>${posName}</b> to stay in step-by-step mode, then come back here and press NEXT STEP.</p>
         <p class="muted" id="ql-status">Choose what to place in your room.</p>
         <div class="ar-dialog-actions">
@@ -693,34 +795,50 @@ class App {
           <button type="button" class="btn" id="ql-full">Prepare full sequence</button>
         </div>`;
       $('ar-dialog').showModal();
-      wire('ql-step', { kind: 'step', pos }, `Open ${posName} in AR`, `${product}-${this.seq.isStep ? `step-${pos + 1}` : 'overview'}.usdz`);
-      wire('ql-full', { kind: 'full' }, 'Open full sequence in AR', `${product}-assembly.usdz`);
+      wire('ql-step', { kind: 'step', pos }, `Open ${posName} in AR`, stepFile);
+      wire('ql-full', { kind: 'full' }, 'Open full sequence in AR', `${slug}-assembly.usdz`);
       return;
     }
-    body.innerHTML = `
-      <p>Markerless AR is not available in this browser. The full 3D viewer, exploded view, assembly steps, narration and BOM work here; for AR open this page on:</p>
+    if (caps.mode === 'webxr') {     // supported but blocked: explain, let the user retry after allowing the camera
+      body.innerHTML = `${head}
+        <p>AR in ${esc(caps.browser.name)} uses the camera to find the floor. When ${esc(caps.browser.name)} asks, choose <b>Allow</b>. If you blocked it before, open the site settings (lock icon next to the address) › Camera › Allow, then try again.</p>
+        <div class="ar-dialog-actions">
+          <button type="button" class="btn btn-accent" id="ar-retry">Try AR again</button>
+          ${overlayBtn}
+        </div>`;
+      $('ar-dialog').showModal();
+      $('ar-retry').onclick = () => { $('ar-dialog').close(); this.#startWebXR(); };
+      bindOverlay();
+      return;
+    }
+    body.innerHTML = `${head}
+      <p>The 3D viewer, automatic camera, exploded view, steps, narration, gestures and BOM all work here. For real AR open this page on:</p>
       <ul class="ar-support">
-        ${li(true, 'Android phone/tablet with ARCore — Chrome (WebXR, full interactive AR)')}
+        ${li(true, 'Android phone / tablet with ARCore — <b>Chrome</b> (WebXR: place the assembly on the floor at 1:1)')}
         ${li(true, 'iPhone / iPad — Safari (AR Quick Look)')}
       </ul>
+      ${caps.overlay ? '<p><b>Camera overlay (not AR):</b> shows the 3D model over this device\'s camera picture. It is not anchored to the room and does not track movement.</p>' : ''}
       <p>Checks for this browser:</p>
       <ul class="ar-support">
-        ${li(caps.secureContext, 'Secure context (HTTPS or localhost)')}
+        ${li(caps.secureContext, 'Secure context (HTTPS)')}
         ${li(caps.webxrApi, 'WebXR Device API')}
-        ${li(caps.immersiveAR, 'immersive-ar sessions')}
+        ${li(caps.immersiveAR, 'immersive-ar sessions (AR tracking)')}
         ${li(caps.quickLook, 'AR Quick Look')}
+        ${li(caps.overlay, 'Camera access API (for the camera overlay)')}
       </ul>
       <div class="url-box">${esc(location.href)}</div>
       <div class="ar-dialog-actions">
+        ${overlayBtn}
         <button type="button" class="btn" id="ar-copy">Copy link</button>
         <button type="button" class="btn" id="ar-usdz-step">USDZ of ${posName}</button>
         <button type="button" class="btn" id="ar-usdz">USDZ full sequence</button>
       </div>
       <p class="muted" id="ql-status"></p>`;
     $('ar-dialog').showModal();
+    bindOverlay();
     $('ar-copy').onclick = () => navigator.clipboard?.writeText(location.href).then(() => this.#toast('Link copied'));
-    wire('ar-usdz-step', { kind: 'step', pos }, 'Download', `${product}-${this.seq.isStep ? `step-${pos + 1}` : 'overview'}.usdz`, true);
-    wire('ar-usdz', { kind: 'full' }, 'Download', `${product}-assembly.usdz`, true);
+    wire('ar-usdz-step', { kind: 'step', pos }, 'Download', stepFile, true);
+    wire('ar-usdz', { kind: 'full' }, 'Download', `${slug}-assembly.usdz`, true);
   }
 
   #toast(msg) {

@@ -53,13 +53,14 @@ function targetOf(model, asmId) {
 export function positionText(model, pos) {
   const N = model.stepCount;
   const m = model.meta;
+  const product = m.displayName || m.product;      // visible name (CONFIG.productName)
   if (pos === ASSEMBLED) {
     return {
       badge: 'Overview', kind: 'Complete product',
-      title: `<span class="pn">${esc(m.product)}</span> — assembled`,
+      title: `${esc(product)} — assembled`,
       desc: `${m.partInstances} parts in ${m.assemblies - 1} sub-assemblies, at their CAD positions. ${N} steps. Press NEXT STEP to see the parts kit.`,
       components: null, note: null,
-      speech: `${m.product} overview. ${m.partInstances} parts, ${N} steps. Press Next step to see the parts kit.`,
+      speech: `${product} overview. ${m.partInstances} parts, ${N} steps. Press Next step to see the parts kit.`,
     };
   }
   if (pos === EXPLODED) {
@@ -74,9 +75,9 @@ export function positionText(model, pos) {
   if (pos >= N) {
     return {
       badge: 'Done', kind: 'Assembly complete',
-      title: `<span class="pn">${esc(m.product)}</span> assembled`,
+      title: `${esc(product)} assembled`,
       desc: `All ${m.partInstances} components are at their CAD positions.`,
-      components: null, note: null, speech: `The ${m.product} assembly is complete.`,
+      components: null, note: null, speech: `The ${product} assembly is complete.`,
     };
   }
 
@@ -119,7 +120,7 @@ export function positionText(model, pos) {
   if (pos === N - 1) desc += ' The assembly is complete.';
 
   const pn = s.partNumber ? ` · <span class="pn">${esc(s.partNumber)}</span>` : '';
-  const components = `${s.qty}× ${esc(lbl)}${pn} · BOM item ${esc(s.item)}`;
+  const components = `${s.qty}× ${esc(lbl)}${pn}`;
   const note = s.flag ? 'Animated path approximate: the CAD model shows no collision-free path for this part.' : null;
   return {
     badge: `Step ${pos + 1} / ${N}`, kind, title: esc(title), desc, components, note,

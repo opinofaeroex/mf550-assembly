@@ -44,7 +44,6 @@ export class BomPanel extends EventTarget {
         : '<span class="tree-spacer"></span>';
       const steps = r.steps.length ? r.steps.map((s) => s + 1).join(', ') : (r.insideUnit ? 'unit' : '—');
       return `<tr data-item="${r.item}" class="${r.insideUnit ? 'is-unit-child' : ''}">
-        <td class="c-item">${r.item}</td>
         <td class="c-pn"><div class="pn-cell" style="padding-left:${r.level * 14}px">${toggle}<div>${pn}${badges}</div></div></td>
         <td class="c-qty">${r.qty}</td>
         <td class="c-step" title="Assembly step">${steps}</td></tr>`;
@@ -56,10 +55,10 @@ export class BomPanel extends EventTarget {
 
   #renderParts() {
     const rows = this.model.partsList.map((p, i) => {
-      const items = this.model.bom.filter((r) => r.kind === 'part' && r.name === p.name).map((r) => r.item);
+      const steps = [...new Set(this.model.bom.filter((r) => r.kind === 'part' && r.name === p.name).flatMap((r) => r.steps))].sort((a, b) => a - b);
       const pn = nameCell(p);
       return `<tr data-part="${i}" class="${p.insideUnit ? 'is-unit-child' : ''}"><td class="c-pn"><div class="pn-cell"><div>${pn}${p.insideUnit ? '<span class="badge badge-unit">Unit</span>' : ''}</div></div></td>
-        <td class="c-qty">${p.qty}</td><td class="c-step" title="BOM items">${items.slice(0, 3).join(', ')}${items.length > 3 ? '…' : ''}</td></tr>`;
+        <td class="c-qty">${p.qty}</td><td class="c-step" title="Assembly step">${steps.length ? steps.slice(0, 3).map((k) => k + 1).join(', ') + (steps.length > 3 ? '…' : '') : (p.insideUnit ? 'unit' : '—')}</td></tr>`;
     });
     this.els.partsBody.innerHTML = rows.join('');
   }
@@ -121,7 +120,7 @@ export class BomPanel extends EventTarget {
     const visibleByFilter = new Set();
     if (f) {
       for (const r of this.model.bom) {
-        const hay = `${r.item} ${r.name} ${r.label ?? ''} ${r.partNumber ?? ''}`.toLowerCase();
+        const hay = `${r.name} ${r.label ?? ''} ${r.partNumber ?? ''}`.toLowerCase();
         if (hay.includes(f)) {
           visibleByFilter.add(r.item);
           // keep ancestors visible for context

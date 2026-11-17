@@ -10,6 +10,7 @@ const CAMERA_TEXT = {
 };
 const PAUSE_TEXT = {
   ar: 'Paused while AR uses the camera',
+  overlay: 'Paused while the camera overlay uses the camera',
   hidden: 'Paused (page in background)',
 };
 const ERROR_TEXT = {

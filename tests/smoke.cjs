@@ -617,15 +617,16 @@ async function testAR(browser) {
   await page.goto(`${BASE}/`);
   await page.waitForFunction(() => window.app && window.app.arCaps, null, { timeout: 120000 });
   await page.evaluate(() => window.semReady);
-  const caps = await page.evaluate(() => window.app.arCaps.mode);
-  check(caps === 'webxr', `AR method detected: ${caps}`);
+  const caps = await page.evaluate(() => ({ mode: app.arCaps.mode, state: app.arCaps.state, btn: document.getElementById('btn-ar').dataset.ar, label: document.getElementById('btn-ar-label').textContent }));
+  check(caps.mode === 'webxr' && caps.state === 'supported' && caps.btn === 'supported', `AR detected: ${caps.mode}, state ${caps.state}, button "${caps.label}" (green status)`);
   await page.evaluate(() => window.xrDevice.quaternion.set(-0.5, 0, 0, 0.866));
   await page.evaluate(() => app.gestures.enable());
   const gOn = await waitFor(page, () => app.gestures.status.phase === 'on', null, 10000);
   await page.click('#btn-ar');
   await page.waitForFunction(() => window.app.xr && window.app.xr.reticle.visible, null, { timeout: 20000 }).catch(() => {});
-  let s = await page.evaluate(() => ({ presenting: app.viewer.renderer.xr.isPresenting, reticle: app.xr.reticle.visible }));
-  check(s.presenting && s.reticle, 'immersive-ar session started, floor found by hit-test');
+  let s = await page.evaluate(() => ({ presenting: app.viewer.renderer.xr.isPresenting, reticle: app.xr.reticle.visible, btn: document.getElementById('btn-ar').dataset.ar, cam: app.cameraCtl.mode }));
+  check(s.presenting && s.reticle, 'immersive-ar session started from the AR button, floor found by hit-test');
+  check(s.btn === 'active' && s.cam === 'ar', `AR state shown as active; automatic 3D camera hands over to the device (${s.cam})`);
   const gAR = await page.evaluate(() => ({ phase: app.gestures.status.phase, reason: app.gestures.status.reason, cam: app.gestures.camera.stream }));
   check(gOn && gAR.phase === 'paused' && gAR.reason === 'ar' && gAR.cam === null, 'gesture camera released while WebXR owns the camera (tracking paused)');
   await page.evaluate(async () => { const c = window.xrDevice.controllers.right; c.updateButtonValue('trigger', 1); await new Promise((r) => setTimeout(r, 300)); c.updateButtonValue('trigger', 0); });
@@ -642,11 +643,286 @@ async function testAR(browser) {
   check(s.pos === 11 && s.title === 'Step 12 / 69' && s.scale === 0.5 && s.narr === 11, `NEXT, narration and scaling inside AR (${s.title}, scale ${s.scale})`);
   await page.evaluate(() => app.xr.end());
   await page.waitForFunction(() => !window.app.inAR, null, { timeout: 10000 }).catch(() => {});
-  s = await page.evaluate(() => ({ inAR: app.inAR, stage: app.viewer.stage.position.length() }));
-  check(!s.inAR && s.stage === 0, 'session ends cleanly and the 3D viewer is restored');
+  s = await page.evaluate(() => ({ inAR: app.inAR, stage: app.viewer.stage.position.length(), btn: document.getElementById('btn-ar').dataset.ar, cam: app.cameraCtl.mode }));
+  check(!s.inAR && s.stage === 0 && s.btn === 'supported' && s.cam === 'auto', 'session ends cleanly; 3D viewer, AR button and automatic camera restored');
   const gBack = await waitFor(page, () => app.gestures.status.phase === 'on' && app.gestures.camera.active, null, 10000);
   check(gBack, 'gesture tracking resumes automatically after the AR session');
   check(errors.length === 0, `no page errors during AR ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+}
+
+async function testCamera(browser) {
+  console.log('\n[9] automatic step camera');
+  const { page, errors } = await openApp(browser, speechMock() + fakeTracker);
+  // every step: target = the components listed in assembly.json steps[k].nodes
+  const rv = await page.evaluate(() => {
+    const r = app.cameraCtl.review();
+    const ok = r.filter((x) => x.source === 'steps[k].nodes' && x.parts > 0 && Number.isFinite(x.radiusMm) && x.radiusMm > 0);
+    const views = new Set(r.map((x) => `${x.elevationDeg}/${x.azimuthDeg}`));
+    const sameParts = app.model.steps.every((s, k) => app.cameraCtl.stepParts[k].size === new Set(s.nodes.flatMap((id) => app.model.partsUnder(id))).size);
+    return { n: r.length, ok: ok.length, views: views.size, sameParts, flagged: r.filter((x) => x.flags.some((f) => f.startsWith('enclosed'))).map((x) => x.step) };
+  });
+  check(rv.n === 69 && rv.ok === 69 && rv.sameParts, `camera targets computed for ${rv.ok} / ${rv.n} steps from steps[k].nodes (no invented targets)`);
+  check(rv.views >= 8, `${rv.views} different viewpoints chosen from the geometry (not one fixed position)`);
+  console.log(`    review: enclosed steps (x-ray highlight, flagged for manual review): ${rv.flagged.join(', ') || 'none'}`);
+
+  // representative steps: first, single part, fasteners, large part, sub-assembly install, other area, final
+  const cases = { 0: 'first', 2: 'fasteners ×6', 3: 'large structural part', 17: 'single part', 21: 'sub-assembly', 40: 'motor area washers', 55: 'rivets all over the unit', 68: 'final' };
+  const bad = [];
+  for (const [k, what] of Object.entries(cases)) {
+    await page.evaluate((k) => app.next && app.seq.goTo(+k), k);
+    // steady state: entry animation finished, camera arrived on the final (fully evaluated) view
+    await waitFor(page, (k) => app.cameraCtl.goal && app.cameraCtl.goal.pos === +k && app.cameraCtl.goal.final && !app.cameraCtl.tween && !app.seq.animating, k, 60000);
+    await page.waitForTimeout(300);
+    const r = await page.evaluate((k) => {
+      const THREE = app.viewer.camera.constructor;   // just to reach Vector3 via a projection helper below
+      const cam = app.viewer.camera;
+      cam.updateMatrixWorld(); cam.updateProjectionMatrix();
+      const vp = document.getElementById('viewport').getBoundingClientRect();
+      const card = document.getElementById('step-card').getBoundingClientRect();
+      const left = card.width < vp.width * 0.6 ? card.right - vp.left : 0;
+      const top = card.width < vp.width * 0.6 ? 0 : card.bottom - vp.top;
+      const ids = [...app.cameraCtl.stepParts[k]];
+      let inside = 0;
+      // final (CAD) position of each component: its box centre with this step's entries at f = 0
+      for (const id of ids) {
+        const box = app.viewer.boxOf(app.loaded.objects.get(id));
+        const c = box.getCenter(app.viewer.camera.position.clone());
+        // parts may be mid-loop: use the CAD position = current minus the step offset
+        const e = app.explode.entries.find((x) => x.step === +k && app.model.partsUnder(x.id).includes(id));
+        if (e) c.addScaledVector(e.vec.clone(), -app.explode.f[app.explode.index.get(e.id)]);
+        const p = c.project(cam);
+        const x = (p.x + 1) / 2 * vp.width, y = (1 - p.y) / 2 * vp.height;
+        if (p.z < 1 && x >= left - 2 && x <= vp.width + 2 && y >= top - 2 && y <= vp.height + 2) inside++;
+      }
+      const dist = cam.position.distanceTo(app.viewer.controls.target);
+      return { inside, n: ids.length, dist, radius: app.cameraCtl.goal.radius, modelR: app.cameraCtl.modelRadius };
+    }, k);
+    if (r.inside < r.n || r.dist < r.radius) bad.push(`step ${+k + 1} (${what}): ${r.inside}/${r.n} visible`);
+    else console.log(`    step ${String(+k + 1).padStart(2)} ${what.padEnd(26)} ${r.n} components in view, camera ${r.dist.toFixed(2)} m from target (focus radius ${(r.radius * 1000).toFixed(0)} mm)`);
+  }
+  check(bad.length === 0, `representative steps: all components of the step inside the uncovered viewport ${bad.join('; ')}`);
+
+  // smooth transition: no jumps, orbit around the target
+  const smooth = await page.evaluate(async () => {
+    app.seq.goTo(10);
+    await new Promise((r) => setTimeout(r, 50));
+    const samples = [];
+    await new Promise((resolve) => {
+      const t0 = performance.now();
+      const tick = () => {
+        samples.push(app.viewer.camera.position.clone());
+        if (app.cameraCtl.tween || performance.now() - t0 < 300) requestAnimationFrame(tick); else resolve();
+      };
+      requestAnimationFrame(tick);
+    });
+    let path = 0, maxStep = 0;
+    for (let i = 1; i < samples.length; i++) { const d = samples[i].distanceTo(samples[i - 1]); path += d; maxStep = Math.max(maxStep, d); }
+    return { frames: samples.length, path, maxStep };
+  });
+  check(smooth.frames > 5 && smooth.maxStep < Math.max(0.35 * smooth.path, 0.02), `smooth move: ${smooth.frames} frames, largest frame step ${(smooth.maxStep * 100).toFixed(1)} cm of a ${(smooth.path * 100).toFixed(0)} cm path`);
+
+  // the step loop: each cycle moves the step's parts out and back in; PREVIOUS removes a part without snapping back
+  const loopShape = await page.evaluate(async () => {
+    app.seq.goTo(40);
+    const e = app.explode.entries.findIndex((x) => x.step === 40);
+    const seen = [];
+    await new Promise((resolve) => {
+      const tick = () => { seen.push([app.seq.loopCount, app.explode.f[e]]); if (app.seq.loopCount < 3) requestAnimationFrame(tick); else resolve(); };
+      requestAnimationFrame(tick);
+    });
+    const byCycle = {};
+    for (const [c, f] of seen) (byCycle[c] = byCycle[c] || []).push(f);
+    const cycles = [1, 2].map((c) => ({ max: Math.max(...byCycle[c]), last: byCycle[c][byCycle[c].length - 1] }));
+    app.seq.goTo(41);
+    await new Promise((r) => { const w = () => (app.seq.animating ? requestAnimationFrame(w) : r()); w(); });
+    const e41 = app.explode.entries.findIndex((x) => x.step === 41);
+    app.seq.speed = 0.5; app.seq.goTo(40);
+    const path = [];
+    await new Promise((resolve) => { const tick = () => { path.push(app.explode.f[e41]); if (app.seq.animating) requestAnimationFrame(tick); else resolve(); }; requestAnimationFrame(tick); });
+    app.seq.speed = 1;
+    let back = 0;
+    for (let i = 1; i < path.length; i++) back = Math.max(back, path[i - 1] - path[i]);
+    return { cycles, prevEnd: path[path.length - 1], back };
+  });
+  check(loopShape.cycles.every((c) => c.max > 0.95 && c.last < 0.02) && loopShape.prevEnd > 0.99 && loopShape.back < 1e-6,
+    `loop: every cycle moves the parts out (f ${loopShape.cycles.map((c) => c.max.toFixed(2)).join(', ')}) and back to the CAD position; PREVIOUS removes the next step's part smoothly (no snap-back)`);
+
+  // the user takes over: drag → paused, camera left alone while the step loops; Refocus / next step resume
+  await waitFor(page, () => !app.cameraCtl.tween, null, 20000);
+  const vp = await page.evaluate(() => { const r = document.querySelector('#viewport canvas').getBoundingClientRect(); return { x: r.left + r.width * 0.72, y: r.top + r.height * 0.5 }; });
+  await page.mouse.move(vp.x, vp.y); await page.mouse.down(); await page.mouse.move(vp.x + 120, vp.y + 30, { steps: 6 }); await page.mouse.up();
+  // orbit damping is frame-based: wait until the user's orbit has fully come to rest
+  await page.evaluate(async () => {
+    let last = app.viewer.camera.position.clone();
+    for (let i = 0; i < 200; i++) {
+      await new Promise((r) => setTimeout(r, 150));
+      const now = app.viewer.camera.position.clone();
+      if (now.distanceTo(last) < 1e-5) break;
+      last = now;
+    }
+  });
+  const p1 = await page.evaluate(() => ({ mode: app.cameraCtl.mode, chip: !document.getElementById('cam-chip').hidden, pos: app.viewer.camera.position.toArray(), loops: app.seq.loopCount, step: app.seq.pos }));
+  await waitFor(page, (l) => app.seq.loopCount > l, p1.loops, 30000);
+  const p2 = await page.evaluate(() => ({ pos: app.viewer.camera.position.toArray(), loops: app.seq.loopCount, step: app.seq.pos }));
+  const still = p1.pos.every((v, i) => Math.abs(v - p2.pos[i]) < 1e-3);
+  check(p1.mode === 'paused' && p1.chip && still && p2.step === p1.step && p2.loops > p1.loops,
+    `manual orbit pauses the automatic camera ("Auto camera paused" + Refocus shown); view kept while the step keeps looping (${p1.mode}, still ${still}, loops ${p1.loops}→${p2.loops})`);
+  await page.click('#cam-refocus');
+  const re = await waitFor(page, () => app.cameraCtl.mode === 'auto' && document.getElementById('cam-chip').hidden && !app.cameraCtl.tween, null, 20000);
+  check(re, 'Refocus restores the recommended view of the current step');
+  await page.mouse.move(vp.x, vp.y); await page.mouse.wheel(0, -300); await page.waitForTimeout(300);
+  const zoomPaused = await page.evaluate(() => app.cameraCtl.mode);
+  await page.click('#btn-next');
+  const resumed = await page.evaluate(() => ({ mode: app.cameraCtl.mode, goal: app.cameraCtl.goal.pos, pos: app.seq.pos, src: app.state.get('lastNavigation').source }));
+  check(zoomPaused === 'paused' && resumed.mode === 'auto' && resumed.goal === resumed.pos, 'zooming pauses it too; NEXT STEP resumes automatic focus on the new step');
+
+  // every navigation input moves the camera through the same path
+  const inputs = [];
+  await page.keyboard.press('ArrowRight'); inputs.push(await page.evaluate(() => [app.state.get('lastNavigation').source, app.cameraCtl.goal.pos === app.seq.pos]));
+  await page.click('#btn-prev'); inputs.push(await page.evaluate(() => [app.state.get('lastNavigation').source, app.cameraCtl.goal.pos === app.seq.pos]));
+  await page.click('#btn-gestures'); await page.click('#gp-toggle');
+  await waitFor(page, () => app.gestures.status.phase === 'on', null, 15000);
+  const before = await page.evaluate(() => app.seq.pos);
+  await page.evaluate((h) => { window.__fakeHands = h; }, [hand('thumb_up.jpg')]);
+  await waitFor(page, (b) => app.seq.pos === b + 1, before, 30000);
+  await page.evaluate(() => { window.__fakeHands = []; });
+  inputs.push(await page.evaluate(() => [app.state.get('lastNavigation').source, app.cameraCtl.goal.pos === app.seq.pos]));
+  await page.click('#gp-toggle');
+  check(inputs.every((x) => x[1]) && inputs.map((x) => x[0]).join(',') === 'key,button,gesture', `camera follows every input: ${inputs.map((x) => x[0]).join(', ')}`);
+
+  // narration once per step, loop never advances, with the camera running
+  await page.evaluate(() => app.seq.goTo(30));
+  const loopOk = await waitFor(page, () => app.seq.loopCount >= 2, null, 90000);
+  const lo = await page.evaluate(() => ({ pos: app.seq.pos, spoken: __speechLog.filter((x) => x.t === 'speak' && x.text === app.narrator.chunks[0]).length }));
+  check(loopOk && lo.pos === 30 && lo.spoken === 1, 'with the camera active the loop still never advances and the narration is spoken once');
+
+  // turn the automatic camera off: steps no longer move the view; setting persists
+  await page.click('#tool-focus');
+  const offPos = await page.evaluate(() => app.viewer.camera.position.toArray());
+  await page.click('#btn-next');
+  await page.waitForTimeout(1500);
+  const off = await page.evaluate((p0) => ({ mode: app.cameraCtl.mode, same: app.viewer.camera.position.toArray().every((v, i) => Math.abs(v - p0[i]) < 1e-3), saved: localStorage.getItem('mf550.camera.auto') }), offPos);
+  await page.click('#tool-focus');
+  const on = await page.evaluate(() => app.cameraCtl.mode);
+  check(off.mode === 'off' && off.same && off.saved === 'false' && on === 'auto', 'Auto camera toggle: off keeps the view on step changes (saved), on refocuses');
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+}
+
+async function testARCapabilities(browser) {
+  console.log('\n[10] AR capability detection (Chrome) and camera overlay');
+  const { page, errors } = await openApp(browser, speechMock() + fakeTracker);
+  const det = await page.evaluate(async () => {
+    const { detectAR, arErrorText } = await import('./js/ar/ARSupport.js');
+    const nav = (o) => ({
+      userAgent: o.ua, userAgentData: o.brands ? { brands: o.brands.map((b) => ({ brand: b })) } : undefined, platform: o.platform || '', maxTouchPoints: o.touch || 0,
+      xr: o.xr === undefined ? undefined : { isSessionSupported: async () => o.xr },
+      permissions: { query: async () => ({ state: o.cam || 'prompt' }) },
+      mediaDevices: { getUserMedia: () => {} },
+    });
+    const doc = (o) => ({ createElement: () => ({ relList: { supports: (t) => !!o.ql && t === 'ar' } }), permissionsPolicy: { allowsFeature: () => o.policy !== false } });
+    const win = (o) => ({ isSecureContext: o.secure !== false });
+    const run = async (o) => { const r = await detectAR({ nav: nav(o), doc: doc(o), win: win(o) }); return `${r.mode}/${r.state}: ${r.reason}`; };
+    const androidChrome = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Mobile Safari/537.36';
+    const deskChrome = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36';
+    const iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1';
+    return {
+      androidOk: await run({ ua: androidChrome, brands: ['Google Chrome'], xr: true }),
+      androidDenied: await run({ ua: androidChrome, brands: ['Google Chrome'], xr: true, cam: 'denied' }),
+      androidPolicy: await run({ ua: androidChrome, brands: ['Google Chrome'], xr: true, policy: false }),
+      androidNoArcore: await run({ ua: androidChrome, brands: ['Google Chrome'], xr: false }),
+      desktopChrome: await run({ ua: deskChrome, brands: ['Google Chrome'], xr: false }),
+      iphone: await run({ ua: iphone, ql: true }),
+      insecure: await run({ ua: androidChrome, brands: ['Google Chrome'], xr: true, secure: false }),
+      err: arErrorText({ name: 'NotAllowedError' }, 'Chrome'),
+    };
+  });
+  for (const [k, v] of Object.entries(det)) console.log(`    ${k.padEnd(15)} ${v.slice(0, 120)}`);
+  check(det.androidOk.startsWith('webxr/supported') && det.androidDenied.startsWith('webxr/needs-permission') && det.androidPolicy.startsWith('webxr/needs-permission')
+    && det.androidNoArcore.startsWith('none/unavailable') && /ARCore/.test(det.androidNoArcore) && det.desktopChrome.startsWith('none/unavailable') && /phone or tablet/.test(det.desktopChrome)
+    && det.iphone.startsWith('quicklook/supported') && det.insecure.startsWith('webxr/unavailable') && /HTTPS/.test(det.insecure) && /allow camera access/.test(det.err),
+  'states: supported (Android Chrome + ARCore), needs-permission (camera denied / embedded), unavailable with reason (no ARCore, desktop Chrome, no HTTPS), Quick Look on iPhone');
+
+  // this headless desktop Chromium: no immersive AR → never presented as AR
+  const ui = await page.evaluate(() => ({ state: document.getElementById('btn-ar').dataset.ar, label: document.getElementById('btn-ar-label').textContent, title: document.getElementById('btn-ar').title }));
+  await page.click('#btn-ar');
+  await page.waitForSelector('#ar-dialog[open]');
+  const dlg = await page.evaluate(() => ({ text: document.getElementById('ar-dialog-body').innerText, overlay: !!document.getElementById('ar-overlay-start') }));
+  check(ui.state === 'unavailable' && ui.label !== 'View in AR' && /no AR tracking|no WebXR AR/.test(ui.title) && /not available here/.test(dlg.text) && dlg.overlay,
+    `unsupported browser: button "${ui.label}" (grey) with the reason; dialog explains and offers the camera overlay`);
+
+  // camera overlay fallback: labelled "not AR", pauses gesture tracking, resumes after
+  await page.click('#ar-dialog [value=close]');
+  await page.click('#btn-gestures'); await page.click('#gp-toggle');
+  await waitFor(page, () => app.gestures.status.phase === 'on', null, 15000);
+  await page.click('#btn-ar'); await page.waitForSelector('#ar-dialog[open]');
+  await page.click('#ar-overlay-start');
+  const ov = await waitFor(page, () => app.cameraView.active && !document.getElementById('overlay-video').paused, null, 15000);
+  const o = await page.evaluate(() => ({
+    banner: document.getElementById('overlay-banner').innerText, btn: document.getElementById('btn-ar').dataset.ar,
+    g: app.gestures.status.phase + '/' + app.gestures.status.reason, xr: app.viewer.renderer.xr.isPresenting,
+  }));
+  await page.click('#btn-next');
+  const nav = await page.evaluate(() => app.seq.pos);
+  await page.click('#overlay-exit');
+  const back = await waitFor(page, () => !app.cameraView.active && app.gestures.status.phase === 'on', null, 15000);
+  check(ov && /not AR/.test(o.banner) && o.btn === 'overlay' && o.g === 'paused/overlay' && !o.xr && nav === -1 && back,
+    `camera overlay: camera picture behind the 3D view, labelled "not AR", gestures paused and resumed, navigation works (${JSON.stringify({ ov, banner: o.banner.slice(0, 40), btn: o.btn, g: o.g, xr: o.xr, nav, back })})`);
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+}
+
+async function testBrandingAndBom(browser) {
+  console.log('\n[11] Mist-Fit 550 branding, hidden source file name, BOM without item numbers');
+  const { page, errors } = await openApp(browser, speechMock());
+  const OLD = 'MF-550-210-B', FILE = 'MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP';
+  const visible = () => page.evaluate(() => {
+    const attrs = [...document.querySelectorAll('*')].flatMap((e) => ['title', 'aria-label', 'alt', 'placeholder'].map((a) => e.getAttribute(a) || ''));
+    const dialogs = [...document.querySelectorAll('dialog')].map((d) => d.textContent);
+    return [document.title, document.body.innerText, ...attrs, ...dialogs].join('\n');
+  });
+  const texts = [];
+  const brand = await page.evaluate(() => ({ title: document.title, head: document.getElementById('product-title').textContent, overview: document.getElementById('step-title').textContent, speech: app.narrator.text || '' }));
+  texts.push(await visible());
+  for (const k of [0, 10, 20, 50, 68]) { await page.evaluate((k) => app.seq.goTo(k), k); await page.waitForTimeout(200); texts.push(await visible()); }
+  // details of a top-level row and of a part instance, the AR dialog and help
+  await page.evaluate(() => app.select({ row: app.model.rowByItem.get('1') }));
+  texts.push(await visible());
+  await page.evaluate(() => app.select({ row: app.model.rowByItem.get('1.1.2'), partId: app.model.rowByItem.get('1.1.2').nodes[0] }));
+  texts.push(await visible());
+  const all = texts.join('\n');
+  check(brand.title.startsWith('Mist-Fit 550') && brand.head === 'Mist-Fit 550' && /Mist-Fit 550/.test(brand.overview) && !all.includes(OLD),
+    `visible name "Mist-Fit 550" (tab title, header, overview, details path); "${OLD}" not shown anywhere`);
+  check(!all.includes(FILE) && !/MIST_FIT|\.STEP\b/.test(all), 'the STEP source file name is not shown (viewer, panels, dialogs, tooltips)');
+
+  const bom = await page.evaluate(() => {
+    const t = document.getElementById('bom-table');
+    const head = [...t.querySelectorAll('th')].map((x) => x.textContent);
+    const rows = [...t.querySelectorAll('tbody tr')];
+    const hier = /(^|\s)\d+(\.\d+)+(\s|$)/;
+    return {
+      head, items: rows.filter((r) => hier.test(r.innerText)).length, rows: rows.length, cItem: t.querySelectorAll('.c-item').length,
+      card: document.getElementById('step-components').textContent, detailsHead: document.getElementById('details-item').textContent,
+      callouts: [...document.querySelectorAll('.callout-label')].map((c) => c.textContent).join(' | '),
+      parts: [...document.querySelectorAll('#parts-table tbody tr')].filter((r) => hier.test(r.innerText)).length,
+      dataItems: rows.filter((r) => r.dataset.item).length, rowByItem: app.model.rowByItem.size,
+      nested: app.model.bom.filter((r) => r.item.split('.').length > 2).length, parents: app.model.bom.filter((r) => r.parent).length,
+    };
+  });
+  check(bom.head.join('|') === 'Component|Qty|Step' && bom.items === 0 && bom.cItem === 0 && bom.parts === 0
+    && !/\d+\.\d+\.\d+|BOM item/.test(bom.card + bom.detailsHead + bom.callouts) && !/^Item /.test(bom.detailsHead),
+  `no hierarchical item numbers in the BOM (${bom.rows} rows), parts list, step card, details or balloons — columns: ${bom.head.join(' / ')}`);
+  check(bom.dataItems === 78 && bom.rowByItem === 78 && bom.nested > 0 && bom.parents > 0,
+    `internal structure intact: ${bom.rowByItem} BOM rows keyed by item, ${bom.nested} nested rows, parent links, part numbers unchanged`);
+  // selection, highlight and step sync still work from the BOM
+  await page.click('#bom-table tr[data-item="1.1.4"]');
+  const sel = await page.evaluate(() => ({ sel: app.state.get('selection'), title: document.getElementById('details-title').textContent, hi: [...app.selection.partSet].length }));
+  await page.click('#details-goto');
+  const go = await page.evaluate(() => ({ pos: app.seq.pos, cur: document.querySelector('#bom-table tr.is-current')?.dataset.item }));
+  check(sel.sel === '1.1.4' && sel.title === 'Filter Element Track' && sel.hi === 1 && go.pos === 6 && go.cur === '1.1.4',
+    `BOM row click selects + highlights "${sel.title}"; "Go to step" → step ${go.pos + 1}, BOM row current`);
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
 }
 
@@ -661,6 +937,9 @@ async function testAR(browser) {
     if (run('integration')) await testIntegration(browser);
     if (run('gestures')) await testGestures(browser);
     if (run('ar')) await testAR(browser);
+    if (run('camera')) await testCamera(browser);
+    if (run('archrome')) await testARCapabilities(browser);
+    if (run('branding')) await testBrandingAndBom(browser);
   } finally {
     await browser.close();
     if (server) server.kill();
