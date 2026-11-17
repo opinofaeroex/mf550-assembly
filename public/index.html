@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>MF-550-210-B · Interactive Assembly Instructions</title>
-  <meta name="description" content="Interactive exploded-view assembly instructions and BOM with WebAR for the MF-550-210-B assembly.">
+  <title>Mist-Fit 550 · Interactive Assembly Instructions</title>
+  <meta name="description" content="Mist-Fit 550: interactive exploded-view assembly instructions, BOM and WebAR.">
   <meta name="theme-color" content="#10151b">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff7a1a'/%3E%3Cpath d='M9 22V10l7 5 7-5v12' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/app.css">
@@ -50,7 +50,7 @@
           <svg viewBox="0 0 32 32"><path d="M9 22V10l7 5 7-5v12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>
         </div>
         <div class="brand-text">
-          <span class="brand-title" id="product-title">Assembly</span>
+          <span class="brand-title" id="product-title">Mist-Fit 550</span>
           <span class="brand-sub">Interactive assembly instructions · BOM · WebAR</span>
         </div>
       </div>
@@ -58,8 +58,8 @@
       <div class="topbar-actions">
         <button class="btn btn-ghost" id="btn-gestures" title="Gesture control: right-hand thumbs up / down" aria-expanded="false" aria-controls="gesture-panel"><svg><use href="#i-hand"/></svg><span class="hide-sm">Gestures</span></button>
         <button class="btn btn-ghost icon-only" id="btn-help" title="Help &amp; shortcuts" aria-label="Help"><svg><use href="#i-help"/></svg></button>
-        <button class="btn btn-accent" id="btn-ar" title="View in augmented reality" disabled>
-          <svg><use href="#i-ar"/></svg><span>View in AR</span>
+        <button class="btn btn-accent btn-ar" id="btn-ar" title="Checking AR support…" data-ar="checking" disabled>
+          <svg><use href="#i-ar"/></svg><span id="btn-ar-label">View in AR</span><i class="ar-dot" aria-hidden="true"></i>
         </button>
       </div>
     </header>
@@ -67,7 +67,12 @@
     <main class="layout">
       <section class="viewport" aria-label="3D assembly view">
        <div class="view-area" id="viewport">
+        <video class="overlay-video" id="overlay-video" muted playsinline hidden aria-hidden="true"></video>
         <div class="callout-layer" id="callout-layer" aria-hidden="true"></div>
+        <div class="overlay-banner" id="overlay-banner" role="status" hidden>
+          <span><b>Camera overlay — not AR.</b> The model is drawn over the camera picture; it is not anchored to your surroundings.</span>
+          <button class="btn btn-small" id="overlay-exit">Exit camera view</button>
+        </div>
 
         <div class="step-card" id="step-card" aria-live="polite">
           <div class="step-card-head">
@@ -95,10 +100,15 @@
 
         <div class="viewport-tools" role="toolbar" aria-label="View options">
           <button class="tool" id="tool-frame" title="Frame model (F)" aria-label="Frame model"><svg><use href="#i-frame"/></svg></button>
-          <button class="tool is-on" id="tool-focus" title="Auto-focus camera on each step" aria-pressed="true" aria-label="Auto-focus"><svg><use href="#i-focus"/></svg></button>
+          <button class="tool is-on" id="tool-focus" title="Automatic camera: follows each step (click to turn off)" aria-pressed="true" aria-label="Automatic camera"><svg><use href="#i-focus"/></svg></button>
           <button class="tool is-on" id="tool-ghost" title="Ghost parts not yet installed (G)" aria-pressed="true" aria-label="Ghost future parts"><svg><use href="#i-ghost"/></svg></button>
           <button class="tool is-on" id="tool-edges" title="Show CAD edges" aria-pressed="true" aria-label="Edges"><svg><use href="#i-edges"/></svg></button>
           <button class="tool" id="tool-isolate" title="Isolate selection (I)" aria-pressed="false" aria-label="Isolate selection"><svg><use href="#i-isolate"/></svg></button>
+        </div>
+
+        <div class="cam-chip" id="cam-chip" role="status" hidden>
+          <svg><use href="#i-focus"/></svg><span>Auto camera paused: you moved the view</span>
+          <button class="btn btn-small" id="cam-refocus" title="Return to the recommended view of this step (C)">Refocus</button>
         </div>
 
         <section class="gesture-panel" id="gesture-panel" hidden aria-label="Gesture control">
@@ -177,11 +187,11 @@
         </div>
         <div class="panel-scroll" id="panel-scroll">
           <table class="bom" id="bom-table" data-panel="bom">
-            <thead><tr><th class="c-item">Item</th><th class="c-pn">Part number / name</th><th class="c-qty">Qty</th><th class="c-step">Step</th></tr></thead>
+            <thead><tr><th class="c-pn">Component</th><th class="c-qty">Qty</th><th class="c-step">Step</th></tr></thead>
             <tbody></tbody>
           </table>
           <table class="bom" id="parts-table" data-panel="parts" hidden>
-            <thead><tr><th class="c-pn">Part number / name</th><th class="c-qty">Total</th><th class="c-step">Used in</th></tr></thead>
+            <thead><tr><th class="c-pn">Component</th><th class="c-qty">Total</th><th class="c-step">Step</th></tr></thead>
             <tbody></tbody>
           </table>
           <ol class="steps-list" id="steps-list" data-panel="steps" hidden></ol>
@@ -250,10 +260,12 @@
           <tr><td><kbd>E</kbd></td><td>Toggle exploded view</td></tr>
           <tr><td><kbd>R</kbd></td><td>Back to the overview</td></tr>
           <tr><td><kbd>F</kbd></td><td>Frame model</td></tr>
+          <tr><td><kbd>C</kbd></td><td>Refocus the automatic camera on the current step</td></tr>
           <tr><td><kbd>G</kbd></td><td>Ghost parts not yet installed</td></tr>
           <tr><td><kbd>I</kbd></td><td>Isolate selection</td></tr>
           <tr><td><kbd>Esc</kbd></td><td>Clear selection</td></tr>
         </table>
+        <p><b>Automatic camera:</b> on every step the view moves close to the components being fitted. Orbit, pan or zoom whenever you like — the automatic camera then pauses until the next step or until you press <b>Refocus</b> (<kbd>C</kbd>). Turn it off with the target button in the view tools.</p>
         <p>Click a part in 3D or a row in the BOM to select it. Drag to orbit, right-drag / two-finger drag to pan, scroll / pinch to zoom.</p>
         <p class="muted" id="help-data-note"></p>
       </div>
