@@ -1,12 +1,12 @@
-# MF-550-210-B — WebAR Assembly Instructions
+# Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.2** (hands-free right-hand gesture navigation, named components from the new STEP file, short instructions, looping step animation — see [§ 0](#0-whats-new-in-version-12))
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.3** (AR straight from Chrome, automatic close-up camera for every step, Mist-Fit 550 branding, simpler BOM — see [§ 0](#0-whats-new-in-version-13))
 
-Interactive, browser-based assembly instructions generated directly from the CAD model
-`MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP`: animated exploded view, step-by-step assembly
-sequence explained by voice, an indented Bill of Materials synchronised with the 3D view,
-hands-free navigation with a right-hand thumbs up / down, and an augmented-reality mode
-for phones and tablets.
+Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
+CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
+moves close to the components of every step, step-by-step assembly sequence explained by voice, a
+Bill of Materials synchronised with the 3D view, hands-free navigation with a right-hand thumbs up /
+down, and an augmented-reality mode for phones and tablets.
 
 ![Overview](docs/screenshots/01-overview.png)
 
@@ -18,11 +18,62 @@ for phones and tablets.
 |---|---|
 | ![Details](docs/screenshots/04-selection-details.png) | ![Mobile](docs/screenshots/05-mobile.png) |
 
-*Screenshots show version 1.0; v1.1 replaces the Play button with **PREVIOUS STEP / NEXT STEP**, adds the narration bar to the step card and uses a 3× exploded distance; v1.2 adds component names, the **Gestures** panel and the status chip.*
+*Screenshots show version 1.0; v1.1 replaces the Play button with **PREVIOUS STEP / NEXT STEP**, adds the narration bar to the step card and uses a 3× exploded distance; v1.2 adds component names, the **Gestures** panel and the status chip; v1.3 shows the name **Mist-Fit 550**, a BOM without item numbers, the AR status dot and the close-up camera.*
 
 ---
 
-## 0. What's new in version 1.2
+## 0. What's new in version 1.3
+
+| Feature | Behaviour |
+|---|---|
+| **AR straight from Chrome** | The **View in AR** button checks what this browser and device can really do and shows it with a status dot: 🟢 *supported* (starts WebXR AR immediately — Chrome on an ARCore Android phone), 🟡 *needs permission* (camera blocked for the site, or the page is embedded without AR permission — the dialog says what to allow and offers *Try AR again*), ⚪ *unavailable* (the button reads **AR options** and the dialog says why: desktop computer, no ARCore, not HTTPS…), 🔵 *active* while an AR session or the camera overlay runs. AR is never shown as available when the session cannot start. |
+| **Camera overlay (not AR)** | Fallback for browsers without immersive AR (desktop Chrome with a webcam, phones without ARCore): the camera picture is shown behind the 3D model. It is labelled *“Camera overlay — not AR”*: there is no tracking and the model is not anchored to the room. Navigation, narration, BOM and the automatic camera keep working. |
+| **One camera at a time** | WebXR AR, the camera overlay and gesture tracking never open the camera together: gesture tracking pauses when AR or the overlay starts and resumes when they end (if gesture control is still on). |
+| **Automatic close-up camera** | On every step the 3D camera moves smoothly to the components that step installs, chosen from the geometry (see below). Orbit, pan or zoom at any time: the automatic camera then pauses (*“Auto camera paused — Refocus”*) until the next step or until you press **Refocus** / <kbd>C</kbd>. The target button in the view tools turns it on / off (remembered). |
+| **Mist-Fit 550** | The interface shows the product name **Mist-Fit 550** (tab title, header, overview, details, AR files). The STEP source file name is no longer displayed anywhere; internal identifiers (`MF-550-210-B`, part numbers, file names) are unchanged. |
+| **Simpler BOM** | The hierarchical ITEM numbers (1.1.1, 1.1.2 …) are gone from the BOM, parts list, step card, details and 3D balloons. Components are identified by their names (part numbers below them); the tree indentation still shows the structure. Internally every row keeps its item key, parent link and part number, so selection, highlighting, steps and camera targets are unchanged. |
+| **Smoother animation** | Fix: animation phases now start from where the previous phase left the parts. Each loop cycle moves the step's parts out *and* back in, and PREVIOUS STEP removes a part without first snapping it back. |
+
+### How the automatic camera works
+
+`public/js/scene/CameraController.js` — one plan per step, computed from data, never hand-placed:
+
+1. **Components** — the nodes listed in `assembly.json` for the step (`steps[k].nodes`) and their parts' meshes.
+   Nothing is guessed: no step without components exists, and none needs a manual target.
+2. **Focus region** — the components at their final (CAD) position plus the last part of their approach path
+   (≤ 22 cm or 1.2 × their size) so the looping motion is visible; never smaller than a 7 cm sphere, so small
+   hardware keeps its context. Several components → one region that contains them all (zooms out as needed).
+3. **Viewpoint** — 60 candidate directions are scored by *sight lines* from the components' surface to the
+   camera, tested against the triangles of all parts that are drawn solid at that step (ghosted parts do not
+   block), by a view *across* the install direction, by a natural elevation (≈ 30° above) and by the
+   smallest turn from the current view. So the camera moves round to reveal hidden mounting points and looks
+   from below for parts fitted from below.
+4. **Distance** — fits the region into the part of the view that the step card does not cover.
+5. **Motion** — the camera orbits to the new view (0.9–1.6 s, ease-in-out; instant with *reduced motion*)
+   and then follows the model while it settles; it never changes the step.
+
+Plans are evaluated a few milliseconds per frame in the background (current step first, then its
+neighbours, then all), so the 3D view never stutters. Tunables: `CONFIG.camera` in `public/js/config.js`.
+The review of all 69 steps is in [`docs/camera-review.md`](docs/camera-review.md): every step has a target
+from its own components; **6 steps (10, 15, 29, 54, 64, 65)** fit parts *inside* the housing, so no outside
+view has a clear line of sight — they are framed and the x-ray highlight shows the parts; they are listed
+there for manual review.
+
+### Browser and device requirements (v1.3)
+
+| Device / browser | 3D viewer + automatic camera | AR | Camera overlay | Gestures |
+|---|---|---|---|---|
+| Android phone / tablet with ARCore, **Chrome** 81+ | ✓ | **WebXR** (floor placement, 1:1) | ✓ | ✓ (paused during AR) |
+| Android without ARCore / other browsers | ✓ | ✗ — reason shown | ✓ | ✓ |
+| **Desktop Chrome / Edge** (Windows, macOS, Linux) | ✓ | ✗ — computers have no AR tracking | ✓ with a webcam | ✓ |
+| iPhone / iPad, Safari | ✓ | **AR Quick Look** (USDZ) | ✓ | ✓ |
+| iPhone / iPad, Chrome | ✓ | Quick Look when iOS allows it, otherwise reason shown | ✓ | ✓ |
+
+All camera features need HTTPS (the GitHub Pages site is HTTPS).
+
+---
+
+## 0.1 What's new in version 1.2
 
 | Feature | Behaviour |
 |---|---|
@@ -75,7 +126,7 @@ for phones and tablets.
 
 ---
 
-## 0.1 What's new in version 1.1
+## 0.2 What's new in version 1.1
 
 | Feature | Behaviour |
 |---|---|
@@ -189,7 +240,8 @@ mf550-webar/
 │   │   ├── scene/Sequencer.js      step state machine (manual NEXT / PREVIOUS, animations)
 │   │   ├── scene/Appearance.js     active / ghost / selected materials, X-ray, CAD edges
 │   │   ├── scene/Picker.js         3D picking (mouse, touch, XR rays)
-│   │   ├── scene/Callout.js        technical-drawing balloons (item numbers)
+│   │   ├── scene/Callout.js        technical-drawing balloons (component names)
+│   │   ├── scene/CameraController.js automatic close-up camera for every step                  (v1.3)
 │   │   ├── ui/BomPanel.js          indented BOM, parts list, step list, search
 │   │   ├── ui/NarrationControls.js play/pause/resume, replay, mute, voice settings           (v1.1)
 │   │   ├── ui/Details.js           component data sheet
@@ -202,7 +254,8 @@ mf550-webar/
 │   │   │   ├── GestureTrigger.js   stabilisation, one action per gesture, cooldown, neutral      (v1.2)
 │   │   │   └── GestureController.js camera → tracker → right hand → classifier → trigger events  (v1.2)
 │   │   └── ar/
-│   │       ├── ARSupport.js        AR capability detection
+│   │       ├── ARSupport.js        AR capability detection: supported / needs permission / unavailable (v1.3)
+│   │       ├── CameraOverlay.js    camera picture behind the 3D view — fallback, not AR          (v1.3)
 │   │       ├── WebXRSession.js     markerless WebXR AR (hit-test, gestures, DOM overlay)
 │   │       └── QuickLook.js        iOS AR Quick Look (USDZ of the current step or full sequence)
 │   ├── vendor/three/               three.js r187 (MIT), minified, only the modules used
@@ -221,6 +274,7 @@ mf550-webar/
 │   └── build-usdz.cjs              pre-builds the animated USDZ (headless browser)
 ├── tests/smoke.cjs                 end-to-end checks incl. emulated WebXR session and gestures
 ├── tests/fixtures/hand-landmarks.json  real MediaPipe landmarks of public test images (v1.2)
+├── docs/camera-review.md          camera targets of all 69 steps (generated)                  (v1.3)
 └── docs/screenshots/
 ```
 
@@ -381,7 +435,7 @@ own sequence, reorder `steps` in `assembly.json` (each step lists its `nodes`) �
 | **Android** phone/tablet with ARCore (Google Play Services for AR), **Chrome** ≥ 83 (other Chromium browsers with WebXR AR, e.g. Samsung Internet) | **WebXR** `immersive-ar` + `hit-test` + `dom-overlay` | Full: floor/table detection, tap to place at **real size 1:1**, 1-finger rotate, 2-finger move & pinch scale (5–300 %, quick 1:1/1:2/1:4 button), PREVIOUS / NEXT, narration play/pause and mute, explode toggle in AR, tap a part → BOM data in the overlay, re-place button. Gesture control pauses during the AR session (ARCore uses the camera) and resumes afterwards. With the 3× exploded view the parts kit spans several metres at 1:1 — use 1:2 or 1:4 indoors |
 | **Meta Quest** Browser (passthrough) | WebXR `immersive-ar` + `hit-test` | Place with the controller trigger; same sequencer. (No DOM overlay on Quest: use the controller to place, the step runs from the page) |
 | **iPhone / iPad**, Safari (iOS 12+) | **AR Quick Look** (ARKit) | Apple does not support WebXR in Safari. The app generates a USDZ on the device: **the current step** (its motion loops — use it to stay step-by-step) or the **full sequence** (≈ 97 s); ARKit handles placement, scaling and rotation. Narration, BOM and NEXT / PREVIOUS stay in the web page |
-| Desktop browsers | — | Full 3D viewer with narration. The AR dialog lists the checks and offers the link and USDZ downloads (current step / full sequence) |
+| Desktop browsers | — | Full 3D viewer with narration and automatic camera. **AR options** explains why there is no AR here and offers the **camera overlay (not AR)**, the link and USDZ downloads (current step / full sequence) |
 
 Tracking method: markerless plane detection (ARCore/ARKit). Marker-based libraries (AR.js, MindAR)
 were not used: they need a printed target, give less stable scale and add dependencies; WebXR gives
@@ -412,7 +466,7 @@ npm test
 ```
 
 Headless Chromium has no voices, so the suite replaces the Web Speech API with a deterministic in-page
-mock that logs every speak / start / end / cancel (the app code is unchanged). 61 checks:
+mock that logs every speak / start / end / cancel (the app code is unchanged). 84 checks:
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
 * **3× exploded view** — all 208 displacement vectors (hardware, parts, sub-assemblies) are exactly 3× the
@@ -436,8 +490,22 @@ mock that logs every speak / start / end / cancel (the app code is unchanged). 6
   once and stop the previous narration, left hand ignored, swap option, gesture during an animation,
   boundaries, button and gesture share `App.next()`, disable releases the camera, permission denied and no
   camera API leave the buttons working.
+* **Automatic camera (v1.3)** — targets for all 69 steps from `steps[k].nodes`; ≥ 8 different viewpoints;
+  first / single part / fasteners / large part / sub-assembly / motor area / spread rivets / final step: every
+  component inside the uncovered view; smooth orbit (no jumps); a full loop cycle goes out and back, PREVIOUS
+  without snap-back; orbit and zoom pause it, Refocus and the next step resume it; it follows button, key and
+  gesture navigation; narration still once per step; on/off toggle remembered.
+* **AR in Chrome (v1.3)** — capability states for Android Chrome with / without ARCore, camera denied,
+  embedded page, desktop Chrome, iPhone, non-HTTPS; unsupported browser shows *AR options* with the reason;
+  camera overlay with Chromium's fake camera (labelled *not AR*, gestures paused and resumed); WebXR session
+  shows *AR active* and hands the camera to the device.
+* **Branding & BOM (v1.3)** — *Mist-Fit 550* in title, header, overview and details; neither `MF-550-210-B` nor
+  the STEP file name in any visible text, tooltip or dialog; no hierarchical item numbers in the BOM, parts
+  list, step card, details or balloons; 78 internal item keys, parent links and part numbers intact; BOM row
+  selection, highlight and *Go to step* work.
 
-`ONLY=gestures npm test` runs one section (`viewer`, `navigation`, `integration`, `gestures`, `ar`).
+`ONLY=gestures npm test` runs one section (`viewer`, `navigation`, `integration`, `gestures`, `ar`, `camera`,
+`archrome`, `branding`).
 The suite replaces MediaPipe with a scripted tracker (real landmark fixtures), so it runs without the
 network. The real library and model are checked on the deployed site in a desktop browser: both load over
 HTTPS, the Hand Landmarker labels MediaPipe's own `thumb_up.jpg` test image as a *Right* hand and the
@@ -453,7 +521,7 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 * Real hardware devices were not available in this environment: the AR flow was verified with WebXR
   emulation (IWER) and the USDZ was generated and inspected, but not opened on a physical iPhone/Android device. Test on target hardware before release.
 * Quick Look shows the animation only; per-step navigation, narration and BOM interaction are web-only on iOS.
-* Narration voice quality depends on the browser (see § 0.1). Only Microsoft Edge's online "Natural" voices
+* Narration voice quality depends on the browser (see § 0.2). Only Microsoft Edge's online "Natural" voices
   are neural; the app does not include a cloud neural TTS service. The first narration after opening the
   page waits for one click/tap (browser autoplay policy).
 * The README screenshots were taken with version 1.0.
@@ -463,11 +531,24 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
   matter. The thumb direction is judged against the camera image, so keep the phone / webcam upright.
 * Gesture control and WebXR AR do not run at the same time (one camera); Quick Look on iOS pauses it too.
 * MediaPipe and its model are loaded from jsDelivr and Google's model storage on first use (≈ 4 MB library
-  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0).
+  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0.1).
 * Sub-assembly names are derived from their largest part — the STEP files contain no sub-assembly names.
+* WebXR AR was verified with the Immersive Web Emulation Runtime and the capability logic with simulated
+  Android / desktop / iPhone browsers, not on a physical ARCore phone in this environment.
+* Automatic camera: 6 steps fit parts inside the housing (no clear outside view — x-ray highlight; listed in
+  `docs/camera-review.md`). Long approach paths start outside the close-up and enter the view.
+* The camera overlay is not AR (no tracking); on a computer it uses the same webcam as gesture control, so
+  gesture tracking pauses while it is open.
 
 ## Changelog
 
+* **1.3** — Visible product name **Mist-Fit 550** (STEP file name no longer displayed); BOM, parts list,
+  step card, details and balloons without hierarchical item numbers (internal keys unchanged); AR button with
+  capability states (supported / needs permission / unavailable / active) and direct WebXR start in Chrome;
+  camera-overlay fallback labelled *not AR*; one camera user at a time (AR, overlay, gestures); automatic
+  close-up camera for every step (`CameraController`, sight-line tests on the CAD triangles, manual override,
+  Refocus, on/off); fix: animation phases start from the current pose (loop out *and* in every cycle, no
+  snap-back on PREVIOUS); `docs/camera-review.md`; tests extended.
 * **1.2** — New authoritative STEP `MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP` (same geometry, named
   components; hierarchy and part numbers kept through a verified structure map); component names in BOM,
   card, balloons and voice; short step titles and one-line instructions spoken exactly as displayed;
