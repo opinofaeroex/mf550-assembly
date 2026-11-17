@@ -1,6 +1,6 @@
 # Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.3** (AR straight from Chrome, automatic close-up camera for every step, Mist-Fit 550 branding, simpler BOM — see [§ 0](#0-whats-new-in-version-13))
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.4** (natural neural-voice narration, AEROEX Technologies branding — see [§ 0](#0-whats-new-in-version-14)) · by **AEROEX Technologies**
 
 Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
 CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
@@ -18,11 +18,110 @@ down, and an augmented-reality mode for phones and tablets.
 |---|---|
 | ![Details](docs/screenshots/04-selection-details.png) | ![Mobile](docs/screenshots/05-mobile.png) |
 
-*Screenshots show version 1.0; v1.1 replaces the Play button with **PREVIOUS STEP / NEXT STEP**, adds the narration bar to the step card and uses a 3× exploded distance; v1.2 adds component names, the **Gestures** panel and the status chip; v1.3 shows the name **Mist-Fit 550**, a BOM without item numbers, the AR status dot and the close-up camera.*
+*Screenshots show version 1.0; v1.4 adds the AEROEX symbol in the header and the natural voice; v1.1 replaces the Play button with **PREVIOUS STEP / NEXT STEP**, adds the narration bar to the step card and uses a 3× exploded distance; v1.2 adds component names, the **Gestures** panel and the status chip; v1.3 shows the name **Mist-Fit 550**, a BOM without item numbers, the AR status dot and the close-up camera.*
 
 ---
 
-## 0. What's new in version 1.3
+## 0. What's new in version 1.4
+
+| Feature | Behaviour |
+|---|---|
+| **Natural voice** | Every position (overview, parts kit, 69 steps, completion) is narrated by a **neural text-to-speech voice**: *Heart*, US English, from the open **Kokoro-82M** model. The 72 recordings are pre-generated MP3 files (7.7 min, 2.8 MB) served by GitHub Pages, so there are no API keys and no speech service at runtime. |
+| **Spoken script** | The voice no longer reads the card's title *and* instruction (which say the same thing twice). It says the operation once, phrased to be heard (`public/js/audio/spokenScript.js`), e.g. *"Step 35. Fit the first of three perforated filter baffles to the filter frame half sub-assembly."* Component, quantity, target, direction and repeat notes come from the same step facts as the card (`ui/text.js stepFacts`), and the tests check that both match for all 69 steps. Nothing is invented: no torques, tools or safety statements. |
+| **Pronunciation** | A separate pronunciation layer keeps the on-screen names untouched. Spoken aliases (`SPOKEN_ALIASES`, e.g. *Mist-Fit 550* → "Mist-Fit five fifty") and an IPA lexicon for the natural voice (`tools/narration/lexicon.json`: *Mist-Fit*, *bellmouth*, *enclosure*). |
+| **Synchronisation** | Unchanged contract: the narration starts when you enter a step, stops at once when you leave it, plays once per step (the looping animation never restarts it) and never advances the step. Buttons, keys, AR overlay and gestures share the same navigation path. Rapid navigation can never play an outdated recording: each start carries a token, and late downloads are aborted or dropped. |
+| **Controls** | Play / Pause / **Resume from the same point**, Replay, Mute (`M`, remembered). Under ⚙: voice (natural voice, or one of the browser's voices), **speed** 0.8–1.25× (pitch kept, applied live) and **volume** (remembered; on iPhone/iPad the hardware buttons control it). |
+| **Performance** | One audio element for the session. The current recording (~40 kB) is fetched into memory first, then the **next step's recording is preloaded** in the background at low priority. At most 10 recordings are kept in memory. The manifest is fetched once. |
+| **Fallback** | If a recording is missing, the network fails, the browser can't play MP3 or a recording is out of date, the browser's own voice (Web Speech API) reads the same script and a one-line notice explains why. Without either voice, a notice says so and the written instructions remain. Nothing in the 3D view, AR, gestures or navigation depends on the voice. |
+| **AEROEX branding** | The supplied AEROEX symbol now appears in the header (before **Mist-Fit 550**, which stays the product name), on the loading screen, and as the favicon / home-screen icon. The original files are kept unchanged in `public/assets/brand/original/`. |
+
+### Text-to-speech provider evaluation
+
+The narration needs about 6,000 characters (72 positions), so any provider's free tier would cover it. The deciding factors were quality, pronunciation control, licensing and the static-hosting constraint.
+
+| | Google Cloud TTS (Chirp 3: HD) | Azure AI Speech (neural / HD) | ElevenLabs | **Kokoro-82M (chosen)** |
+|---|---|---|---|---|
+| Naturalness | Very high, conversational | High | Very high | High (top-ranked open model) |
+| Pronunciation control | IPA / X-SAMPA, speed, pause markup | Full SSML + lexicons | Pronunciation dictionaries | Inline IPA per word (misaki G2P) |
+| Cost for this script | Free tier (1 M chars / month); **billing account required** | Free tier (0.5 M chars / month) | Commercial use from **$5 / month** | Free |
+| Commercial licence | Yes | Yes | Paid plans only | **Apache-2.0** |
+| Account / credentials | Google Cloud project + key | Azure subscription + key | Account + key | **None** |
+| GitHub Pages | Pre-generated audio | Pre-generated audio | Pre-generated audio | Pre-generated audio |
+
+**Decision:** Kokoro-82M, voice *Heart* (`af_heart`), US English. Samples of four Kokoro voices were compared, and *Heart* was chosen for its warm, clear, professional delivery. It needs no account, no billing and no secret, can be regenerated by anyone with the repository, and its licence allows commercial use. Google's Chirp 3: HD voices are the closest match to a navigation-assistant voice and would be the upgrade path. `generate.py` writes the same manifest format, so the player would not change, but it needs a Google Cloud project with billing and a key kept out of the repository (for example a GitHub Actions secret).
+
+**Hosting: pre-generated audio (option A), not a backend (option B).** The text changes only when the assembly data changes, so recording once is cheaper, faster, more consistent and more reliable than synthesising on demand. No credentials exist anywhere in the app or the repository, and nothing runs besides GitHub Pages. A backend would add hosting, cost, latency and a key to protect, for no benefit.
+
+### Natural voice — how it is produced
+
+```
+assembly.json ─► spokenScript.js ─► export-script.mjs ─► generate.py ──────────────────────► public/assets/narration/
+ (step facts)     (natural phrasing)   (72 positions)     misaki G2P + lexicon.json (IPA)       manifest.json
+                                                          Kokoro-82M · voice af_heart · 0.92×    en-US-heart/*.mp3
+                                                          pauses: 0.30 s after "Step N.", 0.45 s between sentences
+                                                          loudness −17 LUFS, look-ahead limiter −1.5 dBFS
+                                                          MP3 mono 24 kHz 48 kbit/s
+```
+
+* **Files:** `public/assets/narration/en-US-heart/step-03-fit-the-pan-head-machine-screws.mp3` and so on, plus
+  `overview.mp3`, `parts-kit.mp3` and `complete.mp3`. `manifest.json` lists for every key the file, the exact
+  spoken text, the duration, the size and a content hash.
+* **Text check:** the app plays a recording only if its text in the manifest equals the script it wants to
+  speak. If the assembly data changes and the audio is not regenerated, those steps fall back to the
+  browser voice instead of saying something else.
+* **Quality review:** `npm run narration:verify` transcribes every file with an independent speech recogniser
+  (NVIDIA Parakeet-TDT 0.6B v2) and measures loudness, peaks and pace → [`docs/narration-review.md`](docs/narration-review.md).
+  Current result:
+  * **Word accuracy:** 96.6 %. The remaining differences are spelling only ("sub-assembly" / "subassembly",
+    "in closure" for *enclosure*), plus "bellmouth support" heard as "bell mouse support": the *th* runs into
+    the *s*, as in natural speech.
+  * **Loudness:** all files at −17.5 ± 0.2 LUFS.
+  * **Pace:** median 165 words/min including pauses.
+
+  This review found two real issues, both fixed in `lexicon.json`:
+  * the product name, which was heard as "Misfit 550";
+  * "bellmouth", which was read like "Plymouth".
+
+  A human listening pass on the target devices is still recommended.
+
+### Updating the narration
+
+1. Change the data or the wording (`public/js/audio/spokenScript.js`), or add a pronunciation to
+   `tools/narration/lexicon.json`.
+2. Re-record. Only changed positions are regenerated; files that are no longer used are deleted:
+
+   ```bash
+   pip install -r tools/narration/requirements.txt && python3 -m spacy download en_core_web_sm   # once
+   npm run narration                          # ≈ 6 min on 2 CPU cores for all 72; seconds for a few
+   npm run narration -- --only step-08 --force
+   npm run narration:verify -- --asr <folder of sherpa-onnx-nemo-parakeet-tdt-0.6b-v2-int8>        # optional review
+   ```
+
+   The Kokoro model files (~350 MB) are downloaded once from the kokoro-onnx GitHub release and checked by
+   SHA-256. Requirements: Python 3.10+, Node 18+ (to export the script with the app's own modules), and
+   ffmpeg.
+3. Run `npm test` and commit `public/assets/narration/`.
+
+**Costs and external services:** none at runtime and none for generation (local, open model). GitHub Pages
+serves the files with the rest of the site (about 40 kB per step). No API key or credential exists in the
+code, the repository, the browser or the network requests.
+
+### AEROEX branding assets
+
+| File | Use |
+|---|---|
+| `public/assets/brand/original/images.png` | Supplied AEROEX symbol, white on black (447 × 447), unchanged |
+| `public/assets/brand/original/Logo.jpg` | Supplied AEROEX symbol, black on white (200 × 200), unchanged; kept for light backgrounds |
+| `public/assets/brand/aeroex-symbol-white.png` | Web copy of `images.png`: same pixels, black background made transparent, trimmed to the symbol (309 × 246, proportions kept). Used in the header (28 px high, 24 px on phones) and on the loading screen. |
+| `favicon-32.png`, `favicon.ico`, `apple-touch-icon.png` (180), `icon-192.png` | Downscaled from `images.png` (the symbol on its black square), for browser tabs and home screens |
+
+The horizontal AEROEX Technologies logo (with the wordmark) was not part of the supplied files. The
+interface therefore uses the symbol only, without imitating the wordmark. To add it later, place the file in
+`public/assets/brand/` and use it in the header's `.brand` block.
+
+---
+
+## 0.1 What's new in version 1.3
 
 | Feature | Behaviour |
 |---|---|
@@ -73,7 +172,7 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 
 ---
 
-## 0.1 What's new in version 1.2
+## 0.2 What's new in version 1.2
 
 | Feature | Behaviour |
 |---|---|
@@ -126,7 +225,7 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 
 ---
 
-## 0.2 What's new in version 1.1
+## 0.3 What's new in version 1.1
 
 | Feature | Behaviour |
 |---|---|
@@ -136,6 +235,9 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 | **iOS AR Quick Look** | Choose **this step** (loops the current step's motion, consistent with manual navigation) or the **full sequence**; both use the 3× vectors and are generated on the device. |
 
 ### Voice technology — what it is and what it is not
+
+*(v1.1–v1.3. Since v1.4 the narration is a pre-recorded natural voice ([§ 0](#0-whats-new-in-version-14)); the Web
+Speech API described here is the fallback, and the alternative voice under ⚙.)*
 
 The narration uses the **Web Speech API** (`speechSynthesis`) of the browser: no API key, no
 server, no audio files, works offline with installed voices. Voice quality therefore depends on the browser:
@@ -231,8 +333,11 @@ mf550-webar/
 │   │   ├── main.js                 app bootstrap & wiring (single data flow)
 │   │   ├── config.js               explodeScale (3), narration settings, asset paths        (v1.1)
 │   │   ├── state/AppState.js       observable UI state store                                 (v1.1)
-│   │   ├── audio/Narrator.js       Web Speech API narration engine                           (v1.1)
-│   │   ├── audio/narrationScript.js spoken instructions generated from the BOM/sequence data  (v1.1)
+│   │   ├── audio/Narrator.js       narration: natural voice first, browser voice as fallback  (v1.4)
+│   │   ├── audio/RecordedVoice.js  plays the pre-recorded MP3s: preload, cache, stale guard   (v1.4)
+│   │   ├── audio/BrowserVoice.js   Web Speech API engine (fallback / chosen browser voice)    (v1.4)
+│   │   ├── audio/spokenScript.js   natural spoken script + spoken-only aliases               (v1.4)
+│   │   ├── audio/narrationScript.js script + recording keys of every position                (v1.1)
 │   │   ├── data/AssemblyModel.js   assembly.json access: tree, BOM, steps
 │   │   ├── scene/Viewer.js         renderer, camera, orbit controls, lighting, floor
 │   │   ├── scene/ModelLoader.js    GLB (meshopt) loading, node ↔ BOM linking
@@ -259,6 +364,10 @@ mf550-webar/
 │   │       ├── WebXRSession.js     markerless WebXR AR (hit-test, gestures, DOM overlay)
 │   │       └── QuickLook.js        iOS AR Quick Look (USDZ of the current step or full sequence)
 │   ├── vendor/three/               three.js r187 (MIT), minified, only the modules used
+│   ├── assets/narration/                                                                       (v1.4)
+│   │   ├── manifest.json           voice, format, and per position: file, exact text, duration, hash
+│   │   └── en-US-heart/*.mp3       72 recordings (overview, parts-kit, step-01 … step-69, complete)
+│   ├── assets/brand/               AEROEX symbol (web copy), favicons; original/ = supplied files  (v1.4)
 │   └── assets/model/
 │       ├── MF-550-210-B.glb               0.87 MB, meshopt-compressed, 1 node per component
 │       └── assembly.json                  hierarchy, BOM, explode vectors (1×, from the pipeline), 69-step sequence
@@ -271,10 +380,17 @@ mf550-webar/
 │   └── requirements.txt
 ├── tools/
 │   ├── serve.mjs                   zero-dependency static server (HTTP/HTTPS, correct MIME types)
-│   └── build-usdz.cjs              pre-builds the animated USDZ (headless browser)
+│   ├── build-usdz.cjs              pre-builds the animated USDZ (headless browser)
+│   └── narration/                                                                              (v1.4)
+│       ├── export-script.mjs       spoken script of every position (uses the app's modules)
+│       ├── generate.py             records the narration with Kokoro-82M → MP3 + manifest
+│       ├── lexicon.json            pronunciation overrides (IPA) for the natural voice
+│       ├── verify.py               speech-recognition, loudness and pace review
+│       └── requirements.txt
 ├── tests/smoke.cjs                 end-to-end checks incl. emulated WebXR session and gestures
 ├── tests/fixtures/hand-landmarks.json  real MediaPipe landmarks of public test images (v1.2)
 ├── docs/camera-review.md          camera targets of all 69 steps (generated)                  (v1.3)
+├── docs/narration-review.md       transcription / loudness / pace review of the recordings    (v1.4)
 └── docs/screenshots/
 ```
 
@@ -465,24 +581,37 @@ npm install && npx playwright install chromium   # first time
 npm test
 ```
 
-Headless Chromium has no voices, so the suite replaces the Web Speech API with a deterministic in-page
-mock that logs every speak / start / end / cancel (the app code is unchanged). 84 checks:
+The natural-voice recordings really play in headless Chromium (autoplay allowed by a launch flag); an
+in-page spy on the audio element logs every play / pause / end with its recording key. Headless Chromium
+has no speech voices, so the Web Speech API (fallback voice) is replaced by a deterministic in-page mock that
+logs every speak / start / end / cancel (the app code is unchanged). 106 checks:
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
 * **3× exploded view** — all 208 displacement vectors (hardware, parts, sub-assemblies) are exactly 3× the
   pipeline vectors with identical directions; measured scene offsets 3.000×; every component back at its
   exact CAD position after the final step; per-step USDZ export for Quick Look.
-* **Synchronisation** — positions, highlight, BOM row, step card and narration script for all 69 steps.
+* **Synchronisation** — positions, highlight, BOM row, step card and spoken script (same component, quantity,
+  target, direction, repeat note) for all 69 steps.
 * **Manual navigation** — buttons and boundaries, disabled NEXT on the final step, **no automatic advance**
-  after the animation and the narration have finished, PREVIOUS during an animation, 6 rapid clicks.
-* **Narration** — auto-start on step entry, pause → resume from the interrupted sentence, replay, mute
-  (stops at once, no speech on later steps), unmute, keyboard, voice ranking, blocked-until-gesture,
-  browser without Web Speech API.
+  after the animation and the narration have finished, natural-voice recording played once while the step
+  loops, PREVIOUS during an animation, 6 rapid clicks (no recording ever starts for a step already left),
+  a deliberately slow download for a step the user has left is never played.
+* **Natural voice (v1.4)** — auto-start with the recording whose text equals the step's script, pause →
+  resume from the same point, live speed 1.25× and volume 60 % (remembered, no restart), replay from 0,
+  mute (stops at once, nothing on later steps), unmute, next-step preload without interruption, keyboard,
+  natural voice selected by default with browser voices as alternatives, switching engines without overlap,
+  blocked-until-gesture, works without Web Speech, no audio and no speech → controls disabled.
+* **Browser-voice fallback (v1.4)** — recordings unreachable → notice + Web Speech voice with the v1.1–v1.3
+  behaviour (sentence pause/resume, replay, once per step, best voice); a single missing file (HTTP 404)
+  falls back for that step only; no recordings and no speech → explicit message, navigation unaffected.
+* **Recordings (v1.4)** — 72 entries for 72 positions with exactly the spoken script; every MP3 served as
+  `audio/mpeg`, decodes with its listed duration; voice / loudness metadata; real playback of a recording
+  runs in real time to its end.
 * **WebXR AR** under the Immersive Web Emulation Runtime — hit-test, placement, NEXT + narration +
   scaling inside AR, clean exit; the gesture camera is released during the session and resumes after it.
 * **New STEP integration (v1.2)** — source file and verified structure map, all 220 parts named, BOM shows
-  names, instruction length limits, card text == spoken text, step loop repeats without changing step or
-  repeating the narration.
+  names, instruction length limits, no part numbers read aloud (card text and, since v1.4, the spoken script:
+  ≤ 30 words, no "(1/2)" marks).
 * **Gestures (v1.2)** — classifier on **real MediaPipe landmarks** of public test images (thumbs up, thumbs
   down, tilted ±25°, left hand, fist, pointing, victory, open hand); trigger state machine (one frame never
   fires, a held gesture fires once, re-arm only after neutral); handedness mapping incl. mirrored input;
@@ -502,10 +631,11 @@ mock that logs every speak / start / end / cancel (the app code is unchanged). 8
 * **Branding & BOM (v1.3)** — *Mist-Fit 550* in title, header, overview and details; neither `MF-550-210-B` nor
   the STEP file name in any visible text, tooltip or dialog; no hierarchical item numbers in the BOM, parts
   list, step card, details or balloons; 78 internal item keys, parent links and part numbers intact; BOM row
-  selection, highlight and *Go to step* work.
+  selection, highlight and *Go to step* work. v1.4: AEROEX symbol in the header (proportions identical to the
+  artwork, before the product title) and on the loading screen; favicon / touch icons load; originals kept.
 
 `ONLY=gestures npm test` runs one section (`viewer`, `navigation`, `integration`, `gestures`, `ar`, `camera`,
-`archrome`, `branding`).
+`archrome`, `branding`, `voice`).
 The suite replaces MediaPipe with a scripted tracker (real landmark fixtures), so it runs without the
 network. The real library and model are checked on the deployed site in a desktop browser: both load over
 HTTPS, the Hand Landmarker labels MediaPipe's own `thumb_up.jpg` test image as a *Right* hand and the
@@ -521,17 +651,22 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 * Real hardware devices were not available in this environment: the AR flow was verified with WebXR
   emulation (IWER) and the USDZ was generated and inspected, but not opened on a physical iPhone/Android device. Test on target hardware before release.
 * Quick Look shows the animation only; per-step navigation, narration and BOM interaction are web-only on iOS.
-* Narration voice quality depends on the browser (see § 0.2). Only Microsoft Edge's online "Natural" voices
-  are neural; the app does not include a cloud neural TTS service. The first narration after opening the
-  page waits for one click/tap (browser autoplay policy).
+* Natural voice (v1.4): the recordings were checked objectively (speech recognition, loudness, pace — see
+  `docs/narration-review.md`) and the voice was chosen from listening samples, but the full set was not
+  listened to on the target devices in this environment — do a listening pass before release. Kokoro is a
+  strong open model, but the best commercial voices (e.g. Google Chirp 3: HD) are still somewhat more
+  expressive (§ 0). The browser voice used as fallback depends on the browser (see § 0.3). The first
+  narration after opening the page waits for one click/tap (browser autoplay policy); iPhone/iPad ignore
+  the in-app volume slider (hardware buttons), so it is hidden there.
 * The README screenshots were taken with version 1.0.
+* Only the AEROEX symbol was supplied; the horizontal AEROEX Technologies logo (wordmark) is not used (§ 0).
 * Gestures: hand tracking was verified on still images and with an emulated camera, not with a person in
   front of a physical webcam in this environment — try it on the target device and adjust
   `CONFIG.gestures.trigger` / `classifier` if needed. Lighting, distance (≈ 0.4–1.5 m) and a visible wrist
   matter. The thumb direction is judged against the camera image, so keep the phone / webcam upright.
 * Gesture control and WebXR AR do not run at the same time (one camera); Quick Look on iOS pauses it too.
 * MediaPipe and its model are loaded from jsDelivr and Google's model storage on first use (≈ 4 MB library
-  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0.1).
+  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0.2).
 * Sub-assembly names are derived from their largest part — the STEP files contain no sub-assembly names.
 * WebXR AR was verified with the Immersive Web Emulation Runtime and the capability logic with simulated
   Android / desktop / iPhone browsers, not on a physical ARCore phone in this environment.
@@ -542,6 +677,13 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 
 ## Changelog
 
+* **1.4** — Natural neural-voice narration: 72 pre-recorded MP3s (Kokoro-82M, voice *Heart*, en-US),
+  natural spoken script built from the same step facts as the card, IPA pronunciation lexicon, loudness
+  normalisation, recording pipeline + speech-recognition review (`tools/narration`); new narrator with recorded
+  voice first and Web Speech fallback (missing file, network, unsupported audio, stale script), next-step
+  preload, in-memory cache, stale-download guard, resume from the same point, live speed, volume control;
+  AEROEX symbol in the header and loading screen, favicon and home-screen icons (originals kept); MP3 MIME
+  type in `tools/serve.mjs`; tests extended (natural voice, fallback, recordings, branding).
 * **1.3** — Visible product name **Mist-Fit 550** (STEP file name no longer displayed); BOM, parts list,
   step card, details and balloons without hierarchical item numbers (internal keys unchanged); AR button with
   capability states (supported / needs permission / unavailable / active) and direct WebXR start in Chrome;
@@ -566,6 +708,9 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 
 ## 10. Third-party components
 
-three.js r187 (MIT, vendored) · OpenCascade Technology via cadquery-ocp (LGPL-2.1 w/ exception / Apache-2.0) ·
+three.js r187 (MIT, vendored) · **Kokoro-82M** voice model (Apache-2.0; used offline to record the narration,
+not shipped) · kokoro-onnx (MIT) · misaki G2P (Apache-2.0) · espeak-ng (GPL-3.0, only as misaki's fallback
+phonemizer inside the offline recording tool; not distributed with the app) · NVIDIA Parakeet-TDT 0.6B v2 via
+sherpa-onnx (CC-BY-4.0 / Apache-2.0; optional review tool only) · OpenCascade Technology via cadquery-ocp (LGPL-2.1 w/ exception / Apache-2.0) ·
 gltfpack / meshoptimizer (MIT) · trimesh (MIT) · Embree (Apache-2.0) · MediaPipe Tasks Vision + Hand
 Landmarker model (Apache-2.0, loaded at runtime when gesture control is enabled) · Playwright, IWER (dev/test only).
