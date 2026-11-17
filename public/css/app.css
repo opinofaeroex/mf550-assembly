@@ -71,11 +71,9 @@ svg { width: 20px; height: 20px; flex: none; }
   position: relative; z-index: 5;
 }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.brand-mark {
-  width: 34px; height: 34px; border-radius: 8px; flex: none;
-  background: var(--accent); color: #fff; display: grid; place-items: center;
-}
-.brand-mark svg { width: 24px; height: 24px; }
+/* AEROEX symbol (supplied artwork; transparent web copy of images.png, proportions kept) */
+.brand-logo { height: 28px; width: auto; flex: none; display: block; user-select: none; -webkit-user-drag: none; }
+.brand-divider { width: 1px; height: 28px; background: var(--line-2); flex: none; }
 .brand-text { display: flex; flex-direction: column; min-width: 0; }
 .brand-title { font-weight: 700; font-size: 16px; letter-spacing: .2px; font-family: var(--mono); }
 .brand-sub { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -214,6 +212,10 @@ svg { width: 20px; height: 20px; flex: none; }
 .nar-pop label { display: grid; gap: 4px; font-size: 12px; color: var(--text-3); }
 .nar-pop select { width: 100%; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 6px 8px; color: var(--text); }
 .nar-kind { margin: 0; font-size: 11.5px; color: var(--text-3); }
+.nar-vol-row { display: flex; align-items: center; gap: 8px; }
+.nar-vol-row input[type="range"] { flex: 1; accent-color: var(--accent); min-width: 0; }
+.nar-vol-row output { font-size: 12px; color: var(--text-2); width: 3.2em; text-align: right; font-variant-numeric: tabular-nums; }
+.narration[data-status="loading"] .nar-status { color: var(--text-2); }
 
 /* ---------- viewport tools ---------- */
 .viewport-tools {
@@ -307,7 +309,9 @@ svg { width: 20px; height: 20px; flex: none; }
 .loader { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: rgba(15, 20, 26, .82); transition: opacity .35s; }
 .loader.is-done { opacity: 0; pointer-events: none; }
 .loader-box { display: flex; flex-direction: column; align-items: center; gap: 14px; width: min(360px, 80%); text-align: center; }
-.loader-ring { width: 44px; height: 44px; border-radius: 50%; border: 3px solid var(--panel-3); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+.loader-mark { position: relative; width: 72px; height: 72px; display: grid; place-items: center; }
+.loader-ring { position: absolute; inset: 0; border-radius: 50%; border: 3px solid var(--panel-3); border-top-color: var(--accent); animation: spin 0.9s linear infinite; }
+.loader-logo { width: 34px; height: auto; display: block; }
 .loader-text { color: var(--text-2); }
 .loader-bar { width: 100%; height: 4px; background: var(--panel-3); border-radius: 99px; overflow: hidden; }
 .loader-bar-fill { width: 0; height: 100%; background: var(--accent); transition: width .2s; }
@@ -454,6 +458,9 @@ kbd { font: 600 11.5px/1 var(--mono); padding: 3px 6px; border-radius: 5px; bord
   .gesture-panel { right: 8px; bottom: 8px; width: min(280px, calc(100% - 16px)); }
   :root { --topbar-h: 52px; }
   .brand-sub { display: none; }
+  .brand-logo { height: 24px; }
+  .brand-divider { height: 24px; }
+  .brand { gap: 10px; }
   #btn-ar span { display: none; }
   #btn-ar { width: 44px; padding: 0; justify-content: center; }
   .layout { position: relative; }

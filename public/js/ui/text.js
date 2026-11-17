@@ -44,8 +44,32 @@ function targetOf(model, asmId) {
 }
 
 /**
- * Text of a navigation position. One source for the step card, the step list,
- * the AR overlay and the voice: `speech` is the on-screen title + instruction.
+ * Facts of an assembly step, straight from assembly.json. Shared by the step card
+ * (positionText) and the spoken script (audio/spokenScript.js), so the written and
+ * the spoken instruction always describe the same operation.
+ */
+export function stepFacts(model, pos) {
+  const s = model.steps[pos];
+  const asm = model.node(s.assembly);
+  const inst = s.assemblyInstances.length;
+  const comp = model.node(s.nodes[0]);
+  const lbl = displayName(comp.kind === 'assembly' ? comp : s);
+  return {
+    step: s, kind: s.kind, label: lbl,
+    per: inst > 1 ? s.qty / inst : s.qty,            // quantity fitted to one assembly instance
+    instances: inst,
+    target: lower(targetOf(model, s.assembly)),       // what the component is fitted to
+    direction: directionPhrase(s.direction).trim(),   // 'from above' | 'from below' | ''
+    set: s.set || null,                               // [k, n]: k-th of n steps fitting this hardware
+    assemblyName: asm.id === model.rootId ? null : displayName(asm),   // null: the final assembly
+    last: pos === model.stepCount - 1,
+  };
+}
+
+/**
+ * Text of a navigation position. One source for the step card, the step list and
+ * the AR overlay; `speech` is the on-screen title + instruction (used by the browser
+ * voice only when the natural voice is off; the natural voice speaks the spoken script).
  * Generated only from assembly.json (names, quantities, hierarchy, direction, flags).
  *
  * @returns {{badge, kind, title, desc, components, note, speech}}  title/components are HTML
@@ -81,15 +105,11 @@ export function positionText(model, pos) {
     };
   }
 
-  const s = model.steps[pos];
+  const f = stepFacts(model, pos);
+  const { step: s, label: lbl, per, instances: inst, target } = f;
   const asm = model.node(s.assembly);
-  const inst = s.assemblyInstances.length;
-  const per = inst > 1 ? s.qty / inst : s.qty;
-  const comp = model.node(s.nodes[0]);
-  const lbl = displayName(comp.kind === 'assembly' ? comp : s);
-  const target = lower(targetOf(model, s.assembly));
-  const dir = directionPhrase(s.direction);
-  const batch = s.set ? ` (${s.set[0]}/${s.set[1]})` : '';
+  const dir = f.direction ? ` ${f.direction}` : '';
+  const batch = f.set ? ` (${f.set[0]}/${f.set[1]})` : '';
   const what = per === 1 ? `the ${lower(lbl)}` : `${per} ${lower(plural(lbl))}`;
 
   let kind, title, desc;

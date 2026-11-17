@@ -1,0 +1,7 @@
+# Natural-voice narration recorder (tools/narration/generate.py) - Python 3.10+, ffmpeg on PATH
+kokoro-onnx==0.6.1
+misaki==0.7.4
+spacy>=3.8,<3.9
+num2words
+pyloudnorm
+# + the spaCy English model: python3 -m spacy download en_core_web_sm
