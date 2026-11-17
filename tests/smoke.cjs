@@ -4,19 +4,26 @@
  *   npm test                      # starts tools/serve.mjs on :8099 and runs all checks
  *   BASE_URL=https://opinofaeroex.github.io/mf550-assembly/public npm test   # test the live site
  *
- * Headless Chromium has no speech voices, so the Web Speech API is replaced by a
- * deterministic in-page mock (speechSynthesis + SpeechSynthesisUtterance) that logs
- * every speak / start / end / cancel. The app code under test is unchanged.
+ * Natural voice (v1.4): the recorded MP3 narration really plays in headless Chromium
+ * (autoplay allowed by a launch flag); an in-page spy on the audio element logs every
+ * play / pause / ended with the recording key. Headless Chromium has no speech voices, so
+ * the Web Speech API (fallback voice) is replaced by a deterministic in-page mock
+ * (speechSynthesis + SpeechSynthesisUtterance) that logs every speak / start / end / cancel.
+ * The app code under test is unchanged.
  *
  * [1] Viewer & data: loads without errors; GLB ↔ assembly.json; geometry of every part
  *     within tolerance of the OpenCascade B-rep boxes.
  * [2] Exploded view ×3: every displayed vector = 3 × the pipeline vector, same direction;
  *     components return to their exact CAD positions.
- * [3] Synchronisation for all steps: positions, highlight, BOM row, step card, narration script.
+ * [3] Synchronisation for all steps: positions, highlight, BOM row, step card, spoken script
+ *     (same operation, component, quantity, target and direction as the card).
  * [4] Manual navigation: NEXT/PREVIOUS buttons, boundaries, no automatic advance after the
- *     animation or the narration, navigation during animation, rapid clicks.
- * [5] Narration: auto-start on step entry, previous narration cancelled, pause / resume /
- *     replay / mute via the UI, blocked-until-gesture, unsupported browser fallback.
+ *     animation or the narration, navigation during animation, rapid clicks, late downloads.
+ * [5] Natural voice: auto-start on step entry, previous narration stopped, pause / resume
+ *     (same position) / replay / mute / speed / volume via the UI, next-step preload,
+ *     blocked-until-gesture, browsers without Web Speech or without audio.
+ * [5b] Browser-voice fallback: recordings unavailable → the Web Speech voice narrates with the
+ *     v1.1–v1.3 behaviour (sentence pause/resume, best voice), one notice; missing file.
  * [6] WebXR AR flow under the Immersive Web Emulation Runtime (IWER + SEM), incl. NEXT in AR
  *     and the gesture camera being released during the AR session.
  * [7] New STEP integration: names from MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP, structure
@@ -25,6 +32,10 @@
  *     state machine, and end-to-end with a fake camera + scripted tracker: thumbs up / down
  *     navigate exactly once, left hand ignored, boundaries, disable, permission denied.
  *     (The real MediaPipe model is checked on the live site, see README § Tests.)
+ * [9] Automatic step camera. [10] AR capability detection. [11] Branding and BOM (v1.3)
+ *     + AEROEX symbol, favicon and loading screen (v1.4).
+ * [12] Natural-voice recordings: manifest covers every position with the exact spoken script,
+ *     every MP3 decodes in the browser with the listed duration, consistent loudness metadata.
  */
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
@@ -79,6 +90,25 @@ const speechMock = (opts = {}) => `(() => {
   window.__speechActive = () => !!cur;
 })();`;
 
+/** Spy on the narration audio element (real playback): logs play / pause / ended with the
+ *  recording key. opts.requireGesture: play() is refused (NotAllowedError) until a pointerdown. */
+const audioSpy = (opts = {}) => `(() => {
+  const log = []; let gesture = ${opts.requireGesture ? 'false' : 'true'};
+  addEventListener('pointerdown', () => { gesture = true; }, true);
+  const P = HTMLAudioElement.prototype;               // narration only: <video> elements are untouched
+  const play = HTMLMediaElement.prototype.play, pause = HTMLMediaElement.prototype.pause;
+  const keyOf = () => (window.app && app.narrator && app.narrator.recorded.current) || null;
+  P.play = function () {
+    if (!this.__spy) { this.__spy = true; this.addEventListener('ended', () => log.push({ t: 'ended', key: keyOf() })); }
+    if (!gesture) { log.push({ t: 'blocked', key: keyOf() }); return Promise.reject(new DOMException('needs a gesture', 'NotAllowedError')); }
+    log.push({ t: 'play', key: keyOf(), at: this.currentTime, seq: window.app ? app.seq.pos : null });
+    return play.call(this);
+  };
+  P.pause = function () { if (!this.paused) log.push({ t: 'pause', key: keyOf(), at: this.currentTime }); return pause.call(this); };
+  window.__audioLog = log;
+  window.__audioActive = () => { const a = window.app && app.narrator.recorded.audio; return !!a && !a.paused && !a.ended; };
+})();`;
+
 const noSpeech = `(() => {
   Object.defineProperty(window, 'speechSynthesis', { value: undefined, configurable: true });
   window.SpeechSynthesisUtterance = undefined;
@@ -94,13 +124,16 @@ async function startServer() {
 async function launch() {
   return chromium.launch({
     args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader',
-      '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
+      '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream',
+      '--autoplay-policy=no-user-gesture-required'],   // real narration audio plays without a click
   });
 }
 
-async function openApp(browser, init, viewport = { width: 1280, height: 800 }) {
+async function openApp(browser, init, viewport = { width: 1280, height: 800 }, { setup, audio } = {}) {
   const page = await browser.newPage({ viewport });
+  await page.addInitScript(audioSpy(audio));
   if (init) await page.addInitScript(init);
+  if (setup) await setup(page);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
@@ -210,6 +243,8 @@ async function testViewer(browser) {
   const sync = await page.evaluate(async () => {
     const { model, seq, explode, appearance, activeParts } = window.app;
     const { narrationText } = await import('./js/audio/narrationScript.js');
+    const { stepFacts, plural } = await import('./js/ui/text.js');
+    const { numberWords } = await import('./js/audio/spokenScript.js');
     const problems = [];
     for (let k = 0; k < model.stepCount; k++) {
       seq.goTo(k, { animate: false });
@@ -226,14 +261,25 @@ async function testViewer(browser) {
       if (curRows.join() !== wantRows.join()) problems.push(`step ${k + 1}: BOM rows ${curRows} != ${wantRows}`);
       const card = document.getElementById('step-badge').textContent;
       if (card !== `Step ${k + 1} / ${model.stepCount}`) problems.push(`step ${k + 1}: card shows ${card}`);
+      // the voice describes the same operation as the card: component, quantity, target, direction
       const script = narrationText(model, k);
-      const desc = document.getElementById('step-desc').textContent;
-      const title = document.getElementById('step-title').textContent;
-      if (script !== `Step ${k + 1}. ${title}. ${desc}`) problems.push(`step ${k + 1}: narration differs from the card`);
+      const desc = document.getElementById('step-desc').textContent.toLowerCase();
+      const title = document.getElementById('step-title').textContent.toLowerCase();
+      const f = stepFacts(model, k);
+      const names = [f.label.toLowerCase(), plural(f.label).toLowerCase()];
+      const cardText = `${title} ${desc}`;
+      const same = script.startsWith(`Step ${k + 1}. `)
+        && names.some((n) => script.includes(n) && cardText.includes(n))
+        && (f.kind === 'base' || (script.includes(`to the ${f.target}`) && desc.includes(`to the ${f.target}`)) || script.includes('to the first'))
+        && (!f.direction || (script.includes(f.direction) && desc.includes(f.direction)))
+        && (f.per === 1 || (script.includes(`${numberWords(f.per)} `) && desc.includes(`${f.per} `)))
+        && (f.instances < 2 || (/Repeat this on/.test(script) && /repeat on/.test(desc)))
+        && (!f.last || script.endsWith('The assembly is complete.'));
+      if (!same) problems.push(`step ${k + 1}: spoken script ("${script}") does not match the card`);
     }
     return { problems, steps: model.stepCount };
   });
-  check(sync.problems.length === 0, `${sync.steps} steps: positions, highlight, BOM row, step card and narration script in sync ${sync.problems.slice(0, 3).join('; ')}`);
+  check(sync.problems.length === 0, `${sync.steps} steps: positions, highlight, BOM row, step card and spoken script (same component, quantity, target, direction) in sync ${sync.problems.slice(0, 3).join('; ')}`);
   await page.close();
 }
 
@@ -269,13 +315,14 @@ async function testNavigationAndVoice(browser) {
   const ended = await waitFor(page, () => app.narrator.status === 'ended' && !app.seq.animating, null, 60000);
   const loops = await waitFor(page, () => app.seq.loopCount >= 2, null, 90000);
   s = await st();
-  const loopInfo = await page.evaluate(() => {
-    const first = app.narrator.chunks[0];
-    return { loops: app.seq.loopCount, spoken: __speechLog.filter((x) => x.t === 'speak' && x.text === first).length, first,
-      log: __speechLog.filter((x) => x.text === first).map((x) => x.t).join(',') };
-  });
-  check(ended && loops && s.pos === 10 && loopInfo.spoken === 1,
-    `step 11: animation repeated ${loopInfo.loops}× without changing step; narration spoken once (status ${s.status}${loopInfo.spoken === 1 ? '' : `; "${loopInfo.first}": ${loopInfo.log}`})`);
+  const loopInfo = await page.evaluate(() => ({
+    loops: app.seq.loopCount, engine: app.narrator.engine,
+    plays: __audioLog.filter((x) => x.t === 'play' && x.key === 'step-11').length,
+    ends: __audioLog.filter((x) => x.t === 'ended' && x.key === 'step-11').length,
+    log: __audioLog.filter((x) => x.key === 'step-11').map((x) => x.t).join(','),
+  }));
+  check(ended && loops && s.pos === 10 && loopInfo.plays === 1 && loopInfo.ends === 1 && loopInfo.engine === 'natural',
+    `step 11: animation repeated ${loopInfo.loops}× without changing step; natural-voice narration played once to the end (status ${s.status}${loopInfo.plays === 1 ? '' : `; ${loopInfo.log}`})`);
 
   // navigation during animation, and rapid clicks
   await page.evaluate(() => { app.seq.speed = 0.25; app.seq.goTo(20); });
@@ -284,88 +331,205 @@ async function testNavigationAndVoice(browser) {
   s = await st();
   check(during && s.pos === 19 && s.animating, 'PREVIOUS during an animation: new step animates (no overlap)');
   await page.evaluate(() => { app.seq.speed = 1; });
-  for (let i = 0; i < 6; i++) await page.click('#btn-next', { delay: 0 });
+  for (let i = 0; i < 5; i++) await page.click('#btn-next', { delay: 0 });
+  const mark = await page.evaluate(() => __audioLog.length);
+  await page.click('#btn-next', { delay: 0 });
   s = await st();
   check(s.pos === 25, `6 rapid NEXT clicks → step ${s.pos + 1}`);
-  await waitFor(page, () => app.narrator.id === app.seq.pos && __speechLog.some((x) => x.t === 'start' && x.text.startsWith(`Step ${app.seq.pos + 1} of`)), null, 20000);
-  const overlap = await page.evaluate(() => {
-    const log = __speechLog;
-    const lastLoad = log.map((x) => x.text).lastIndexOf(`Step ${app.seq.pos + 1} of 69.`);
-    const after = log.slice(lastLoad).filter((x) => x.t === 'speak').map((x) => x.text);
-    return { after, current: app.narrator.text };
-  });
-  check(overlap.after.every((t) => overlap.current.includes(t)), 'after rapid clicks only the current step is narrated (stale narrations cancelled)');
+  const cur = await waitFor(page, () => app.narrator.id === app.seq.pos && app.narrator.status === 'speaking' && window.__audioActive(), null, 20000);
+  await page.waitForTimeout(400);
+  const overlap = await page.evaluate((n) => ({
+    plays: __audioLog.slice(n).filter((x) => x.t === 'play').map((x) => x.key),
+    stale: __audioLog.filter((x) => x.t === 'play' && x.seq >= 0 && x.key !== `step-${String(x.seq + 1).padStart(2, '0')}`).map((x) => `${x.key}@${x.seq + 1}`),
+    current: app.narrator.recorded.current, text: app.narrator.recorded.manifest.entries[app.narrator.recorded.current].text === app.narrator.text,
+  }), mark);
+  check(cur && overlap.current === 'step-26' && overlap.text && overlap.plays.slice(-1)[0] === 'step-26' && overlap.stale.length === 0,
+    `after rapid clicks only the current step's recording plays; no recording ever started for a step the user had left (${overlap.stale.join(', ') || 'none'})`);
 
-  console.log('\n[5] voice narration');
+  // a slow download for a step the user has already left must never play
+  await page.route('**/assets/narration/**/step-29-*.mp3', async (route) => { await new Promise((r) => setTimeout(r, 4000)); await route.continue().catch(() => {}); });
+  const mark2 = await page.evaluate(() => __audioLog.length);
+  const raced = await page.evaluate(async () => {
+    const n = app.narrator;
+    n.recorded.cache.delete('step-29');
+    app.seq.goTo(28);
+    const t0 = performance.now();
+    while (!(n.id === 28 && n.recorded.pending.has('step-29')) && performance.now() - t0 < 3000) await new Promise((r) => setTimeout(r, 20));
+    const waiting = n.recorded.pending.has('step-29');
+    app.seq.goTo(29);                                       // leave while step 29's recording is still downloading
+    return waiting;
+  });
+  await waitFor(page, () => app.narrator.id === 29 && app.narrator.status === 'speaking', null, 15000);
+  await page.waitForTimeout(4500);                          // the delayed step-29 response would have arrived by now
+  const late = await page.evaluate((n) => ({ keys: __audioLog.slice(n).filter((x) => x.t === 'play').map((x) => x.key), current: app.narrator.recorded.current }), mark2);
+  await page.unroute('**/assets/narration/**/step-29-*.mp3');
+  check(raced && !late.keys.includes('step-29') && late.current === 'step-30',
+    `a recording that arrives after the user moved on is dropped (played: ${late.keys.join(', ')})`);
+
+  console.log('\n[5] natural voice narration');
   // DOM clicks: same click event on the same buttons, without Playwright's actionability round-trips
-  // (headless SwiftShader is slow enough for a short sentence to end in between)
   const domClick = (sel) => page.evaluate((q) => document.querySelector(q).click(), sel);
+  const audio = () => page.evaluate(() => { const a = app.narrator.recorded.audio; return { t: a.currentTime, paused: a.paused, rate: a.playbackRate, vol: a.volume, key: app.narrator.recorded.current }; });
   await page.evaluate(() => app.seq.goTo(30));
-  await waitFor(page, () => app.narrator.id === 30 && app.narrator.status === 'speaking' && window.__speechActive());
+  await waitFor(page, () => app.narrator.id === 30 && app.narrator.status === 'speaking' && window.__audioActive() && app.narrator.recorded.audio.currentTime > 0.8);
   s = await st();
-  check(s.status === 'speaking' && s.id === 30, 'narration starts automatically when entering a step');
-  const spoken = await page.evaluate(() => { const t = __speechLog.filter((x) => x.t === 'start').slice(-1)[0].text; return { t, ok: app.narrator.text.startsWith('Step 31.') && app.narrator.text.includes(t) }; });
-  check(spoken.ok, `the sentence being spoken belongs to step 31: "${spoken.t.slice(0, 70)}"`);
+  const playing = await page.evaluate(() => ({ engine: app.narrator.engine, key: app.narrator.recorded.current, same: app.narrator.recorded.manifest.entries['step-31'].text === app.narrator.text, voice: app.narrator.voice.name }));
+  check(s.status === 'speaking' && s.id === 30 && playing.engine === 'natural' && playing.key === 'step-31' && playing.same,
+    `narration starts automatically when entering a step: recording "step-31" (${playing.voice}), script identical to step 31's spoken text`);
   await domClick('#nar-play');
   s = await st();
   const label1 = await page.textContent('#nar-play-label');
-  check(s.status === 'paused' && label1 === 'Resume', `Pause → status ${s.status}, button "${label1}"`);
-  const paused = await page.evaluate(() => ({ idx: app.narrator.index, text: app.narrator.chunks[app.narrator.index], n: __speechLog.length }));
+  const p1 = await audio();
+  check(s.status === 'paused' && label1 === 'Resume' && p1.paused, `Pause → status ${s.status}, button "${label1}", audio paused at ${p1.t.toFixed(2)} s`);
+  const lastPlay = () => page.evaluate(() => __audioLog.filter((x) => x.t === 'play').slice(-1)[0]);
+  const plays = () => page.evaluate(() => __audioLog.filter((x) => x.t === 'play').length);
   await domClick('#nar-play');
-  s = await st();
-  await waitFor(page, (n) => __speechLog.slice(n).some((x) => x.t === 'speak'), paused.n, 10000);
-  const resumed = await page.evaluate((n) => __speechLog.slice(n).find((x) => x.t === 'speak').text, paused.n);
-  check(s.status === 'speaking' && resumed === paused.text, `Resume → continues from the interrupted sentence ("${paused.text.slice(0, 50)}")`);
-  await waitFor(page, () => app.narrator.index >= 1);
+  await waitFor(page, () => app.narrator.status === 'speaking' && window.__audioActive(), null, 10000);
+  const p2 = await lastPlay();
+  check(p2.key === 'step-31' && Math.abs(p2.at - p1.t) < 0.1, `Resume → continues from the same point (paused at ${p1.t.toFixed(2)} s, resumed at ${p2.at.toFixed(2)} s), not from the beginning`);
+  // speed and volume apply to the narration that is playing, without restarting it
+  const n0 = await plays();
+  await page.evaluate(() => {
+    document.getElementById('nar-settings').click();
+    const r = document.getElementById('nar-rate'); r.value = '1.25'; r.dispatchEvent(new Event('change', { bubbles: true }));
+    const v = document.getElementById('nar-volume'); v.value = '60'; v.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const p3 = await audio();
+  const saved = await page.evaluate(() => ({ rate: localStorage.getItem('mf550.narration.rate'), vol: localStorage.getItem('mf550.narration.volume'), out: document.getElementById('nar-volume-out').textContent }));
+  check(p3.rate === 1.25 && Math.abs(p3.vol - 0.6) < 1e-6 && p3.key === 'step-31' && (await plays()) === n0 && saved.rate === '1.25' && saved.vol === '0.6' && saved.out === '60%',
+    `speed 1.25× and volume 60 % apply at once to the playing recording (no restart) and are remembered`);
+  await page.evaluate(() => {
+    const r = document.getElementById('nar-rate'); r.value = '1'; r.dispatchEvent(new Event('change', { bubbles: true }));
+    const v = document.getElementById('nar-volume'); v.value = '100'; v.dispatchEvent(new Event('input', { bubbles: true }));
+    document.getElementById('nar-settings').click();
+  });
+  const n1 = await plays();
   await domClick('#nar-replay');
   s = await st();
   check(s.pos === 30 && s.animating, 'Replay → same step, animation restarts');
-  const replayed = await waitFor(page, () => app.narrator.index === 0 && app.narrator.status === 'speaking' && app.narrator.id === 30, null, 10000);
-  check(replayed, 'Replay → narration restarts from the beginning');
+  await waitFor(page, (k) => __audioLog.filter((x) => x.t === 'play').length > k && app.narrator.status === 'speaking', n1, 10000);
+  const p4 = await lastPlay();
+  check(p4.key === 'step-31' && p4.at < 0.05, `Replay → narration restarts from the beginning (${p4.at.toFixed(2)} s)`);
   await page.click('#nar-mute');
   s = await st();
-  const speakingAfterMute = await page.evaluate(() => window.__speechActive());
-  check(s.status === 'muted' && !speakingAfterMute, 'Mute → speech stops immediately');
-  const before = await page.evaluate(() => __speechLog.length);
+  check(s.status === 'muted' && !(await page.evaluate(() => window.__audioActive())), 'Mute → narration stops immediately');
+  const before = await page.evaluate(() => __audioLog.length);
   await page.click('#btn-next');
-  await page.waitForTimeout(600);
-  const spokeWhileMuted = await page.evaluate((n) => __speechLog.slice(n).some((x) => x.t === 'speak'), before);
-  check(!spokeWhileMuted, 'NEXT while muted → no speech');
+  await page.waitForTimeout(800);
+  const playedWhileMuted = await page.evaluate((n) => __audioLog.slice(n).some((x) => x.t === 'play'), before);
+  check(!playedWhileMuted, 'NEXT while muted → no audio');
   await page.click('#nar-mute');
-  const unmuted = await waitFor(page, () => app.narrator.status === 'speaking' && app.narrator.id === 31);
+  const unmuted = await waitFor(page, () => app.narrator.status === 'speaking' && app.narrator.id === 31 && app.narrator.recorded.current === 'step-32');
   check(unmuted, 'Unmute → narrates the current step');
+  const pre = await waitFor(page, () => app.narrator.recorded.cache.has('step-33'), null, 10000);
+  const prePlayed = await page.evaluate(() => __audioLog.some((x) => x.t === 'play' && x.key === 'step-33'));
+  check(pre && !prePlayed && (await audio()).key === 'step-32', 'the next step\'s recording is preloaded in the background without interrupting the current one');
+  await domClick('#nar-replay');
+  await waitFor(page, () => app.narrator.status === 'speaking' && window.__audioActive(), null, 10000);
   await page.keyboard.press('Space');
   check((await st()).status === 'paused', 'Space key pauses the narration');
   await page.keyboard.press('ArrowRight');
-  const kb = await waitFor(page, () => app.seq.pos === 32 && app.narrator.id === 32 && app.narrator.status === 'speaking');
-  check(kb, '→ key: next step, new narration starts');
-  const voiceInfo = await page.evaluate(() => ({ v: app.narrator.voice.name, kind: document.getElementById('nar-voice-kind').textContent, options: document.querySelectorAll('#nar-voice option').length }));
-  check(/Natural/.test(voiceInfo.v) && /neural/.test(voiceInfo.kind) && voiceInfo.options === 2,
-    `best English voice chosen automatically (${voiceInfo.v}); ${voiceInfo.options} English voices offered`);
+  const kb = await waitFor(page, () => app.seq.pos === 32 && app.narrator.id === 32 && app.narrator.status === 'speaking' && app.narrator.recorded.current === 'step-33');
+  check(kb, '→ key: next step, new narration starts (from the preloaded recording)');
+  const voiceInfo = await page.evaluate(() => ({ v: app.narrator.voice.name, kind: document.getElementById('nar-voice-kind').textContent, options: document.querySelectorAll('#nar-voice option').length, sel: document.getElementById('nar-voice').value }));
+  check(/Heart \(natural voice\)/.test(voiceInfo.v) && /neural/.test(voiceInfo.kind) && voiceInfo.sel === 'natural' && voiceInfo.options === 3,
+    `natural voice used by default (${voiceInfo.v}); ${voiceInfo.options - 1} browser voices offered as alternatives`);
+  // switching to a browser voice and back while narrating (the real <select>, inside the page)
+  const pick = (v) => page.evaluate((val) => { app.narrator.replay(); const sel = document.getElementById('nar-voice'); sel.value = val; sel.dispatchEvent(new Event('change', { bubbles: true })); }, v);
+  await pick('jenny');
+  const sw = await waitFor(page, () => app.narrator.engine === 'browser' && app.narrator.status === 'speaking' && window.__speechActive() && !window.__audioActive(), null, 10000);
+  await pick('natural');
+  const back = await waitFor(page, () => app.narrator.engine === 'natural' && app.narrator.status === 'speaking' && window.__audioActive() && !window.__speechActive(), null, 10000);
+  check(sw && back, 'choosing a browser voice switches engines without overlap; choosing the natural voice switches back');
   check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
 
-  // browsers that block speech until the first user gesture
-  const g = await openApp(browser, speechMock({ requireGesture: true }));
+  // browsers that block sound until the first user gesture
+  const g = await openApp(browser, speechMock({ requireGesture: true }), undefined, { audio: { requireGesture: true } });
   await g.page.evaluate(() => app.seq.goTo(3));
   const blocked = await waitFor(g.page, () => app.narrator.status === 'blocked');
   const hint = await g.page.textContent('#nar-status');
   await g.page.mouse.click(600, 400);
-  const unlocked = await waitFor(g.page, () => app.narrator.status === 'speaking' && window.__speechActive());
-  check(blocked && unlocked, `speech blocked before the first gesture ("${hint}"), starts on the first tap`);
+  const unlocked = await waitFor(g.page, () => app.narrator.status === 'speaking' && window.__audioActive() && app.narrator.recorded.current === 'step-04');
+  check(blocked && unlocked, `audio blocked before the first gesture ("${hint}"), starts on the first tap`);
   await g.page.close();
 
-  // browser without speech synthesis
+  // browser without the Web Speech API: the recorded voice does not need it
   const u = await openApp(browser, noSpeech);
-  const un = await u.page.evaluate(() => ({
+  await u.page.evaluate(() => app.seq.goTo(5));
+  const ns = await waitFor(u.page, () => app.narrator.status === 'speaking' && app.narrator.engine === 'natural' && window.__audioActive(), null, 15000);
+  check(ns && u.errors.length === 0, 'no Web Speech API: the natural voice still narrates');
+  await u.page.close();
+
+  // neither audio playback nor speech synthesis: controls disabled, everything else works
+  const n = await openApp(browser, noSpeech + 'window.Audio = undefined;');
+  const un = await n.page.evaluate(() => ({
     status: app.narrator.status, disabled: document.getElementById('nar-play').disabled,
     text: document.getElementById('nar-status').textContent, card: document.getElementById('step-desc').textContent.length,
   }));
-  await u.page.click('#btn-next');
-  const moved = await u.page.evaluate(() => app.seq.pos);
-  check(un.status === 'unsupported' && un.disabled && un.card > 20 && moved === -1 && u.errors.length === 0,
-    `no Web Speech API: controls disabled ("${un.text}"), written instructions and navigation still work`);
-  await u.page.close();
+  await n.page.click('#btn-next');
+  const moved = await n.page.evaluate(() => app.seq.pos);
+  check(un.status === 'unsupported' && un.disabled && un.card > 20 && moved === -1 && n.errors.length === 0,
+    `no audio and no speech: controls disabled ("${un.text}"), written instructions and navigation still work`);
+  await n.page.close();
+
+  console.log('\n[5b] browser-voice fallback (recordings unavailable)');
+  const offline = (page) => page.route('**/assets/narration/**', (r) => r.abort('internetdisconnected'));
+  const f = await openApp(browser, speechMock({ msPerChar: 40 }), undefined, { setup: offline });
+  const fst = () => f.page.evaluate(() => ({ pos: app.seq.pos, animating: app.seq.animating, status: app.narrator.status, id: app.narrator.id, engine: app.narrator.engine }));
+  const fClick = (sel) => f.page.evaluate((q) => document.querySelector(q).click(), sel);
+  await f.page.evaluate(() => app.seq.goTo(30));
+  await waitFor(f.page, () => app.narrator.id === 30 && app.narrator.status === 'speaking' && window.__speechActive());
+  s = await fst();
+  const notice = await f.page.evaluate(() => ({ text: document.getElementById('toast').textContent }));
+  check(s.status === 'speaking' && s.id === 30 && s.engine === 'browser' && /browser voice/.test(notice.text),
+    `recordings unreachable → the browser voice narrates; notice "${notice.text}"`);
+  const spoken = await f.page.evaluate(() => { const t = __speechLog.filter((x) => x.t === 'start').slice(-1)[0].text; return { t, ok: app.narrator.text.startsWith('Step 31.') && app.narrator.text.includes(t) }; });
+  check(spoken.ok, `the sentence being spoken belongs to step 31: "${spoken.t.slice(0, 70)}"`);
+  await fClick('#nar-play');
+  s = await fst();
+  const flabel = await f.page.textContent('#nar-play-label');
+  check(s.status === 'paused' && flabel === 'Resume', `Pause → status ${s.status}, button "${flabel}"`);
+  const paused = await f.page.evaluate(() => ({ idx: app.narrator.index, text: app.narrator.chunks[app.narrator.index], n: __speechLog.length }));
+  await fClick('#nar-play');
+  s = await fst();
+  await waitFor(f.page, (k) => __speechLog.slice(k).some((x) => x.t === 'speak'), paused.n, 10000);
+  const resumed = await f.page.evaluate((k) => __speechLog.slice(k).find((x) => x.t === 'speak').text, paused.n);
+  check(s.status === 'speaking' && resumed === paused.text, `Resume → continues from the interrupted sentence ("${paused.text.slice(0, 50)}")`);
+  await waitFor(f.page, () => app.narrator.index >= 1);
+  await fClick('#nar-replay');
+  const freplayed = await waitFor(f.page, () => app.narrator.index === 0 && app.narrator.status === 'speaking' && app.narrator.id === 30, null, 10000);
+  check(freplayed, 'Replay → narration restarts from the beginning');
+  await f.page.evaluate(() => app.seq.goTo(10));
+  const fended = await waitFor(f.page, () => app.narrator.status === 'ended' && !app.seq.animating, null, 60000);
+  const floops = await waitFor(f.page, () => app.seq.loopCount >= 2, null, 90000);
+  const fonce = await f.page.evaluate(() => ({ pos: app.seq.pos, n: __speechLog.filter((x) => x.t === 'speak' && x.text === app.narrator.chunks[0]).length, toasts: 1 }));
+  check(fended && floops && fonce.pos === 10 && fonce.n === 1, 'browser voice: narration spoken once per step while the animation loops, no automatic advance');
+  const fvoice = await f.page.evaluate(() => ({ v: app.narrator.voice.name, kind: document.getElementById('nar-voice-kind').textContent, options: document.querySelectorAll('#nar-voice option').length }));
+  check(/Natural/.test(fvoice.v) && /neural/.test(fvoice.kind) && fvoice.options === 2,
+    `best English browser voice chosen automatically (${fvoice.v}); ${fvoice.options} English voices offered`);
+  check(f.errors.filter((e) => !/narration|ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(e)).length === 0, `no page errors ${JSON.stringify(f.errors.filter((e) => !/narration|ERR_INTERNET_DISCONNECTED|Failed to load resource/.test(e)).slice(0, 3))}`);
+  await f.page.close();
+
+  // one recording missing (404): that step falls back, the next step uses the natural voice again
+  const m = await openApp(browser, speechMock(), undefined, { setup: (page) => page.route('**/assets/narration/**/step-13-*.mp3', (r) => r.fulfill({ status: 404, body: 'not found' })) });
+  await m.page.evaluate(() => app.seq.goTo(12));
+  const miss = await waitFor(m.page, () => app.narrator.id === 12 && app.narrator.engine === 'browser' && app.narrator.status === 'speaking' && window.__speechActive(), null, 15000);
+  await m.page.evaluate(() => app.seq.goTo(13));
+  const next = await waitFor(m.page, () => app.narrator.id === 13 && app.narrator.engine === 'natural' && app.narrator.status === 'speaking' && window.__audioActive() && !window.__speechActive(), null, 15000);
+  check(miss && next, 'missing recording (HTTP 404) → browser voice for that step only; the next step plays its recording');
+  await m.page.close();
+
+  // web speech also unavailable: an explicit message, written instructions and navigation unaffected
+  const e = await openApp(browser, noSpeech, undefined, { setup: offline });
+  await e.page.evaluate(() => app.seq.goTo(2));
+  await waitFor(e.page, () => app.narrator.status === 'error', null, 15000);
+  const er = await e.page.evaluate(() => ({ status: app.narrator.status, text: document.getElementById('nar-status').textContent, toast: document.getElementById('toast').textContent, card: document.getElementById('step-desc').textContent }));
+  await e.page.click('#btn-next');
+  const emoved = await e.page.evaluate(() => app.seq.pos);
+  check(er.status === 'error' && /written instructions/.test(er.text) && /not available/.test(er.toast) && er.card.length > 20 && emoved === 3,
+    `no recordings and no speech: "${er.text}"; notice shown; navigation continues (step ${emoved + 1})`);
+  await e.page.close();
 }
 
 async function testIntegration(browser) {
@@ -374,6 +538,7 @@ async function testIntegration(browser) {
   const d = await page.evaluate(async () => {
     const { model } = window.app;
     const { positionText } = await import('./js/ui/text.js');
+    const { spokenText, forSpeech } = await import('./js/audio/spokenScript.js');
     const m = model.meta;
     const parts = model.partIds.map((id) => model.node(id));
     const texts = model.steps.map((s, k) => positionText(model, k));
@@ -388,6 +553,7 @@ async function testIntegration(browser) {
       longestSpeechWords: Math.max(...texts.map((t) => t.speech.split(/\s+/).length)),
       sample: texts[17].speech,
       noPartNumbersSpoken: texts.every((t) => !/[A-Z0-9]{3,}-[A-Z0-9]{3,}/.test(t.speech)),
+      spoken: model.steps.map((s, k) => forSpeech(spokenText(model, k))),
     };
   });
   check(d.source === 'MF-550-210-B_MIST_FIT_550_FINAL_NAMED.STEP' && d.structure && d.structure.verification.otherDifferences === 0
@@ -397,6 +563,9 @@ async function testIntegration(browser) {
     `all ${d.parts} parts carry their STEP name (${d.names} distinct); BOM shows names (item 1.1.2 = "${d.bomCell}")`);
   check(d.longestTitle <= 60 && d.longestDesc <= 170 && d.longestSpeechWords <= 40 && d.noPartNumbersSpoken,
     `instructions are short: title ≤ ${d.longestTitle} chars, instruction ≤ ${d.longestDesc} chars, speech ≤ ${d.longestSpeechWords} words, no part numbers read aloud — e.g. "${d.sample}"`);
+  const sw = Math.max(...d.spoken.map((t) => t.split(/\s+/).length));
+  check(sw <= 30 && d.spoken.every((t) => !/[A-Z0-9]{3,}-[A-Z0-9]{3,}|\(\d\/\d\)|\d\s*\/\s*\d/.test(t)),
+    `spoken script: ≤ ${sw} words per step, no part numbers or "(1/2)" marks read aloud — e.g. "${d.spoken[34]}"`);
   check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
 }
@@ -483,19 +652,25 @@ async function testGestures(browser) {
   const off = await page.evaluate(() => ({ panel: !document.getElementById('gesture-panel').hidden, cam: !!app.gestures.camera.stream }));
   check(off.panel && !off.cam, 'Gesture Control panel opens; the camera stays off until the user enables it');
   await page.click('#gp-toggle');
-  const on = await waitFor(page, () => app.gestures.status.phase === 'on' && app.gestures.camera.active, null, 15000);
+  const on = await waitFor(page, () => app.gestures.status.phase === 'on' && app.gestures.camera.active, null, 30000);   // fake camera start is slow under SwiftShader
   const ui = await page.evaluate(() => ({ cam: document.getElementById('gp-camera').textContent, chip: !document.getElementById('gesture-chip').hidden }));
   check(on && ui.chip, `enable → camera permission, tracker loaded, status "${ui.cam}", status chip on the 3D view`);
 
   await page.evaluate(() => app.seq.goTo(4));
   await waitFor(page, () => app.narrator.id === 4 && app.narrator.status === 'speaking');
-  const logBefore = await page.evaluate(() => __speechLog.length);
+  const logBefore = await page.evaluate(() => __audioLog.length);
   await set(UP);
   const moved = await waitFor(page, () => app.seq.pos === 5, null, 30000);
   const toast = await page.textContent('#gesture-toast');
   await frames(30);                                      // keep holding the thumbs up (~2 s at 15 fps)
   const held = await pos();
-  const nar = await page.evaluate((n) => ({ id: app.narrator.id, cancelled: __speechLog.slice(n).some((x) => x.t === 'cancel'), src: app.state.get('lastNavigation').source }), logBefore);
+  const nar = await page.evaluate((n) => {
+    const after = __audioLog.slice(n);
+    return { id: app.narrator.id, src: app.state.get('lastNavigation').source,
+      // step 5's recording was stopped by the gesture (or had already finished), step 6's plays alone
+      cancelled: (after.some((x) => x.t === 'pause' && x.key === 'step-05') || __audioLog.some((x) => x.t === 'ended' && x.key === 'step-05'))
+        && after.some((x) => x.t === 'play' && x.key === 'step-06') && app.narrator.recorded.current === 'step-06' };
+  }, logBefore);
   check(moved && held === 5 && toast.includes('NEXT STEP ACTIVATED') && nar.src === 'gesture',
     `right thumbs up → NEXT once (step 6), held 2 s → still step ${held + 1}; feedback "${toast}"`);
   check(nar.id === 5 && nar.cancelled, 'gesture during narration: previous narration stopped, step 6 narration started');
@@ -794,7 +969,7 @@ async function testCamera(browser) {
   // narration once per step, loop never advances, with the camera running
   await page.evaluate(() => app.seq.goTo(30));
   const loopOk = await waitFor(page, () => app.seq.loopCount >= 2, null, 90000);
-  const lo = await page.evaluate(() => ({ pos: app.seq.pos, spoken: __speechLog.filter((x) => x.t === 'speak' && x.text === app.narrator.chunks[0]).length }));
+  const lo = await page.evaluate(() => ({ pos: app.seq.pos, spoken: __audioLog.filter((x) => x.t === 'play' && x.key === 'step-31').length }));
   check(loopOk && lo.pos === 30 && lo.spoken === 1, 'with the camera active the loop still never advances and the narration is spoken once');
 
   // turn the automatic camera off: steps no longer move the view; setting persists
@@ -858,7 +1033,7 @@ async function testARCapabilities(browser) {
   await waitFor(page, () => app.gestures.status.phase === 'on', null, 15000);
   await page.click('#btn-ar'); await page.waitForSelector('#ar-dialog[open]');
   await page.click('#ar-overlay-start');
-  const ov = await waitFor(page, () => app.cameraView.active && !document.getElementById('overlay-video').paused, null, 15000);
+  const ov = await waitFor(page, () => app.cameraView.active && !document.getElementById('overlay-video').paused, null, 30000);
   const o = await page.evaluate(() => ({
     banner: document.getElementById('overlay-banner').innerText, btn: document.getElementById('btn-ar').dataset.ar,
     g: app.gestures.status.phase + '/' + app.gestures.status.reason, xr: app.viewer.renderer.xr.isPresenting,
@@ -896,6 +1071,31 @@ async function testBrandingAndBom(browser) {
     `visible name "Mist-Fit 550" (tab title, header, overview, details path); "${OLD}" not shown anywhere`);
   check(!all.includes(FILE) && !/MIST_FIT|\.STEP\b/.test(all), 'the STEP source file name is not shown (viewer, panels, dialogs, tooltips)');
 
+  // v1.4: AEROEX symbol (supplied artwork) in the header and loading screen, favicon
+  const logo = await page.evaluate(async () => {
+    const img = document.querySelector('.brand-logo');
+    const r = img.getBoundingClientRect();
+    const title = document.getElementById('product-title').getBoundingClientRect();
+    const view = document.getElementById('viewport').getBoundingClientRect();
+    const icons = [...document.querySelectorAll('link[rel~="icon"], link[rel="apple-touch-icon"]')];
+    const iconOk = await Promise.all(icons.map(async (l) => {
+      const res = await fetch(l.href); const b = await createImageBitmap(await res.blob());
+      return { href: l.getAttribute('href'), ok: res.ok, square: b.width === b.height, size: b.width };
+    }));
+    const orig = await Promise.all(['assets/brand/original/images.png', 'assets/brand/original/Logo.jpg'].map(async (u) => (await fetch(u)).ok));
+    return {
+      loaded: img.complete && img.naturalWidth > 0, alt: img.alt, ratio: r.width / r.height, natural: img.naturalWidth / img.naturalHeight,
+      h: r.height, beforeTitle: r.right <= title.left, insideHeader: r.bottom <= view.top + 1,
+      loader: !!document.querySelector('#loader .loader-logo'), iconOk, orig,
+      productTitle: document.getElementById('product-title').textContent, docTitle: document.title,
+    };
+  });
+  check(logo.loaded && logo.alt === 'AEROEX Technologies' && Math.abs(logo.ratio - logo.natural) < 0.01 && logo.h >= 20 && logo.h <= 32
+    && logo.beforeTitle && logo.insideHeader && logo.loader && logo.productTitle === 'Mist-Fit 550' && logo.docTitle.startsWith('Mist-Fit 550'),
+  `AEROEX symbol in the header (${logo.h}px high, proportions ${logo.ratio.toFixed(3)} = artwork ${logo.natural.toFixed(3)}) and on the loading screen; product title stays "${logo.productTitle}"`);
+  check(logo.iconOk.length >= 3 && logo.iconOk.every((i) => i.ok && i.square) && logo.orig.every(Boolean),
+    `favicon / touch icons from the AEROEX symbol (${logo.iconOk.map((i) => `${i.size}px`).join(', ')}); original artwork kept (images.png, Logo.jpg)`);
+
   const bom = await page.evaluate(() => {
     const t = document.getElementById('bom-table');
     const head = [...t.querySelectorAll('th')].map((x) => x.textContent);
@@ -926,6 +1126,67 @@ async function testBrandingAndBom(browser) {
   await page.close();
 }
 
+async function testVoiceAssets(browser) {
+  console.log('\n[12] natural-voice recordings');
+  const { page, errors } = await openApp(browser, speechMock());
+  const r = await page.evaluate(async () => {
+    const { narrationText, narrationKeys } = await import('./js/audio/narrationScript.js');
+    const { model } = window.app;
+    const man = await (await fetch('assets/narration/manifest.json', { cache: 'no-store' })).json();
+    const ctx = new OfflineAudioContext(1, 24000, 24000);
+    const missing = [], textDiff = [], bad = [], durDiff = [], names = [];
+    let positions = 0, bytes = 0;
+    const jobs = [];
+    for (let pos = -2; pos <= model.stepCount; pos++) {
+      positions++;
+      const { key } = narrationKeys(model, pos);
+      const e = man.entries[key];
+      if (!e) { missing.push(key); continue; }
+      if (e.text !== narrationText(model, pos)) textDiff.push(key);
+      names.push(e.file);
+      jobs.push(fetch(`assets/narration/${e.file}`).then(async (res) => {
+        const buf = await res.arrayBuffer();
+        bytes += buf.byteLength;
+        if (!res.ok || buf.byteLength !== e.bytes || !/audio\/mpeg/.test(res.headers.get('content-type') || '')) {
+          bad.push(`${key}: HTTP ${res.status}, ${buf.byteLength} bytes, ${res.headers.get('content-type')}`); return;
+        }
+        try {
+          const ab = await ctx.decodeAudioData(buf);
+          if (Math.abs(ab.duration - e.duration) > 0.15) durDiff.push(`${key}: ${ab.duration.toFixed(2)} s vs ${e.duration}`);
+        } catch (err) { bad.push(`${key}: ${err.name}`); }
+      }));
+    }
+    await Promise.all(jobs);
+    return { positions, count: man.count, voice: man.voice, format: man.format, missing, textDiff, bad, durDiff, bytes,
+      descriptive: names.every((f) => /^en-US-heart\/(overview|parts-kit|complete|step-\d\d-[a-z0-9-]+)\.mp3$/.test(f)),
+      unique: new Set(names).size === names.length, sample: names[10] };
+  });
+  check(r.positions === 72 && r.count === 72 && r.missing.length === 0 && r.textDiff.length === 0,
+    `${r.count} recordings for ${r.positions} positions (overview, parts kit, 69 steps, completion), each of exactly the spoken script ${[...r.missing, ...r.textDiff].join(' ')}`);
+  check(r.bad.length === 0 && r.durDiff.length === 0,
+    `every MP3 downloads (audio/mpeg) and decodes in the browser with its listed duration (${(r.bytes / 1e6).toFixed(2)} MB) ${[...r.bad, ...r.durDiff].slice(0, 3).join('; ')}`);
+  check(r.descriptive && r.unique && r.voice.model === 'Kokoro-82M v1.0' && r.voice.voice === 'af_heart' && r.format.loudnessLUFS === -17 && r.format.codec === 'mp3',
+    `${r.voice.model} voice "${r.voice.voiceName}" (${r.voice.lang}), loudness-normalised to ${r.format.loudnessLUFS} LUFS, descriptive file names (e.g. ${r.sample})`);
+  // real playback in the browser's media pipeline (plain page: the software-rendered 3D loop of
+  // headless SwiftShader would delay event delivery): plays to its end, in real time
+  const file = await page.evaluate(() => app.narrator.recorded.manifest.entries['step-06'].file);
+  const plain = await browser.newPage();
+  await plain.goto(`${BASE}/assets/narration/manifest.json`);
+  const real = await plain.evaluate(async (f) => {
+    const a = new Audio(f);                       // relative to assets/narration/
+    let tp = 0;
+    a.onplaying = () => { tp = performance.now(); };
+    await a.play();
+    await new Promise((res, rej) => { a.onended = res; a.onerror = rej; setTimeout(() => rej(new Error('timeout')), 20000); });
+    return { secs: (performance.now() - tp) / 1000, dur: a.duration, end: a.currentTime };
+  }, file).catch((e) => ({ error: e.message }));
+  await plain.close();
+  check(!real.error && Math.abs(real.secs - real.dur) < 0.6 && Math.abs(real.end - real.dur) < 0.05,
+    `real playback of step 6: ${real.secs?.toFixed(2)} s for a ${real.dur?.toFixed(2)} s recording, played to the end ${real.error || ''}`);
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+}
+
 (async () => {
   await startServer();
   const browser = await launch();
@@ -940,6 +1201,7 @@ async function testBrandingAndBom(browser) {
     if (run('camera')) await testCamera(browser);
     if (run('archrome')) await testARCapabilities(browser);
     if (run('branding')) await testBrandingAndBom(browser);
+    if (run('voice')) await testVoiceAssets(browser);
   } finally {
     await browser.close();
     if (server) server.kill();
