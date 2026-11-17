@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 /**
- * Callout — technical-drawing style balloon (item number + label) attached to
+ * Callout — technical-drawing style balloon (optional badge + label) attached to
  * the centre of a set of components, drawn as HTML over the canvas.
  * Works in the 3D viewer and inside the WebXR DOM overlay.
  */
@@ -24,7 +24,8 @@ export class Callout {
 
   set(objects, num, text) {
     this.objects = objects;
-    this.num.textContent = num;
+    this.num.textContent = num ?? '';
+    this.label.classList.toggle('no-num', !num);
     this.txt.textContent = text;
     this.el.style.opacity = objects.length ? '1' : '0';
   }
