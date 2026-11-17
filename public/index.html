@@ -6,7 +6,10 @@
   <title>Mist-Fit 550 · Interactive Assembly Instructions</title>
   <meta name="description" content="Mist-Fit 550: interactive exploded-view assembly instructions, BOM and WebAR.">
   <meta name="theme-color" content="#10151b">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23ff7a1a'/%3E%3Cpath d='M9 22V10l7 5 7-5v12' fill='none' stroke='%23fff' stroke-width='2.6' stroke-linejoin='round'/%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/brand/favicon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/brand/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/brand/apple-touch-icon.png">
+  <link rel="preload" href="assets/brand/aeroex-symbol-white.png" as="image">
   <link rel="stylesheet" href="css/app.css">
   <script type="importmap">
     { "imports": { "three": "./vendor/three/three.module.min.js", "three/addons/": "./vendor/three/addons/" } }
@@ -46,9 +49,8 @@
   <div id="app" class="app">
     <header class="topbar">
       <div class="brand">
-        <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32"><path d="M9 22V10l7 5 7-5v12" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linejoin="round"/></svg>
-        </div>
+        <img class="brand-logo" src="assets/brand/aeroex-symbol-white.png" width="309" height="246" alt="AEROEX Technologies">
+        <span class="brand-divider" aria-hidden="true"></span>
         <div class="brand-text">
           <span class="brand-title" id="product-title">Mist-Fit 550</span>
           <span class="brand-sub">Interactive assembly instructions · BOM · WebAR</span>
@@ -93,8 +95,11 @@
           <div class="nar-pop" id="nar-pop" hidden>
             <label>Voice <select id="nar-voice"></select></label>
             <label>Speed <select id="nar-rate"></select></label>
+            <label class="nar-vol" id="nar-volume-row">Volume
+              <span class="nar-vol-row"><input type="range" id="nar-volume" min="0" max="100" step="5" value="100" aria-label="Narration volume"><output id="nar-volume-out" for="nar-volume">100%</output></span>
+            </label>
             <p class="nar-kind" id="nar-voice-kind"></p>
-            <p class="nar-kind">Voices come from your browser (Web Speech API). Microsoft Edge offers Microsoft's online "Natural" neural voices.</p>
+            <p class="nar-kind">The natural voice is recorded with a neural text-to-speech model and played from this site. If it cannot be played, your browser's own voice reads the instructions.</p>
           </div>
         </div>
 
@@ -136,7 +141,7 @@
 
         <div class="loader" id="loader" role="status">
           <div class="loader-box">
-            <div class="loader-ring"></div>
+            <div class="loader-mark"><div class="loader-ring"></div><img class="loader-logo" src="assets/brand/aeroex-symbol-white.png" width="309" height="246" alt=""></div>
             <div class="loader-text" id="loader-text">Loading assembly…</div>
             <div class="loader-bar"><div class="loader-bar-fill" id="loader-bar"></div></div>
           </div>
