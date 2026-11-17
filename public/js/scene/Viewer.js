@@ -60,6 +60,7 @@ export class Viewer {
 
     this.timer = new THREE.Timer();
     this.onUpdate = [];       // callbacks (dt, frame) before each render
+    this.onCamera = [];       // camera drivers (dt), after the floor lift, before the orbit controls
     this.#camTween = null;
     this.#lift = 0;
 
@@ -160,14 +161,7 @@ export class Viewer {
       box = box.clone().translate(new THREE.Vector3(0, dy, 0));
     }
     const sphere = box.getBoundingSphere(new THREE.Sphere());
-    // fit inside the uncovered part of the viewport (see setInsets)
-    const w = this.container.clientWidth || 1;
-    const h = this.container.clientHeight || 1;
-    const { left, top } = this.insets || { left: 0, top: 0 };
-    const fullH = h + top;
-    const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2);
-    const avail = Math.max(80, Math.min(w - left, h - top));
-    const dist = (sphere.radius / Math.sin(Math.atan(tanV * avail / fullH))) * padding;
+    const dist = this.fitDistance(sphere.radius, padding);
     let dir = this.camera.position.clone().sub(this.controls.target);
     if (dir.lengthSq() < 1e-8) dir.set(1, 0.6, 1.3);
     dir.normalize();
@@ -184,6 +178,20 @@ export class Viewer {
       fromT: this.controls.target.clone(), toT: target,
       fromP: this.camera.position.clone(), toP: pos,
     };
+  }
+
+  /**
+   * Camera distance that fits a sphere of `radius` into the part of the viewport
+   * that is not covered by the step card (see setInsets).
+   */
+  fitDistance(radius, padding = 1.15) {
+    const w = this.container.clientWidth || 1;
+    const h = this.container.clientHeight || 1;
+    const { left, top } = this.insets || { left: 0, top: 0 };
+    const fullH = h + top;
+    const tanV = Math.tan(THREE.MathUtils.degToRad(this.camera.fov) / 2);
+    const avail = Math.max(80, Math.min(w - left, h - top));
+    return (radius / Math.sin(Math.atan(tanV * avail / fullH))) * padding;
   }
 
   /** Lift needed (stage space) so that the current pose of the model stands on y = 0. */
@@ -214,6 +222,7 @@ export class Viewer {
     const dt = Math.min(this.timer.getDelta(), 0.1);
     for (const fn of this.onUpdate) fn(dt, frame);
     this.#updateLift(dt);
+    for (const fn of this.onCamera) fn(dt);
     if (this.#camTween && !this.renderer.xr.isPresenting) {
       const tw = this.#camTween;
       tw.t = Math.min(1, tw.t + dt / tw.dur);
