@@ -49,7 +49,9 @@ export class Narrator extends EventTarget {
     this.rate = load('rate', defaultRate);
     this.volume = Math.min(1, Math.max(0, Number(load('volume', 1)) || 0));
     this.muted = !!load('muted', false);
-    this.pref = load('voice', 'natural');                     // 'natural' | browser voiceURI
+    // 'natural' | browser voiceURI. Stored under a new key: a browser voice picked in v1.1–v1.3
+    // ('voice', when no natural voice existed) must not hide the natural voice after the update.
+    this.pref = load('voicePref', 'natural');
     this.recorded = new RecordedVoice({ manifestUrl, fetchTimeoutMs, startTimeoutMs });
     this.browser = new BrowserVoice({ lang });
     if (this.pref !== 'natural' && !this.browser.setVoice(this.pref)) this.browser.voiceURI = this.pref;
@@ -120,7 +122,7 @@ export class Narrator extends EventTarget {
     if (v === 'natural') this.pref = 'natural';
     else if (this.browser.setVoice(v)) this.pref = v;
     else return;
-    save('voice', this.pref);
+    save('voicePref', this.pref);
     if (this.status === 'speaking' || this.status === 'loading') { this.offset = 0; this.#start(); }
     this.#emit();
   }
