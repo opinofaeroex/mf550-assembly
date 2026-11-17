@@ -1,0 +1,602 @@
+{
+ "version": 1,
+ "product": "Mist-Fit 550",
+ "voice": {
+  "model": "Kokoro-82M v1.0",
+  "voice": "af_heart",
+  "voiceName": "Heart",
+  "lang": "en-US",
+  "speed": 0.92,
+  "license": "Apache-2.0 (Kokoro-82M weights)",
+  "engine": "kokoro-onnx + misaki G2P"
+ },
+ "format": {
+  "codec": "mp3",
+  "mime": "audio/mpeg",
+  "sampleRate": 24000,
+  "bitrate": "48k",
+  "channels": 1,
+  "loudnessLUFS": -17.0
+ },
+ "count": 72,
+ "totalBytes": 2826427,
+ "totalSeconds": 462.4,
+ "entries": {
+  "overview": {
+   "pos": -2,
+   "file": "en-US-heart/overview.mp3",
+   "text": "This is the Mist-Fit 550, fully assembled: 220 parts, put together in 69 steps. Press Next step to see the parts kit.",
+   "duration": 9.95,
+   "bytes": 60411,
+   "hash": "d3924116162a25b2ae26"
+  },
+  "parts-kit": {
+   "pos": -1,
+   "file": "en-US-heart/parts-kit.mp3",
+   "text": "Here is the parts kit. Each component is shown along its removal direction. Press Next step to begin with step 1.",
+   "duration": 8.27,
+   "bytes": 50332,
+   "hash": "01a5a597e6f6fa86487b"
+  },
+  "step-01": {
+   "pos": 0,
+   "file": "en-US-heart/step-01-position-the-gauge-box-enclosure.mp3",
+   "text": "Step 1. Start the gauge box enclosure sub-assembly. Place the gauge box enclosure.",
+   "duration": 6.39,
+   "bytes": 39097,
+   "hash": "6898bdb46351016a14df"
+  },
+  "step-02": {
+   "pos": 1,
+   "file": "en-US-heart/step-02-install-the-gauge-mounting-panel.mp3",
+   "text": "Step 2. Fit the gauge mounting panel to the gauge box enclosure.",
+   "duration": 4.96,
+   "bytes": 30457,
+   "hash": "f573493d744a6f6cb084"
+  },
+  "step-03": {
+   "pos": 2,
+   "file": "en-US-heart/step-03-fit-the-pan-head-machine-screws.mp3",
+   "text": "Step 3. Fit six pan head machine screws to the gauge box enclosure, from above.",
+   "duration": 5.96,
+   "bytes": 36505,
+   "hash": "4f4eade18ddd0f342cb7"
+  },
+  "step-04": {
+   "pos": 3,
+   "file": "en-US-heart/step-04-position-the-unit-body.mp3",
+   "text": "Step 4. Start the unit body sub-assembly. Place the unit body.",
+   "duration": 5.37,
+   "bytes": 32905,
+   "hash": "7f0397e8cee95fcf7313"
+  },
+  "step-05": {
+   "pos": 4,
+   "file": "en-US-heart/step-05-install-the-back-panel.mp3",
+   "text": "Step 5. Fit the back panel to the unit body, from below.",
+   "duration": 4.45,
+   "bytes": 27433,
+   "hash": "2c665f024f853ad81c1b"
+  },
+  "step-06": {
+   "pos": 5,
+   "file": "en-US-heart/step-06-install-the-track-mount-legs.mp3",
+   "text": "Step 6. Fit two track mount legs to the unit body.",
+   "duration": 4.24,
+   "bytes": 26137,
+   "hash": "bbf2f583da95161b03d4"
+  },
+  "step-07": {
+   "pos": 6,
+   "file": "en-US-heart/step-07-install-the-filter-element-track.mp3",
+   "text": "Step 7. Fit the filter element track to the unit body, from above.",
+   "duration": 5.09,
+   "bytes": 31321,
+   "hash": "a7ffa9f904717eb6a446"
+  },
+  "step-08": {
+   "pos": 7,
+   "file": "en-US-heart/step-08-install-the-bellmouth-support-track.mp3",
+   "text": "Step 8. Fit the bellmouth support track to the unit body, from above.",
+   "duration": 4.96,
+   "bytes": 30457,
+   "hash": "dbd17d0169eb50d0224a"
+  },
+  "step-09": {
+   "pos": 8,
+   "file": "en-US-heart/step-09-fit-the-clip-nuts-1-of-2.mp3",
+   "text": "Step 9. Fit two clip nuts to the unit body, from below. This is the first of two sets.",
+   "duration": 6.86,
+   "bytes": 41833,
+   "hash": "6f47852d7409b87c8f27"
+  },
+  "step-10": {
+   "pos": 9,
+   "file": "en-US-heart/step-10-install-the-filter-base.mp3",
+   "text": "Step 10. Fit the filter base to the unit body, from above.",
+   "duration": 4.53,
+   "bytes": 27866,
+   "hash": "af681db804a603bcbf8d"
+  },
+  "step-11": {
+   "pos": 10,
+   "file": "en-US-heart/step-11-install-the-gauge-box-enclosure-sub-assembly.mp3",
+   "text": "Step 11. Fit the completed gauge box enclosure sub-assembly to the unit body, from above.",
+   "duration": 6.62,
+   "bytes": 40538,
+   "hash": "e559829058ff056aa027"
+  },
+  "step-12": {
+   "pos": 11,
+   "file": "en-US-heart/step-12-install-the-spring-nut-angle.mp3",
+   "text": "Step 12. Fit the spring nut angle to the unit body.",
+   "duration": 4.06,
+   "bytes": 25130,
+   "hash": "c2ee4b80ca708e1049b0"
+  },
+  "step-13": {
+   "pos": 12,
+   "file": "en-US-heart/step-13-fit-the-self-tapping-pan-head-screws.mp3",
+   "text": "Step 13. Fit four self-tapping pan head screws to the unit body.",
+   "duration": 5.13,
+   "bytes": 31466,
+   "hash": "4507c2d63550a50a043d"
+  },
+  "step-14": {
+   "pos": 13,
+   "file": "en-US-heart/step-14-fit-the-clip-nuts-2-of-2.mp3",
+   "text": "Step 14. Fit two clip nuts to the unit body. This is the second of two sets.",
+   "duration": 6.31,
+   "bytes": 38522,
+   "hash": "f3e74b12b5a28b3e5f42"
+  },
+  "step-15": {
+   "pos": 14,
+   "file": "en-US-heart/step-15-install-the-impeller-bracket-supports.mp3",
+   "text": "Step 15. Fit two impeller bracket supports to the unit body, from below.",
+   "duration": 5.64,
+   "bytes": 34634,
+   "hash": "7e2e559cb0fd9d01e6e6"
+  },
+  "step-16": {
+   "pos": 15,
+   "file": "en-US-heart/step-16-install-the-gauge-box-cover.mp3",
+   "text": "Step 16. Fit the gauge box cover to the unit body.",
+   "duration": 4.26,
+   "bytes": 26282,
+   "hash": "5e0811d544a84bb2e289"
+  },
+  "step-17": {
+   "pos": 16,
+   "file": "en-US-heart/step-17-position-the-door-frame.mp3",
+   "text": "Step 17. Start the access door sub-assembly. Place the door frame.",
+   "duration": 5.62,
+   "bytes": 34490,
+   "hash": "8aff82c981f4f747bba0"
+  },
+  "step-18": {
+   "pos": 17,
+   "file": "en-US-heart/step-18-install-the-access-door.mp3",
+   "text": "Step 18. Fit the access door to the door frame.",
+   "duration": 3.79,
+   "bytes": 23402,
+   "hash": "cb362b7a77855d578ef9"
+  },
+  "step-19": {
+   "pos": 18,
+   "file": "en-US-heart/step-19-fit-the-closed-end-rivets.mp3",
+   "text": "Step 19. Fit six closed-end rivets to the door frame.",
+   "duration": 4.45,
+   "bytes": 27434,
+   "hash": "47ccc23312ba4c599fcb"
+  },
+  "step-20": {
+   "pos": 19,
+   "file": "en-US-heart/step-20-position-the-unit-body-sub-assembly.mp3",
+   "text": "Step 20. Start the unit body assembly. Place the unit body sub-assembly.",
+   "duration": 5.9,
+   "bytes": 36074,
+   "hash": "c94f71e616656210b608"
+  },
+  "step-21": {
+   "pos": 20,
+   "file": "en-US-heart/step-21-install-the-filter-clamp-bolt-bracket-1-of-2.mp3",
+   "text": "Step 21. Fit the first of two filter clamp bolt brackets to the unit body sub-assembly.",
+   "duration": 6.62,
+   "bytes": 40538,
+   "hash": "101e3fa58bc9f48a1bf1"
+  },
+  "step-22": {
+   "pos": 21,
+   "file": "en-US-heart/step-22-install-the-access-door-sub-assembly.mp3",
+   "text": "Step 22. Fit the completed access door sub-assembly to the unit body sub-assembly.",
+   "duration": 6.28,
+   "bytes": 38378,
+   "hash": "f2c666b886e7f79043a5"
+  },
+  "step-23": {
+   "pos": 22,
+   "file": "en-US-heart/step-23-install-the-impeller-guard.mp3",
+   "text": "Step 23. Fit the impeller guard to the unit body sub-assembly, from above.",
+   "duration": 5.62,
+   "bytes": 34490,
+   "hash": "25b71f17ca6d6441370e"
+  },
+  "step-24": {
+   "pos": 23,
+   "file": "en-US-heart/step-24-install-the-filter-clamp.mp3",
+   "text": "Step 24. Fit the filter clamp to the unit body sub-assembly, from above.",
+   "duration": 5.52,
+   "bytes": 33770,
+   "hash": "ad8820321c8112af43f9"
+  },
+  "step-25": {
+   "pos": 24,
+   "file": "en-US-heart/step-25-install-the-filter-clamp-bolt-bracket-2-of-2.mp3",
+   "text": "Step 25. Fit the second of two filter clamp bolt brackets to the unit body sub-assembly.",
+   "duration": 7.01,
+   "bytes": 42842,
+   "hash": "3298003f4928d96ed151"
+  },
+  "step-26": {
+   "pos": 25,
+   "file": "en-US-heart/step-26-position-the-filter-frame-half.mp3",
+   "text": "Step 26. Start the filter frame half sub-assembly. Place the filter frame half. Repeat this on both filter frame half sub-assemblies.",
+   "duration": 10.08,
+   "bytes": 61274,
+   "hash": "f141930b866b322ff895"
+  },
+  "step-27": {
+   "pos": 26,
+   "file": "en-US-heart/step-27-install-the-filter-frame-half-2-of-2.mp3",
+   "text": "Step 27. Fit the second filter frame half to the first. Repeat this on both filter frame half sub-assemblies.",
+   "duration": 8.12,
+   "bytes": 49466,
+   "hash": "69da63841dc0d2b7bfdf"
+  },
+  "step-28": {
+   "pos": 27,
+   "file": "en-US-heart/step-28-fit-the-blind-rivets-1-of-2.mp3",
+   "text": "Step 28. Fit four blind rivets to the filter frame half. This is the first of two sets. Repeat this on both filter frame half sub-assemblies.",
+   "duration": 10.49,
+   "bytes": 63722,
+   "hash": "4468e9f040be353ed5ed"
+  },
+  "step-29": {
+   "pos": 28,
+   "file": "en-US-heart/step-29-install-the-filter-retaining-bars.mp3",
+   "text": "Step 29. Fit four filter retaining bars to the filter frame half. Repeat this on both filter frame half sub-assemblies.",
+   "duration": 8.89,
+   "bytes": 54074,
+   "hash": "bc95907733600e9aa711"
+  },
+  "step-30": {
+   "pos": 29,
+   "file": "en-US-heart/step-30-fit-the-blind-rivets-2-of-2.mp3",
+   "text": "Step 30. Fit eight blind rivets to the filter frame half. This is the second of two sets. Repeat this on both filter frame half sub-assemblies.",
+   "duration": 10.43,
+   "bytes": 63290,
+   "hash": "39d86a1cbe18b22e41ed"
+  },
+  "step-31": {
+   "pos": 30,
+   "file": "en-US-heart/step-31-position-the-filter-frame-half-sub-assembly.mp3",
+   "text": "Step 31. Start the mesh filter media sub-assembly. Place the filter frame half sub-assembly.",
+   "duration": 7.07,
+   "bytes": 43130,
+   "hash": "225dc2d0ecf50e6b3c22"
+  },
+  "step-32": {
+   "pos": 31,
+   "file": "en-US-heart/step-32-fit-the-blind-rivets.mp3",
+   "text": "Step 32. Fit four blind rivets to the filter frame half sub-assembly.",
+   "duration": 5.39,
+   "bytes": 33050,
+   "hash": "73bdd1b92918056ffb3f"
+  },
+  "step-33": {
+   "pos": 32,
+   "file": "en-US-heart/step-33-install-the-mesh-filter-media.mp3",
+   "text": "Step 33. Fit the mesh filter media to the filter frame half sub-assembly.",
+   "duration": 5.81,
+   "bytes": 35642,
+   "hash": "af75c83400c7a5a2eee9"
+  },
+  "step-34": {
+   "pos": 33,
+   "file": "en-US-heart/step-34-position-the-filter-frame-half-sub-assembly.mp3",
+   "text": "Step 34. Start the perforated filter baffle sub-assembly. Place the filter frame half sub-assembly.",
+   "duration": 7.42,
+   "bytes": 45146,
+   "hash": "fc2750c6e8f9882c164a"
+  },
+  "step-35": {
+   "pos": 34,
+   "file": "en-US-heart/step-35-install-the-perforated-filter-baffle-1-of-3.mp3",
+   "text": "Step 35. Fit the first of three perforated filter baffles to the filter frame half sub-assembly.",
+   "duration": 7.58,
+   "bytes": 46298,
+   "hash": "0438239ad4d5215a062f"
+  },
+  "step-36": {
+   "pos": 35,
+   "file": "en-US-heart/step-36-install-the-perforated-filter-baffle-2-of-3.mp3",
+   "text": "Step 36. Fit the second of three perforated filter baffles to the filter frame half sub-assembly.",
+   "duration": 7.31,
+   "bytes": 44570,
+   "hash": "14389dc11e95c27afe5b"
+  },
+  "step-37": {
+   "pos": 36,
+   "file": "en-US-heart/step-37-install-the-perforated-filter-baffle-3-of-3.mp3",
+   "text": "Step 37. Fit the third of three perforated filter baffles to the filter frame half sub-assembly.",
+   "duration": 7.67,
+   "bytes": 46730,
+   "hash": "d76400a3c4582f612022"
+  },
+  "step-38": {
+   "pos": 37,
+   "file": "en-US-heart/step-38-position-the-impeller-drive-motor-unit.mp3",
+   "text": "Step 38. Start the impeller drive motor assembly. Place the impeller drive motor unit.",
+   "duration": 6.58,
+   "bytes": 40250,
+   "hash": "480423c2b7cc064abc7d"
+  },
+  "step-39": {
+   "pos": 38,
+   "file": "en-US-heart/step-39-install-the-motor-mounting-bracket.mp3",
+   "text": "Step 39. Fit the motor mounting bracket to the impeller drive motor unit, from above.",
+   "duration": 6.3,
+   "bytes": 38522,
+   "hash": "b6a5eaa635f6ae9e5141"
+  },
+  "step-40": {
+   "pos": 39,
+   "file": "en-US-heart/step-40-fit-the-motor-mounting-hex-bolts.mp3",
+   "text": "Step 40. Fit four motor mounting hex bolts to the impeller drive motor unit, from above.",
+   "duration": 6.37,
+   "bytes": 38954,
+   "hash": "5c740e89606591e49abc"
+  },
+  "step-41": {
+   "pos": 40,
+   "file": "en-US-heart/step-41-fit-the-external-tooth-lock-washers.mp3",
+   "text": "Step 41. Fit four external tooth lock washers to the impeller drive motor unit, from above.",
+   "duration": 6.84,
+   "bytes": 41690,
+   "hash": "59e6a628cddf902f1460"
+  },
+  "step-42": {
+   "pos": 41,
+   "file": "en-US-heart/step-42-install-the-bellmouth-mounting-plate.mp3",
+   "text": "Step 42. Fit the bellmouth mounting plate to the impeller drive motor unit, from above.",
+   "duration": 6.33,
+   "bytes": 38666,
+   "hash": "e3030bd25e3f555a80fc"
+  },
+  "step-43": {
+   "pos": 42,
+   "file": "en-US-heart/step-43-fit-the-hex-flange-bolts.mp3",
+   "text": "Step 43. Fit six hex flange bolts to the impeller drive motor unit, from below.",
+   "duration": 6.24,
+   "bytes": 38234,
+   "hash": "68566822881cc91e99ad"
+  },
+  "step-44": {
+   "pos": 43,
+   "file": "en-US-heart/step-44-fit-the-hex-flange-nuts.mp3",
+   "text": "Step 44. Fit six hex flange nuts to the impeller drive motor unit, from above.",
+   "duration": 6.11,
+   "bytes": 37370,
+   "hash": "8efa2f17348151ee7a8f"
+  },
+  "step-45": {
+   "pos": 44,
+   "file": "en-US-heart/step-45-position-the-pleated-filter-housing-half.mp3",
+   "text": "Step 45. Start the pleated filter housing half sub-assembly. Place the pleated filter housing half.",
+   "duration": 7.44,
+   "bytes": 45290,
+   "hash": "beac7fddf825e43d0cf5"
+  },
+  "step-46": {
+   "pos": 45,
+   "file": "en-US-heart/step-46-install-the-pleated-filter-housing-half-2-of-2.mp3",
+   "text": "Step 46. Fit the second pleated filter housing half to the first.",
+   "duration": 5.07,
+   "bytes": 31178,
+   "hash": "814b6116049a7e9c7fec"
+  },
+  "step-47": {
+   "pos": 46,
+   "file": "en-US-heart/step-47-fit-the-blind-rivets.mp3",
+   "text": "Step 47. Fit ten blind rivets to the pleated filter housing half.",
+   "duration": 5.41,
+   "bytes": 33194,
+   "hash": "c507986c9eb7dd824f2e"
+  },
+  "step-48": {
+   "pos": 47,
+   "file": "en-US-heart/step-48-position-the-pleated-filter-housing-half-sub-assembly.mp3",
+   "text": "Step 48. Start the pleated filter element sub-assembly. Place the pleated filter housing half sub-assembly.",
+   "duration": 7.82,
+   "bytes": 47594,
+   "hash": "eaf5ec9b11a9468e128d"
+  },
+  "step-49": {
+   "pos": 48,
+   "file": "en-US-heart/step-49-install-the-pleated-filter-element.mp3",
+   "text": "Step 49. Fit the pleated filter element to the pleated filter housing half sub-assembly.",
+   "duration": 6.54,
+   "bytes": 39962,
+   "hash": "2ac6bac9b35d6393dcb3"
+  },
+  "step-50": {
+   "pos": 49,
+   "file": "en-US-heart/step-50-install-the-filter-gasket.mp3",
+   "text": "Step 50. Fit the filter gasket to the pleated filter housing half sub-assembly, from below.",
+   "duration": 6.6,
+   "bytes": 40394,
+   "hash": "adc1bdf77294b8eb195c"
+  },
+  "step-51": {
+   "pos": 50,
+   "file": "en-US-heart/step-51-position-the-unit-body-assembly.mp3",
+   "text": "Step 51. Start the final assembly. Place the unit body assembly.",
+   "duration": 5.58,
+   "bytes": 34202,
+   "hash": "54353d3fe4b26cf51b14"
+  },
+  "step-52": {
+   "pos": 51,
+   "file": "en-US-heart/step-52-fit-the-cable-strain-relief.mp3",
+   "text": "Step 52. Fit the cable strain relief to the unit body assembly.",
+   "duration": 5.13,
+   "bytes": 31466,
+   "hash": "3be14b30c6899beffaa5"
+  },
+  "step-53": {
+   "pos": 52,
+   "file": "en-US-heart/step-53-fit-the-hex-flange-bolts-1-of-2.mp3",
+   "text": "Step 53. Fit five hex flange bolts to the unit body assembly, from above. This is the first of two sets.",
+   "duration": 8.01,
+   "bytes": 48746,
+   "hash": "4f218cc72d2af6b1f5b3"
+  },
+  "step-54": {
+   "pos": 53,
+   "file": "en-US-heart/step-54-fit-the-self-tapping-pan-head-screws.mp3",
+   "text": "Step 54. Fit eight self-tapping pan head screws to the unit body assembly, from below.",
+   "duration": 6.45,
+   "bytes": 39386,
+   "hash": "01e80562caadba3c4a61"
+  },
+  "step-55": {
+   "pos": 54,
+   "file": "en-US-heart/step-55-fit-the-filter-clamp-hex-bolts.mp3",
+   "text": "Step 55. Fit two filter clamp hex bolts to the unit body assembly, from below.",
+   "duration": 6.2,
+   "bytes": 37946,
+   "hash": "8d77bdfae1e6bed1f743"
+  },
+  "step-56": {
+   "pos": 55,
+   "file": "en-US-heart/step-56-fit-the-closed-end-rivets.mp3",
+   "text": "Step 56. Fit thirty-eight closed-end rivets to the unit body assembly.",
+   "duration": 5.56,
+   "bytes": 34058,
+   "hash": "f23032ba7bf169bc22a5"
+  },
+  "step-57": {
+   "pos": 56,
+   "file": "en-US-heart/step-57-fit-the-pan-head-machine-screws.mp3",
+   "text": "Step 57. Fit eight pan head machine screws to the unit body assembly.",
+   "duration": 5.43,
+   "bytes": 33338,
+   "hash": "23fc5c25f449de00448e"
+  },
+  "step-58": {
+   "pos": 57,
+   "file": "en-US-heart/step-58-fit-the-strain-relief-nut.mp3",
+   "text": "Step 58. Fit the strain relief nut to the unit body assembly.",
+   "duration": 5.0,
+   "bytes": 30746,
+   "hash": "f835f2229caa21e4956b"
+  },
+  "step-59": {
+   "pos": 58,
+   "file": "en-US-heart/step-59-fit-the-door-bolt-washers.mp3",
+   "text": "Step 59. Fit four door bolt washers to the unit body assembly.",
+   "duration": 5.2,
+   "bytes": 31898,
+   "hash": "06ef2342ab15b2ef6fa5"
+  },
+  "step-60": {
+   "pos": 59,
+   "file": "en-US-heart/step-60-fit-the-pressure-gauge.mp3",
+   "text": "Step 60. Fit the pressure gauge to the unit body assembly.",
+   "duration": 4.47,
+   "bytes": 27578,
+   "hash": "995c28596043a188204f"
+  },
+  "step-61": {
+   "pos": 60,
+   "file": "en-US-heart/step-61-fit-the-hex-nuts.mp3",
+   "text": "Step 61. Fit two hex nuts to the unit body assembly, from above.",
+   "duration": 5.34,
+   "bytes": 32762,
+   "hash": "d051b48b2ba33d48a756"
+  },
+  "step-62": {
+   "pos": 61,
+   "file": "en-US-heart/step-62-fit-the-filter-clamp-knobs.mp3",
+   "text": "Step 62. Fit two filter clamp knobs to the unit body assembly, from above.",
+   "duration": 6.03,
+   "bytes": 36938,
+   "hash": "45f742649779d43e7e71"
+  },
+  "step-63": {
+   "pos": 62,
+   "file": "en-US-heart/step-63-fit-the-clip-nuts-1-of-2.mp3",
+   "text": "Step 63. Fit ten clip nuts to the unit body assembly, from below. This is the first of two sets.",
+   "duration": 7.67,
+   "bytes": 46730,
+   "hash": "64d11be387c0ac122ec5"
+  },
+  "step-64": {
+   "pos": 63,
+   "file": "en-US-heart/step-64-install-the-mesh-filter-media-sub-assembly.mp3",
+   "text": "Step 64. Fit the completed mesh filter media sub-assembly to the unit body assembly.",
+   "duration": 6.62,
+   "bytes": 40538,
+   "hash": "1a2db2f6ec7935065ee9"
+  },
+  "step-65": {
+   "pos": 64,
+   "file": "en-US-heart/step-65-install-the-perforated-filter-baffle-sub-assembly.mp3",
+   "text": "Step 65. Fit the completed perforated filter baffle sub-assembly to the unit body assembly.",
+   "duration": 6.97,
+   "bytes": 42554,
+   "hash": "b2672bba861264595952"
+  },
+  "step-66": {
+   "pos": 65,
+   "file": "en-US-heart/step-66-install-the-impeller-drive-motor-assembly.mp3",
+   "text": "Step 66. Fit the completed impeller drive motor assembly to the unit body assembly, from above.",
+   "duration": 7.22,
+   "bytes": 43994,
+   "hash": "d4641583579cecc57809"
+  },
+  "step-67": {
+   "pos": 66,
+   "file": "en-US-heart/step-67-fit-the-hex-flange-bolts-2-of-2.mp3",
+   "text": "Step 67. Fit three hex flange bolts to the unit body assembly, from above. This is the second of two sets.",
+   "duration": 8.12,
+   "bytes": 49466,
+   "hash": "da2cedb9cfded335c7a6"
+  },
+  "step-68": {
+   "pos": 67,
+   "file": "en-US-heart/step-68-fit-the-clip-nuts-2-of-2.mp3",
+   "text": "Step 68. Fit four clip nuts to the unit body assembly. This is the second of two sets.",
+   "duration": 6.9,
+   "bytes": 42122,
+   "hash": "89fb2bf8102d711198e7"
+  },
+  "step-69": {
+   "pos": 68,
+   "file": "en-US-heart/step-69-install-the-pleated-filter-element-sub-assembly.mp3",
+   "text": "Step 69. Fit the completed pleated filter element sub-assembly to the unit body assembly, from above. The assembly is complete.",
+   "duration": 9.61,
+   "bytes": 58394,
+   "hash": "06ecd6604397f3b39c73"
+  },
+  "complete": {
+   "pos": 69,
+   "file": "en-US-heart/complete.mp3",
+   "text": "The Mist-Fit 550 assembly is complete. All 220 components are in their final positions.",
+   "duration": 7.07,
+   "bytes": 43131,
+   "hash": "c25ca3bcf5e558542ed8"
+  }
+ }
+}
