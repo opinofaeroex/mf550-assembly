@@ -2,6 +2,9 @@
  * Application configuration (single place for tunable behaviour).
  */
 export const CONFIG = {
+  /** Product name shown in the interface (the CAD/internal identifier stays MF-550-210-B). */
+  productName: 'Mist-Fit 550',
+
   assemblyUrl: 'assets/model/assembly.json',
   modelDir: 'assets/model/',
 
@@ -14,6 +17,17 @@ export const CONFIG = {
    * the exact CAD position. v1.0 used 1, v1.1 uses 3.
    */
   explodeScale: 3,
+
+  /**
+   * Automatic camera (v1.3, scene/CameraController.js): close-up of each step's components.
+   * radius / travel in metres, transition in seconds (scaled by the angle to turn).
+   */
+  camera: {
+    padding: 1.3,            // margin around the focus sphere
+    minRadius: 0.07,         // never closer than a 7 cm sphere: keeps context around small hardware
+    maxTravelShown: 0.22,    // part of the approach path kept in view (longer paths enter from off-screen)
+    transition: [0.9, 1.6],  // seconds for a small / a half-turn camera move
+  },
 
   /** Continuous animation of the current step (v1.2). Never changes the step. */
   animation: {
