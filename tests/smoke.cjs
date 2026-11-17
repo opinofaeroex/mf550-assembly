@@ -438,11 +438,20 @@ async function testNavigationAndVoice(browser) {
   const pick = (v) => page.evaluate((val) => { app.narrator.replay(); const sel = document.getElementById('nar-voice'); sel.value = val; sel.dispatchEvent(new Event('change', { bubbles: true })); }, v);
   await pick('jenny');
   const sw = await waitFor(page, () => app.narrator.engine === 'browser' && app.narrator.status === 'speaking' && window.__speechActive() && !window.__audioActive(), null, 10000);
+  const savedPick = await page.evaluate(() => localStorage.getItem('mf550.narration.voicePref'));
   await pick('natural');
   const back = await waitFor(page, () => app.narrator.engine === 'natural' && app.narrator.status === 'speaking' && window.__audioActive() && !window.__speechActive(), null, 10000);
-  check(sw && back, 'choosing a browser voice switches engines without overlap; choosing the natural voice switches back');
+  check(sw && back && savedPick === '"jenny"', 'choosing a browser voice switches engines without overlap (choice remembered); choosing the natural voice switches back');
   check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
+
+  // a browser voice picked in v1.1–v1.3 (stored as "voice") does not hide the natural voice after the update
+  const old = await openApp(browser, speechMock() + `try { localStorage.setItem('mf550.narration.voice', JSON.stringify('jenny')); } catch {}`);
+  await old.page.evaluate(() => app.seq.goTo(4));
+  const oldNat = await waitFor(old.page, () => app.narrator.id === 4 && app.narrator.status === 'speaking' && app.narrator.engine === 'natural' && window.__audioActive() && !window.__speechActive(), null, 15000);
+  const oldSel = await old.page.evaluate(() => document.getElementById('nar-voice').value);
+  check(oldNat && oldSel === 'natural' && old.errors.length === 0, 'returning visitor with a v1.3 browser-voice choice: the natural voice is used (the old choice is not carried over)');
+  await old.page.close();
 
   // browsers that block sound until the first user gesture
   const g = await openApp(browser, speechMock({ requireGesture: true }), undefined, { audio: { requireGesture: true } });
@@ -481,9 +490,9 @@ async function testNavigationAndVoice(browser) {
   await f.page.evaluate(() => app.seq.goTo(30));
   await waitFor(f.page, () => app.narrator.id === 30 && app.narrator.status === 'speaking' && window.__speechActive());
   s = await fst();
-  const notice = await f.page.evaluate(() => ({ text: document.getElementById('toast').textContent }));
-  check(s.status === 'speaking' && s.id === 30 && s.engine === 'browser' && /browser voice/.test(notice.text),
-    `recordings unreachable → the browser voice narrates; notice "${notice.text}"`);
+  const notice = await f.page.evaluate(() => ({ text: document.getElementById('toast').textContent, pe: getComputedStyle(document.getElementById('toast')).pointerEvents }));
+  check(s.status === 'speaking' && s.id === 30 && s.engine === 'browser' && /browser voice/.test(notice.text) && notice.pe === 'none',
+    `recordings unreachable → the browser voice narrates; notice "${notice.text}" (does not block the step buttons)`);
   const spoken = await f.page.evaluate(() => { const t = __speechLog.filter((x) => x.t === 'start').slice(-1)[0].text; return { t, ok: app.narrator.text.startsWith('Step 31.') && app.narrator.text.includes(t) }; });
   check(spoken.ok, `the sentence being spoken belongs to step 31: "${spoken.t.slice(0, 70)}"`);
   await fClick('#nar-play');

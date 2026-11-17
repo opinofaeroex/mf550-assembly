@@ -421,6 +421,7 @@ kbd { font: 600 11.5px/1 var(--mono); padding: 3px 6px; border-radius: 5px; bord
   position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 50;
   max-width: min(520px, calc(100% - 32px)); padding: 10px 14px; border-radius: 10px;
   background: #0b0f14; border: 1px solid var(--line-2); box-shadow: var(--shadow); font-size: 13px;
+  pointer-events: none;   /* text only: a notice never blocks the step buttons underneath */
 }
 
 /* ---------- AR overlay ---------- */
