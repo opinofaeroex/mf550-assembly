@@ -1,0 +1,13 @@
+{
+  "_comment": "Pronunciation overrides for the natural voice (Kokoro / misaki IPA). Keys are matched as whole words, case-insensitively, in the spoken text only; the names shown in the app and the BOM are never changed. Add an entry, then run `npm run narration` to re-record only the affected steps. Notation: misaki phonemes (https://github.com/hexgrad/misaki/blob/main/EN_PHONES.md) - ˈ primary stress, ˌ secondary stress, W = 'ow' as in 'mouth', A = 'ay', I = 'eye', O = 'oh'.",
+  "words": {
+    "Mist-Fit": "mˈɪstʔ fˈɪt",
+    "bellmouth": "bˈɛlmˌWθ",
+    "enclosure": "ɪnklˈOʒəɹ"
+  },
+  "_notes": {
+    "Mist-Fit": "a short glottal stop keeps the t; without it the product name is heard as 'Misfit'",
+    "bellmouth": "bell-mouth, not 'BEL-muth' (as in Plymouth)",
+    "enclosure": "in-CLOH-zhur; after 'box' the default en- was heard as 'and closure'"
+  }
+}
