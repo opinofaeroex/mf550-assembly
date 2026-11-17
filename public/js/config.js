@@ -60,5 +60,9 @@ export const CONFIG = {
     startDelayMs: 150,     // debounce: rapid step changes never queue several narrations
     rates: [0.8, 0.9, 1, 1.1, 1.25],
     defaultRate: 1,
+    /** v1.4 natural voice: pre-recorded MP3 per position (tools/narration/generate.py). */
+    manifestUrl: 'assets/narration/manifest.json',
+    fetchTimeoutMs: 12000, // a recording that takes longer → browser voice for that step
+    startTimeoutMs: 8000,  // playback that never starts → browser voice
   },
 };
