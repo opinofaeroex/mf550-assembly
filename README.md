@@ -30,7 +30,7 @@ down, and an augmented-reality mode for phones and tablets.
 | **Spoken script** | The voice no longer reads the card's title *and* instruction (which say the same thing twice). It says the operation once, phrased to be heard (`public/js/audio/spokenScript.js`), e.g. *"Step 35. Fit the first of three perforated filter baffles to the filter frame half sub-assembly."* Component, quantity, target, direction and repeat notes come from the same step facts as the card (`ui/text.js stepFacts`), and the tests check that both match for all 69 steps. Nothing is invented: no torques, tools or safety statements. |
 | **Pronunciation** | A separate pronunciation layer keeps the on-screen names untouched. Spoken aliases (`SPOKEN_ALIASES`, e.g. *Mist-Fit 550* → "Mist-Fit five fifty") and an IPA lexicon for the natural voice (`tools/narration/lexicon.json`: *Mist-Fit*, *bellmouth*, *enclosure*). |
 | **Synchronisation** | Unchanged contract: the narration starts when you enter a step, stops at once when you leave it, plays once per step (the looping animation never restarts it) and never advances the step. Buttons, keys, AR overlay and gestures share the same navigation path. Rapid navigation can never play an outdated recording: each start carries a token, and late downloads are aborted or dropped. |
-| **Controls** | Play / Pause / **Resume from the same point**, Replay, Mute (`M`, remembered). Under ⚙: voice (natural voice, or one of the browser's voices), **speed** 0.8–1.25× (pitch kept, applied live) and **volume** (remembered; on iPhone/iPad the hardware buttons control it). |
+| **Controls** | Play / Pause / **Resume from the same point**, Replay, Mute (`M`, remembered). Under ⚙: voice (natural voice, or one of the browser's voices; remembered — a browser voice picked before v1.4 is not carried over, so returning visitors hear the natural voice), **speed** 0.8–1.25× (pitch kept, applied live) and **volume** (remembered; on iPhone/iPad the hardware buttons control it). |
 | **Performance** | One audio element for the session. The current recording (~40 kB) is fetched into memory first, then the **next step's recording is preloaded** in the background at low priority. At most 10 recordings are kept in memory. The manifest is fetched once. |
 | **Fallback** | If a recording is missing, the network fails, the browser can't play MP3 or a recording is out of date, the browser's own voice (Web Speech API) reads the same script and a one-line notice explains why. Without either voice, a notice says so and the written instructions remain. Nothing in the 3D view, AR, gestures or navigation depends on the voice. |
 | **AEROEX branding** | The supplied AEROEX symbol now appears in the header (before **Mist-Fit 550**, which stays the product name), on the loading screen, and as the favicon / home-screen icon. The original files are kept unchanged in `public/assets/brand/original/`. |
@@ -584,7 +584,7 @@ npm test
 The natural-voice recordings really play in headless Chromium (autoplay allowed by a launch flag); an
 in-page spy on the audio element logs every play / pause / end with its recording key. Headless Chromium
 has no speech voices, so the Web Speech API (fallback voice) is replaced by a deterministic in-page mock that
-logs every speak / start / end / cancel (the app code is unchanged). 106 checks:
+logs every speak / start / end / cancel (the app code is unchanged). 107 checks:
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
 * **3× exploded view** — all 208 displacement vectors (hardware, parts, sub-assemblies) are exactly 3× the
@@ -600,7 +600,7 @@ logs every speak / start / end / cancel (the app code is unchanged). 106 checks:
   resume from the same point, live speed 1.25× and volume 60 % (remembered, no restart), replay from 0,
   mute (stops at once, nothing on later steps), unmute, next-step preload without interruption, keyboard,
   natural voice selected by default with browser voices as alternatives, switching engines without overlap,
-  blocked-until-gesture, works without Web Speech, no audio and no speech → controls disabled.
+  a browser voice chosen in v1.1–v1.3 does not replace the natural voice, blocked-until-gesture, works without Web Speech, no audio and no speech → controls disabled.
 * **Browser-voice fallback (v1.4)** — recordings unreachable → notice + Web Speech voice with the v1.1–v1.3
   behaviour (sentence pause/resume, replay, once per step, best voice); a single missing file (HTTP 404)
   falls back for that step only; no recordings and no speech → explicit message, navigation unaffected.
@@ -682,7 +682,8 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
   normalisation, recording pipeline + speech-recognition review (`tools/narration`); new narrator with recorded
   voice first and Web Speech fallback (missing file, network, unsupported audio, stale script), next-step
   preload, in-memory cache, stale-download guard, resume from the same point, live speed, volume control;
-  AEROEX symbol in the header and loading screen, favicon and home-screen icons (originals kept); MP3 MIME
+  the voice choice is stored under a new key, so a browser voice picked in v1.1–v1.3 does not hide the natural
+  voice; AEROEX symbol in the header and loading screen, favicon and home-screen icons (originals kept); MP3 MIME
   type in `tools/serve.mjs`; tests extended (natural voice, fallback, recordings, branding).
 * **1.3** — Visible product name **Mist-Fit 550** (STEP file name no longer displayed); BOM, parts list,
   step card, details and balloons without hierarchical item numbers (internal keys unchanged); AR button with
