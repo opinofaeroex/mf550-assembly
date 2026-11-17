@@ -684,7 +684,8 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
   preload, in-memory cache, stale-download guard, resume from the same point, live speed, volume control;
   the voice choice is stored under a new key, so a browser voice picked in v1.1–v1.3 does not hide the natural
   voice; AEROEX symbol in the header and loading screen, favicon and home-screen icons (originals kept); MP3 MIME
-  type in `tools/serve.mjs`; tests extended (natural voice, fallback, recordings, branding).
+  type in `tools/serve.mjs`; on-screen notices no longer intercept taps on the step buttons; tests extended
+  (natural voice, fallback, recordings, branding).
 * **1.3** — Visible product name **Mist-Fit 550** (STEP file name no longer displayed); BOM, parts list,
   step card, details and balloons without hierarchical item numbers (internal keys unchanged); AR button with
   capability states (supported / needs permission / unavailable / active) and direct WebXR start in Chrome;
