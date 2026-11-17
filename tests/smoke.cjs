@@ -490,9 +490,9 @@ async function testNavigationAndVoice(browser) {
   await f.page.evaluate(() => app.seq.goTo(30));
   await waitFor(f.page, () => app.narrator.id === 30 && app.narrator.status === 'speaking' && window.__speechActive());
   s = await fst();
-  const notice = await f.page.evaluate(() => ({ text: document.getElementById('toast').textContent }));
-  check(s.status === 'speaking' && s.id === 30 && s.engine === 'browser' && /browser voice/.test(notice.text),
-    `recordings unreachable → the browser voice narrates; notice "${notice.text}"`);
+  const notice = await f.page.evaluate(() => ({ text: document.getElementById('toast').textContent, pe: getComputedStyle(document.getElementById('toast')).pointerEvents }));
+  check(s.status === 'speaking' && s.id === 30 && s.engine === 'browser' && /browser voice/.test(notice.text) && notice.pe === 'none',
+    `recordings unreachable → the browser voice narrates; notice "${notice.text}" (does not block the step buttons)`);
   const spoken = await f.page.evaluate(() => { const t = __speechLog.filter((x) => x.t === 'start').slice(-1)[0].text; return { t, ok: app.narrator.text.startsWith('Step 31.') && app.narrator.text.includes(t) }; });
   check(spoken.ok, `the sentence being spoken belongs to step 31: "${spoken.t.slice(0, 70)}"`);
   await fClick('#nar-play');
