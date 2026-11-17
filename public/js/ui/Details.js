@@ -27,7 +27,8 @@ export class Details {
     const steps = row.steps.length ? row.steps.map((s) => s + 1).join(', ') : row.insideUnit ? 'Part of a purchased unit' : '—';
     const flag = (inst && inst.flag) || first.flag;
 
-    this.els.item.textContent = `Item ${row.item}${inst ? ' · instance ' + inst.cad : ''}`;
+    const kind = row.unit ? 'Purchased unit' : row.kind === 'sub-assembly' ? 'Sub-assembly' : 'Part';
+    this.els.item.textContent = `${kind}${inst ? ' · instance ' + inst.cad : ''}`;
     this.els.title.textContent = displayName(row);
     const rows = [
       ['Name', row.label
@@ -37,7 +38,7 @@ export class Details {
       ['Part number', row.partNumber ? `<dd class="mono">${esc(row.partNumber)}</dd>` : '<dd class="missing">Not in STEP file — CAD name shown</dd>'],
       ['Quantity', `<dd>${row.qty} in ${esc(displayName(parent))}${total && row.kind === 'part' && total.qty !== row.qty ? ` · ${total.qty} in product` : ''}</dd>`],
       ['Type', `<dd>${esc(type)}</dd>`],
-      ['Parent assembly', `<dd class="mono">${esc([...m.assemblyPath(first.id)].join(' › '))}</dd>`],
+      ['Parent assembly', `<dd>${esc(this.#path(first).join(' › '))}</dd>`],
       ['Assembly step', `<dd>${steps}</dd>`],
       ['Envelope', `<dd>${ex.map((v) => fmt(v, 1)).join(' × ')} mm</dd>`],
       ['Volume', `<dd>${fmt(first.volumeMm3 / 1000, 2)} cm³ (from CAD solid)</dd>`],
@@ -49,5 +50,12 @@ export class Details {
     this.els.grid.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt>${v}`).join('');
     this.els.goto.disabled = row.steps.length === 0;
     this.els.root.hidden = false;
+  }
+
+  /** Names of the assemblies above a node, product first (visible names, no item numbers). */
+  #path(node) {
+    const out = [];
+    for (let p = this.model.parentOf(node.id); p; p = this.model.parentOf(p.id)) out.unshift(displayName(p));
+    return out;
   }
 }
