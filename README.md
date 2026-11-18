@@ -1,6 +1,6 @@
 # Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.4** (natural neural-voice narration, AEROEX Technologies branding — see [§ 0](#0-whats-new-in-version-14)) · by **AEROEX Technologies**
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.5** (Raspberry Pi performance: profiles, lighter models, on-demand rendering — see [§ 0](#0-whats-new-in-version-15)) · by **AEROEX Technologies**
 
 Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
 CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
@@ -22,7 +22,50 @@ down, and an augmented-reality mode for phones and tablets.
 
 ---
 
-## 0. What's new in version 1.4
+## 0. What's new in version 1.5
+
+Version 1.5 makes the same application run efficiently on a **Raspberry Pi 5** (primary target) and
+a **Raspberry Pi 4** (reduced quality) with Chromium, without removing any function: every
+component keeps its name, BOM row, selection, highlight and exploded-view animation. Deployment,
+Chromium GPU checks and kiosk set-up: **[docs/raspberry-pi.md](docs/raspberry-pi.md)**. Audit,
+bottlenecks and before/after measurements: **[docs/performance-audit.md](docs/performance-audit.md)**.
+
+| Change | What it does |
+|---|---|
+| **Performance profiles** | *High quality* (desktop), *Balanced* (Pi 5), *Low performance* (Pi 4), chosen automatically from the WebGL renderer (V3D 7 → Balanced, V3D 4 or software rendering → Low) or under **Help → Display quality** / `?profile=`. A profile sets the model detail, resolution, MSAA, frame cap, CAD edges, camera resolution and gesture analysis rate (`public/js/perf/Profiles.js`). `?profile=legacy` reproduces version 1.4 for before/after comparisons on the same device. |
+| **Lighter models** | `tools/optimize-model.mjs` simplifies each mesh to a fixed absolute error target (meshoptimizer): **0.2 mm** → 95 k triangles (−80 %), **0.45 mm** → 69 k (−85 %), from 469 k; measured, component bounding boxes move by at most 0.15 / 0.54 mm. Node tree, names, BOM ids (`nid`), transforms, hierarchy, instancing and materials are verified identical; every remaining vertex is an original CAD vertex. Renders differ from the full model on ≤ 0.03 % (Balanced) / ≤ 0.24 % (Low) of pixels. |
+| **On-demand rendering** | A frame is drawn only when the camera, a component, a highlight, the floor lift or the viewport changed. A still view draws nothing; the looping step animation draws only while parts move (53 % of frames). |
+| **Frame cap** | 30 fps on Balanced / Low: an even cadence on a 60 Hz display and CPU time left for the browser, the BOM and hand tracking. |
+| **Precomputed camera plans** | The automatic camera's 60-direction sight-line analysis per step ran on the device (7.7 s of main-thread work, up to 33 ms per frame, after every load). It is now computed once (`tools/precompute-camera.cjs` → `assets/model/camera-plans.json`, 39 kB) and looked up; same views as before (tested), with a fingerprint check and the runtime planner as fallback. |
+| **Less work per frame** | Only moved components recompute transforms; the floor lift comes from bounds measured once instead of two bounding-box passes over the model per frame; callouts are re-projected only when a frame is drawn; the camera controller no longer allocates per frame. |
+| **Start-up** | CAD edges are built in idle slices (and only for the profile's scope) instead of one blocking pass; the hidden loader and its endless spinner leave the page. |
+| **Hand tracking in a Web Worker** | MediaPipe inference runs off the main thread (main-thread cost per analysed frame 46 ms → 2 ms in the same test); at most one frame in flight; analysis rate per profile (15 / 12 / 8 Hz). Falls back to the main thread automatically. |
+| **Camera** | Camera-overlay resolution and frame rate per profile (1280 × 720 @ 30 → 640 × 480 @ 24 on a Pi 4). |
+| **Monitoring** | Development dashboard (**Ctrl + Shift + P** or `?perf=1`, hidden otherwise): frame rate, frame time, draw calls, triangles, meshes, JS heap, camera / gesture rates and costs, model load time, long tasks, WebGL renderer and whether it is hardware accelerated. Software rendering is also announced to the user. |
+| **On-device benchmark** | `?bench` runs a scripted real-time sequence and reports per phase the drawn frame rate, frame-time percentiles, stalls and long tasks (copy / download as JSON). Run it with `&profile=legacy` and `&profile=balanced` on the Pi for a before/after comparison. |
+
+Measured in headless Chromium (x86 server; method and full tables in the audit — not Raspberry Pi
+numbers):
+
+| | v1.4 | v1.5 Balanced | v1.5 Low |
+|---|---|---|---|
+| Triangles per frame | 468,766 | 94,748 | 69,080 |
+| Draw calls per frame | 455 | 281 | 228 |
+| Software-rasterised frame (GPU-load proxy) | 1,123 ms | 343 ms | 84 ms |
+| Camera planning after load (main thread) | 7,724 ms | 14 ms | 30 ms |
+| Long tasks during start-up (total / longest) | 764 / 425 ms | 365 / 155 ms | 421 / 146 ms |
+| Frames drawn while the view is still | 100 % | 0 % | 0 % |
+| Frames drawn during the step loop | 100 % | 53 % | 53 % |
+| Hand tracking on the main thread per analysed frame | 46 ms | 2 ms | 3 ms |
+
+```bash
+npm run model:tiers     # regenerate the Balanced / Low models after the GLB changed
+npm run camera:plans    # regenerate the camera plans after the model / camera settings changed
+```
+
+---
+
+## 0.1 What's new in version 1.4
 
 | Feature | Behaviour |
 |---|---|
@@ -121,7 +164,7 @@ interface therefore uses the symbol only, without imitating the wordmark. To add
 
 ---
 
-## 0.1 What's new in version 1.3
+## 0.2 What's new in version 1.3
 
 | Feature | Behaviour |
 |---|---|
@@ -172,7 +215,7 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 
 ---
 
-## 0.2 What's new in version 1.2
+## 0.3 What's new in version 1.2
 
 | Feature | Behaviour |
 |---|---|
@@ -225,7 +268,7 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 
 ---
 
-## 0.3 What's new in version 1.1
+## 0.4 What's new in version 1.1
 
 | Feature | Behaviour |
 |---|---|
@@ -236,7 +279,7 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 
 ### Voice technology — what it is and what it is not
 
-*(v1.1–v1.3. Since v1.4 the narration is a pre-recorded natural voice ([§ 0](#0-whats-new-in-version-14)); the Web
+*(v1.1–v1.3. Since v1.4 the narration is a pre-recorded natural voice ([§ 0.1](#01-whats-new-in-version-14)); the Web
 Speech API described here is the fallback, and the alternative voice under ⚙.)*
 
 The narration uses the **Web Speech API** (`speechSynthesis`) of the browser: no API key, no
@@ -347,6 +390,9 @@ mf550-webar/
 │   │   ├── scene/Picker.js         3D picking (mouse, touch, XR rays)
 │   │   ├── scene/Callout.js        technical-drawing balloons (component names)
 │   │   ├── scene/CameraController.js automatic close-up camera for every step                  (v1.3)
+│   │   ├── perf/Profiles.js        High / Balanced / Low / legacy profiles, GPU detection        (v1.5)
+│   │   ├── perf/PerfMonitor.js     development dashboard (Ctrl+Shift+P, ?perf=1)                 (v1.5)
+│   │   ├── perf/Bench.js           on-device benchmark (?bench)                                  (v1.5)
 │   │   ├── ui/BomPanel.js          indented BOM, parts list, step list, search
 │   │   ├── ui/NarrationControls.js play/pause/resume, replay, mute, voice settings           (v1.1)
 │   │   ├── ui/Details.js           component data sheet
@@ -355,6 +401,8 @@ mf550-webar/
 │   │   ├── gesture/
 │   │   │   ├── CameraManager.js    camera on request only; released for AR / background         (v1.2)
 │   │   │   ├── HandTracker.js      MediaPipe Hand Landmarker (lazy-loaded), handedness mapping   (v1.2)
+│   │   │   ├── WorkerHandTracker.js same contract, inference in a Web Worker; main-thread fallback (v1.5)
+│   │   │   ├── hand-worker.js      the worker (classic worker: MediaPipe's WASM glue needs importScripts) (v1.5)
 │   │   │   ├── GestureClassifier.js thumbs up / down / neutral from the 21 landmarks             (v1.2)
 │   │   │   ├── GestureTrigger.js   stabilisation, one action per gesture, cooldown, neutral      (v1.2)
 │   │   │   └── GestureController.js camera → tracker → right hand → classifier → trigger events  (v1.2)
@@ -369,7 +417,12 @@ mf550-webar/
 │   │   └── en-US-heart/*.mp3       72 recordings (overview, parts-kit, step-01 … step-69, complete)
 │   ├── assets/brand/               AEROEX symbol (web copy), favicons; original/ = supplied files  (v1.4)
 │   └── assets/model/
-│       ├── MF-550-210-B.glb               0.87 MB, meshopt-compressed, 1 node per component
+│       ├── MF-550-210-B.glb               0.87 MB, meshopt-compressed, 1 node per component (High quality)
+│       ├── MF-550-210-B.balanced.glb      0.2 mm simplification target, same node tree (Balanced)     (v1.5)
+│       ├── MF-550-210-B.low.glb           0.45 mm simplification target, same node tree (Low)         (v1.5)
+│       ├── model-tiers.json               tier → file, tolerance, triangles                            (v1.5)
+│       ├── model-tiers-report.json        per-mesh simplification report (generated)                   (v1.5)
+│       ├── camera-plans.json              precomputed automatic-camera plans (both ghost options)      (v1.5)
 │       └── assembly.json                  hierarchy, BOM, explode vectors (1×, from the pipeline), 69-step sequence
 ├── pipeline/
 │   ├── convert_step.py             STEP → GLB + assembly.json (OpenCascade)
@@ -381,6 +434,9 @@ mf550-webar/
 ├── tools/
 │   ├── serve.mjs                   zero-dependency static server (HTTP/HTTPS, correct MIME types)
 │   ├── build-usdz.cjs              pre-builds the animated USDZ (headless browser)
+│   ├── optimize-model.mjs          Balanced / Low model tiers (meshoptimizer, verified identity)   (v1.5)
+│   ├── precompute-camera.cjs       camera-plans.json from the runtime planner (headless browser)  (v1.5)
+│   ├── perf/                       measurement harnesses (docs/performance-audit.md)              (v1.5)
 │   └── narration/                                                                              (v1.4)
 │       ├── export-script.mjs       spoken script of every position (uses the app's modules)
 │       ├── generate.py             records the narration with Kokoro-82M → MP3 + manifest
@@ -391,6 +447,8 @@ mf550-webar/
 ├── tests/fixtures/hand-landmarks.json  real MediaPipe landmarks of public test images (v1.2)
 ├── docs/camera-review.md          camera targets of all 69 steps (generated)                  (v1.3)
 ├── docs/narration-review.md       transcription / loudness / pace review of the recordings    (v1.4)
+├── docs/performance-audit.md      audit, bottlenecks, before/after measurements                (v1.5)
+├── docs/raspberry-pi.md           Raspberry Pi deployment, Chromium GPU check, kiosk, tuning     (v1.5)
 └── docs/screenshots/
 ```
 
@@ -584,7 +642,9 @@ npm test
 The natural-voice recordings really play in headless Chromium (autoplay allowed by a launch flag); an
 in-page spy on the audio element logs every play / pause / end with its recording key. Headless Chromium
 has no speech voices, so the Web Speech API (fallback voice) is replaced by a deterministic in-page mock that
-logs every speak / start / end / cancel (the app code is unchanged). 107 checks:
+logs every speak / start / end / cancel (the app code is unchanged). Headless Chromium renders in software, which
+the app would detect as *Low performance*; sections 1–12 therefore pin the *High quality* profile (full model,
+v1.4 visuals) and section 13 tests the profiles. 120 checks:
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
 * **3× exploded view** — all 208 displacement vectors (hardware, parts, sub-assemblies) are exactly 3× the
@@ -633,9 +693,20 @@ logs every speak / start / end / cancel (the app code is unchanged). 107 checks:
   list, step card, details or balloons; 78 internal item keys, parent links and part numbers intact; BOM row
   selection, highlight and *Go to step* work. v1.4: AEROEX symbol in the header (proportions identical to the
   artwork, before the product title) and on the loading screen; favicon / touch icons load; originals kept.
+* **Performance (v1.5)** — automatic profile from the WebGL renderer (Pi 5 / Pi 4 / llvmpipe / SwiftShader /
+  desktop / Mali / small CPUs); the Balanced and Low models have the identical node tree (names, BOM ids,
+  transforms, materials) with component bounds within the stated tolerance; precomputed camera plans equal
+  the runtime planner for 6 steps × both ghost options, and a plan file for another model is ignored;
+  `?profile=balanced` / `low` apply model, pixel ratio, MSAA, frame cap, edges, blur, gesture rate and camera
+  size; on-demand rendering (no draws while still, a BOM selection draws, an animation draws every frame);
+  **no stale transforms**: every world matrix at 6 poses equals a full recomputation, and the analytic floor
+  lift equals the bounding-box lift; async (worker) hand tracking keeps one frame in flight and drops late
+  results; the dashboard is hidden until Ctrl+Shift+P; *Display quality* options; `?bench` reports 6 phases.
 
 `ONLY=gestures npm test` runs one section (`viewer`, `navigation`, `integration`, `gestures`, `ar`, `camera`,
-`archrome`, `branding`, `voice`).
+`archrome`, `branding`, `voice`, `perf`).
+Performance measurements (not pass/fail): see [docs/performance-audit.md](docs/performance-audit.md) — the
+harness scripts are described there.
 The suite replaces MediaPipe with a scripted tracker (real landmark fixtures), so it runs without the
 network. The real library and model are checked on the deployed site in a desktop browser: both load over
 HTTPS, the Hand Landmarker labels MediaPipe's own `thumb_up.jpg` test image as a *Right* hand and the
@@ -655,18 +726,18 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
   `docs/narration-review.md`) and the voice was chosen from listening samples, but the full set was not
   listened to on the target devices in this environment — do a listening pass before release. Kokoro is a
   strong open model, but the best commercial voices (e.g. Google Chirp 3: HD) are still somewhat more
-  expressive (§ 0). The browser voice used as fallback depends on the browser (see § 0.3). The first
+  expressive (§ 0.1). The browser voice used as fallback depends on the browser (see § 0.4). The first
   narration after opening the page waits for one click/tap (browser autoplay policy); iPhone/iPad ignore
   the in-app volume slider (hardware buttons), so it is hidden there.
 * The README screenshots were taken with version 1.0.
-* Only the AEROEX symbol was supplied; the horizontal AEROEX Technologies logo (wordmark) is not used (§ 0).
+* Only the AEROEX symbol was supplied; the horizontal AEROEX Technologies logo (wordmark) is not used (§ 0.1).
 * Gestures: hand tracking was verified on still images and with an emulated camera, not with a person in
   front of a physical webcam in this environment — try it on the target device and adjust
   `CONFIG.gestures.trigger` / `classifier` if needed. Lighting, distance (≈ 0.4–1.5 m) and a visible wrist
   matter. The thumb direction is judged against the camera image, so keep the phone / webcam upright.
 * Gesture control and WebXR AR do not run at the same time (one camera); Quick Look on iOS pauses it too.
 * MediaPipe and its model are loaded from jsDelivr and Google's model storage on first use (≈ 4 MB library
-  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0.2).
+  download compressed + 7.5 MB model, cached by the browser); self-host them for offline sites (§ 0.3, and [docs/raspberry-pi.md § 5.2](docs/raspberry-pi.md#52-run-locally-no-internet-on-the-shop-floor) since v1.5).
 * Sub-assembly names are derived from their largest part — the STEP files contain no sub-assembly names.
 * WebXR AR was verified with the Immersive Web Emulation Runtime and the capability logic with simulated
   Android / desktop / iPhone browsers, not on a physical ARCore phone in this environment.
@@ -674,9 +745,29 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
   `docs/camera-review.md`). Long approach paths start outside the close-up and enter the view.
 * The camera overlay is not AR (no tracking); on a computer it uses the same webcam as gesture control, so
   gesture tracking pauses while it is open.
+* Raspberry Pi (v1.5): **no Pi was available in this environment**, so frame rates on a Pi 5 / Pi 4 were not
+  measured. The improvements were measured in headless Chromium (workload, main-thread time, software
+  rasteriser) — see `docs/performance-audit.md`. Run `?bench&profile=legacy` and `?bench&profile=balanced`
+  on the Pi for the real before/after numbers (`docs/raspberry-pi.md` § 6). The 30 fps target is an
+  engineering target, not a measured result.
+* Draw calls stay at 228–281 per frame on the Pi profiles: every component remains a separate mesh so it can
+  be selected, highlighted and animated on its own. Batching identical fasteners (instancing) would cut
+  ~150 more but needs per-instance highlight and animation — not done in v1.5.
+* On a Raspberry Pi the AR button offers the camera overlay (Chromium on Linux has no WebXR
+  `immersive-ar`); the app has no marker or image tracking.
+* Software rendering is detected from the WebGL renderer string (SwiftShader, llvmpipe, …).
 
 ## Changelog
 
+* **1.5** — Raspberry Pi performance: High / Balanced / Low profiles with automatic detection (WebGL renderer),
+  Display quality setting, `?profile=` (incl. `legacy` = v1.4 behaviour); simplified Balanced (0.2 mm target) and Low
+  (0.45 mm target) models with verified identical node tree (`tools/optimize-model.mjs`); on-demand rendering, 30 fps
+  cap, pixel-ratio / render-scale / MSAA per profile; precomputed automatic-camera plans
+  (`tools/precompute-camera.cjs`); transforms recomputed only for moved components; analytic floor lift;
+  callouts re-projected on drawn frames; CAD edges in idle slices and per-profile scope; loader removed after
+  start; hand tracking in a Web Worker with per-profile rate; camera-overlay resolution per profile; development
+  dashboard (Ctrl+Shift+P / `?perf=1`); on-device benchmark (`?bench`); software-rendering notice;
+  `docs/raspberry-pi.md`, `docs/performance-audit.md`; tests extended (section 13).
 * **1.4** — Natural neural-voice narration: 72 pre-recorded MP3s (Kokoro-82M, voice *Heart*, en-US),
   natural spoken script built from the same step facts as the card, IPA pronunciation lexicon, loudness
   normalisation, recording pipeline + speech-recognition review (`tools/narration`); new narrator with recorded
