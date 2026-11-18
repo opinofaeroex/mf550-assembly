@@ -272,6 +272,13 @@
         </table>
         <p><b>Automatic camera:</b> on every step the view moves close to the components being fitted. Orbit, pan or zoom whenever you like — the automatic camera then pauses until the next step or until you press <b>Refocus</b> (<kbd>C</kbd>). Turn it off with the target button in the view tools.</p>
         <p>Click a part in 3D or a row in the BOM to select it. Drag to orbit, right-drag / two-finger drag to pan, scroll / pinch to zoom.</p>
+        <h4 class="help-h">Display quality</h4>
+        <div class="perf-setting">
+          <label for="perf-profile">Graphics profile</label>
+          <select id="perf-profile" class="select"></select>
+        </div>
+        <p class="muted" id="perf-info"></p>
+        <p class="muted">Balanced suits a Raspberry Pi 5, Low performance a Raspberry Pi 4. Lighter profiles use a simplified model (component outlines move by at most 0.15 / 0.54 mm), fewer pixels and fewer edge lines; every component, the BOM and the steps stay the same. Changing it reloads the page.</p>
         <p class="muted" id="help-data-note"></p>
       </div>
     </form>
