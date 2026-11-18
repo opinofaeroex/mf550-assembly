@@ -1,0 +1,28 @@
+{
+  "source": "MF-550-210-B.glb",
+  "sourceBytes": 869984,
+  "generatedBy": "tools/optimize-model.mjs (meshoptimizer simplify, absolute error)",
+  "tiers": {
+    "balanced": {
+      "file": "MF-550-210-B.balanced.glb",
+      "maxErrorMm": 0.2,
+      "measuredBoundsMm": 0.145,
+      "bytes": 480528,
+      "renderedTriangles": 94746,
+      "uniqueTriangles": 44364
+    },
+    "low": {
+      "file": "MF-550-210-B.low.glb",
+      "maxErrorMm": 0.45,
+      "measuredBoundsMm": 0.541,
+      "bytes": 403476,
+      "renderedTriangles": 69078,
+      "uniqueTriangles": 34139
+    }
+  },
+  "high": {
+    "file": "MF-550-210-B.glb",
+    "renderedTriangles": 468764,
+    "uniqueTriangles": 141390
+  }
+}

@@ -39,12 +39,18 @@ import { AppState } from './state/AppState.js';
 import { GestureController } from './gesture/GestureController.js';
 import { GesturePanel } from './ui/GesturePanel.js';
 import { CONFIG } from './config.js';
+import { chooseProfile, saveProfile, PROFILES, SELECTABLE } from './perf/Profiles.js';
+import { PerfMonitor } from './perf/PerfMonitor.js';
 
 const $ = (id) => document.getElementById(id);
 
 class App {
   constructor() {
-    this.opts = { ghost: true, edges: true, focus: true, isolate: false };
+    // v1.5 performance profile (perf/Profiles.js): URL ?profile= > saved choice > automatic
+    this.perf = chooseProfile();
+    document.documentElement.dataset.perf = this.perf.id;
+    this.metrics = { t0: performance.now(), modelLoadMs: null, readyMs: null };
+    this.opts = { ghost: true, edges: this.perf.settings.edges !== 'none', focus: true, isolate: false };
     this.selection = null;
     this.inAR = false;
     this.state = new AppState({
@@ -55,13 +61,20 @@ class App {
 
   // ------------------------------------------------------------------ boot
   async init() {
-    this.viewer = new Viewer($('viewport'));
+    this.viewer = new Viewer($('viewport'), this.perf.settings);
     try {
       this.#loader('Loading assembly data…', 0.05);
       this.model = await loadAssembly(CONFIG.assemblyUrl);
       this.#loader('Loading 3D model…', 0.1);
-      this.loaded = await loadModel(CONFIG.modelDir + this.model.meta.glb, this.model,
-        (p) => this.#loader('Loading 3D model…', 0.1 + p * 0.8));
+      const S = this.perf.settings;
+      // camera plans are fetched in parallel with the model (small JSON, optional)
+      this.cameraPlans = S.cameraPlans === 'precomputed'
+        ? fetch(CONFIG.modelDir + 'camera-plans.json').then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(null);
+      const { url, tier } = await this.#modelFile(S.model);
+      const t = performance.now();
+      this.loaded = await loadModel(url, this.model, (p) => this.#loader('Loading 3D model…', 0.1 + p * 0.8));
+      this.metrics.modelLoadMs = Math.round(performance.now() - t);
+      this.modelTier = tier;
     } catch (err) {
       this.#loaderError(err);
       return;
@@ -69,15 +82,23 @@ class App {
     this.#loader('Preparing scene…', 0.95);
 
     const { model, loaded, viewer } = this;
+    const S = this.perf.settings;
     viewer.setModel(loaded.root);
-    this.appearance = new Appearance(loaded);
+    const isHardware = (id) => { const n = model.node(id); const s = model.steps[n.effectiveStep ?? n.step]; return !!s && s.kind === 'fasten'; };
+    this.appearance = new Appearance(loaded, { onChange: () => viewer.requestRender(), freeze: (o) => viewer.freeze(o), isHardware });
     this.explode = new ExplodeController(model, loaded.objects, CONFIG.explodeScale);
+    this.explode.onChange = () => viewer.requestRender();
+    if (S.analyticLift) {
+      this.explode.prepareBounds(viewer.modelRoot, [...loaded.meshesByPart.values()].flat());
+      viewer.liftProvider = () => this.explode.lowestPoint();
+    }
     this.seq = new Sequencer(model, this.explode, { loop: CONFIG.animation.loop, timing: CONFIG.animation.timing });
     model.meta.displayName = CONFIG.productName;          // visible product name (internal id stays meta.product)
     model.root.label = CONFIG.productName;
     this.picker = new Picker(viewer, this.appearance);
     this.stepCallout = new Callout($('callout-layer'), 'step');
     this.selCallout = new Callout($('callout-layer'), 'sel');
+    this.stepCallout.onChange = this.selCallout.onChange = () => viewer.requestRender();
     this.activeParts = model.steps.map((s) => new Set(s.nodes.flatMap((id) => model.partsUnder(id))));
     // parts of the (sub-)assembly being worked on; null = whole product
     this.stepContext = model.steps.map((s) => (s.assembly === model.rootId ? null
@@ -85,13 +106,17 @@ class App {
 
     viewer.onUpdate.push((dt) => {
       this.seq.update(dt);
-      this.#updateCallouts();
+      if (!S.calloutsOnRender) this.#updateCallouts();
     });
+    if (S.calloutsOnRender) viewer.onRender.push(() => this.#updateCallouts());   // callouts follow drawn frames
     // automatic close-up of each step's components (scene/CameraController.js)
     this.cameraCtl = new CameraController({
-      viewer, model, loaded, explode: this.explode, cfg: CONFIG.camera,
+      viewer, model, loaded, explode: this.explode, cfg: { ...CONFIG.camera, frameBudgetMs: S.planningBudgetMs },
       isSolid: (id, pos) => this.#isSolid(id, pos),
+      variant: () => (this.opts.ghost ? 'ghost' : 'solid'),
     });
+    const plans = await this.cameraPlans;
+    this.cameraCtl.usePrecomputed(plans, CameraController.planKey(model, this.cameraCtl.cfg, viewer.camera.fov, CONFIG.explodeScale));
     viewer.controls.addEventListener('start', () => {   // user orbit / zoom / pan
       viewer.cancelCameraTween();
       this.cameraCtl.pauseByUser();
@@ -116,16 +141,74 @@ class App {
     if (startStep !== null) this.seq.goTo(startStep);
 
     // CAD edges are built after the first frame so the model appears quickly
-    setTimeout(() => {
-      this.appearance.buildEdges();
-      this.appearance.setEdgesVisible(this.opts.edges);
-    }, 60);
+    // (v1.5: in idle slices, and only for the profile's scope; 'none' builds them when switched on)
+    this.appearance.setEdgesVisible(this.opts.edges);
+    setTimeout(() => { if (this.opts.edges) this.#buildEdges(); }, 60);
 
     this.#loader('Ready', 1);
-    setTimeout(() => $('loader').classList.add('is-done'), 150);
+    setTimeout(() => {
+      $('loader').classList.add('is-done');
+      // once faded out, remove the loader from rendering: its spinner would otherwise keep animating
+      setTimeout(() => { $('loader').style.display = 'none'; }, 450);
+    }, 150);
     this.#initAR();
+    this.#initPerf();
+    this.metrics.readyMs = Math.round(performance.now() - this.metrics.t0);
     window.app = this; // handy for debugging / automation
+    if (new URLSearchParams(location.search).has('bench')) {
+      import('./perf/Bench.js').then(({ runBench }) => runBench(this));
+    }
   }
+
+  /** Model file of the profile's tier (tools/optimize-model.mjs); the full model if it is missing. */
+  async #modelFile(tier) {
+    const full = { url: CONFIG.modelDir + this.model.meta.glb, tier: 'high' };
+    if (!tier || tier === 'high') return full;
+    try {
+      const r = await fetch(CONFIG.modelDir + 'model-tiers.json');
+      const tiers = r.ok ? (await r.json()).tiers : null;
+      const t = tiers && tiers[tier];
+      if (t && t.file) return { url: CONFIG.modelDir + t.file, tier };
+    } catch { /* no tiers: full model */ }
+    console.warn(`[perf] model tier "${tier}" not found, loading the full model`);
+    return full;
+  }
+
+  #buildEdges() {
+    const S = this.perf.settings;
+    const scope = S.edges === 'none' ? 'parts' : S.edges;
+    return this.appearance.buildEdges(28, { scope, mode: S.edgeBuild === 'sync' ? 'sync' : 'idle' });
+  }
+
+  // ---------------------------------------------------------- performance
+  #initPerf() {
+    const p = this.perf;
+    this.perfMonitor = new PerfMonitor(this);
+    // Display quality (help dialog): choice is remembered; the page reloads to load the matching model
+    const sel = $('perf-profile');
+    if (sel) {
+      sel.innerHTML = SELECTABLE.map((id) => {
+        const label = id === 'auto' ? `Automatic — ${PROFILES[p.detected.id].label}` : `${PROFILES[id].label} (${PROFILES[id].hint})`;
+        return `<option value="${id}">${label}</option>`;
+      }).join('');
+      sel.value = p.source === 'saved' ? p.saved : p.source === 'url' && SELECTABLE.includes(p.id) ? p.id : 'auto';
+      sel.addEventListener('change', () => {
+        saveProfile(sel.value);
+        const u = new URL(location.href);
+        u.searchParams.delete('profile');
+        location.replace(u.toString());
+      });
+      $('perf-info').textContent = `In use: ${PROFILES[p.id].label}${p.source === 'url' ? ' (set by the page address)' : ''}. `
+        + `Detected: ${p.detected.reason}. Graphics: ${p.gpu.renderer}${p.gpu.software ? ' — software rendering' : ''}.`;
+    }
+    if (p.gpu.software) {
+      this.#toast('Graphics acceleration is off: the 3D view is drawn by the CPU and will be slow. See "Display quality" in Help.');
+      document.documentElement.dataset.softwareGl = 'true';
+    }
+  }
+
+  /** Public option setter (tools, tests, benchmark): same as the view-tool buttons. */
+  setOption(name, value) { this.#setOpt(name, value); }
 
   #loader(text, p) {
     $('loader-text').textContent = text;
@@ -215,7 +298,10 @@ class App {
     const b = $(map[name]);
     b.classList.toggle('is-on', value);
     b.setAttribute('aria-pressed', value);
-    if (name === 'edges') this.appearance.setEdgesVisible(value);
+    if (name === 'edges') {
+      this.appearance.setEdgesVisible(value);
+      if (value) this.#buildEdges();
+    }
     if (name === 'focus' && this.cameraCtl) {
       this.cameraCtl.setEnabled(value);
       try { localStorage.setItem('mf550.camera.auto', JSON.stringify(value)); } catch { /* storage unavailable */ }
@@ -283,7 +369,10 @@ class App {
       set: (k, v) => { try { localStorage.setItem(store + k, JSON.stringify(v)); } catch { /* storage unavailable */ } },
     };
     // window.__MF550_TEST_TRACKER__ (set before load) replaces MediaPipe in automated tests only
-    this.gestures = new GestureController(CONFIG.gestures, {
+    const G = this.perf.settings.gestures;
+    const gcfg = { ...CONFIG.gestures, fps: G.fps, worker: G.worker, analysisWidth: G.analysisWidth, delegate: G.delegate,
+      camera: { ...CONFIG.gestures.camera, width: G.width, height: G.height } };
+    this.gestures = new GestureController(gcfg, {
       video: $('gesture-video'),
       createTracker: window.__MF550_TEST_TRACKER__,
     });
@@ -581,6 +670,7 @@ class App {
     const cam = this.viewer.activeCamera();
     let w, h;
     if (this.inAR) { w = window.innerWidth; h = window.innerHeight; }
+    else if (this.perf.settings.calloutsOnRender) { w = this.viewer.width; h = this.viewer.height; }   // cached on resize (no layout read)
     else { const r = this.viewer.container; w = r.clientWidth; h = r.clientHeight; }
     this.stepCallout.update(cam, w, h);
     this.selCallout.update(cam, w, h);
@@ -599,7 +689,7 @@ class App {
       staticUrl: `${CONFIG.modelDir}${this.model.meta.product}-assembly.usdz`,   // optional pre-built file (internal name)
     });
     // fallback without immersive AR: the camera picture behind the 3D view (not AR)
-    this.cameraView = new CameraOverlay({ container: $('viewport'), video: $('overlay-video') });
+    this.cameraView = new CameraOverlay({ container: $('viewport'), video: $('overlay-video'), constraints: this.perf.settings.overlayCamera });
     this.cameraView.addEventListener('state', (e) => {
       const on = e.detail.active;
       $('overlay-banner').hidden = !on;

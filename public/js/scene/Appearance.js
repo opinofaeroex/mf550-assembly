@@ -8,6 +8,10 @@ import * as THREE from 'three';
  *   active   : orange emissive, parts of the current step
  *   selected : blue emissive, user selection
  * Switching a mesh between states only swaps the material reference.
+ *
+ * v1.5: every visible change calls `onChange` (the viewer then draws a frame — rendering is
+ * on demand); helper objects are frozen (`freeze`: their transform never changes); CAD edges
+ * can be limited to non-hardware parts and are built in small slices between frames.
  */
 export const STATE = { NORMAL: 0, GHOST: 1, ACTIVE: 2, SELECTED: 3, HIDDEN: 4 };
 
@@ -15,8 +19,12 @@ const ACTIVE_COLOR = new THREE.Color(0xff7a1a);
 const SELECT_COLOR = new THREE.Color(0x3aa0ff);
 
 export class Appearance {
-  constructor(loaded) {
+  constructor(loaded, { onChange = null, freeze = null, isHardware = null } = {}) {
     this.meshesByPart = loaded.meshesByPart;
+    this.onChange = onChange || (() => {});
+    this.freeze = freeze || (() => {});
+    this.isHardware = isHardware || (() => false);
+    this.edgeScope = null;        // 'all' | 'parts' once built
     this.variants = new Map();      // base material uuid -> [normal, ghost, active, selected]
     this.state = new Map();         // part id -> STATE
     this.edges = [];
@@ -39,6 +47,7 @@ export class Appearance {
         xr.raycast = () => {};
         xr.userData.isXray = true;
         m.add(xr);
+        this.freeze(xr);
         m.userData.xray = xr;
       }
     }
@@ -65,30 +74,75 @@ export class Appearance {
     return [base, ghost, active, selected];
   }
 
-  /** Build CAD-style feature edges once per unique geometry (shared by instances). */
-  buildEdges(thresholdDeg = 28) {
-    const cache = new Map();
-    for (const meshes of this.meshesByPart.values()) {
+  /**
+   * Build CAD-style feature edges once per unique geometry (shared by instances).
+   * scope 'all' = every part, 'parts' = no hardware (fasteners: many small draw calls).
+   * mode 'sync' builds in one pass (v1.4); 'idle' spreads the work over idle time in slices
+   * of ~sliceMs so the first frames and the UI stay responsive. Resolves when done.
+   */
+  buildEdges(thresholdDeg = 28, { scope = 'all', mode = 'sync', sliceMs = 6 } = {}) {
+    if (this.edgeBuild && this.edgeScope === scope) return this.edgeBuild;
+    this.edgeScope = scope;
+    const work = [];
+    const byGeo = new Map();
+    for (const [part, meshes] of this.meshesByPart) {
+      if (scope === 'parts' && this.isHardware(part)) continue;
       for (const m of meshes) {
-        let g = cache.get(m.geometry.uuid);
-        if (!g) {
-          g = new THREE.EdgesGeometry(m.geometry, thresholdDeg);
-          cache.set(m.geometry.uuid, g);
-        }
+        if (m.userData.edges) continue;
+        let list = byGeo.get(m.geometry.uuid);
+        if (!list) { list = []; byGeo.set(m.geometry.uuid, list); work.push(list); }
+        list.push([part, m]);
+      }
+    }
+    const cache = this.edgeGeometries || (this.edgeGeometries = new Map());
+    const one = (list) => {
+      const geo = list[0][1].geometry;
+      let g = cache.get(geo.uuid);
+      if (!g) { g = new THREE.EdgesGeometry(geo, thresholdDeg); cache.set(geo.uuid, g); }
+      for (const [part, m] of list) {
         const lines = new THREE.LineSegments(g, this.edgeMaterial);
         lines.raycast = () => {};       // never pickable
         lines.userData.isEdge = true;
         lines.renderOrder = 1;
         m.add(lines);
+        this.freeze(lines);
         m.userData.edges = lines;
         this.edges.push(lines);
+        this.#applyEdgeState(lines, this.state.get(part));
       }
+    };
+    if (mode === 'sync') {
+      work.forEach(one);
+      this.onChange();
+      this.edgeBuild = Promise.resolve();
+      return this.edgeBuild;
     }
+    const idle = (fn) => (typeof requestIdleCallback === 'function'
+      ? requestIdleCallback(fn, { timeout: 200 }) : setTimeout(() => fn({ timeRemaining: () => sliceMs }), 16));
+    this.edgeBuild = new Promise((resolve) => {
+      let i = 0;
+      const slice = (deadline) => {
+        const t0 = performance.now();
+        const budget = Math.min(sliceMs, Math.max(2, deadline && deadline.timeRemaining ? deadline.timeRemaining() : sliceMs));
+        while (i < work.length && performance.now() - t0 < budget) one(work[i++]);
+        if (i < work.length) idle(slice);
+        else { this.onChange(); resolve(); }      // one redraw when all edges exist (not one per slice)
+      };
+      idle(slice);
+    });
+    return this.edgeBuild;
+  }
+
+  #applyEdgeState(e, state) {
+    e.material = state === STATE.GHOST ? this.edgeGhostMaterial : this.edgeMaterial;
+    e.userData.hiddenByState = state === STATE.HIDDEN;
+    e.visible = this.edgesVisible !== false && state !== STATE.HIDDEN;
   }
 
   setEdgesVisible(v) {
     for (const e of this.edges) e.visible = v && e.parent.visible && !e.userData.hiddenByState;
     this.edgesVisible = v;
+    this.onChange();
   }
 
   /** Apply a state to all meshes of a part instance. */
@@ -107,12 +161,9 @@ export class Appearance {
         if (xr.visible) xr.material = this.xrayMaterials[state];
       }
       const e = m.userData.edges;
-      if (e) {
-        e.material = state === STATE.GHOST ? this.edgeGhostMaterial : this.edgeMaterial;
-        e.userData.hiddenByState = state === STATE.HIDDEN;
-        e.visible = this.edgesVisible !== false && state !== STATE.HIDDEN;
-      }
+      if (e) this.#applyEdgeState(e, state);
     }
+    this.onChange();
   }
 
   get(partId) { return this.state.get(partId); }
@@ -135,6 +186,7 @@ export class Appearance {
         if (m.userData.xray) m.userData.xray.visible = !!xv;
       }
       for (const e of this.edges) e.visible = e.userData.wasVisible;
+      this.onChange();
     }
   }
 }

@@ -20,6 +20,7 @@ export class Callout {
     this.hide();
     this._box = new THREE.Box3();
     this._v = new THREE.Vector3();
+    this.onChange = null;          // v1.5: the viewer draws (and re-projects callouts) on demand
   }
 
   set(objects, num, text) {
@@ -28,11 +29,12 @@ export class Callout {
     this.label.classList.toggle('no-num', !num);
     this.txt.textContent = text;
     this.el.style.opacity = objects.length ? '1' : '0';
+    if (this.onChange) this.onChange();
   }
 
-  hide() { this.objects = []; this.el.style.opacity = '0'; }
+  hide() { this.objects = []; this.el.style.opacity = '0'; if (this.onChange) this.onChange(); }
 
-  /** Re-project every frame. */
+  /** Re-project (v1.4: every frame; v1.5: whenever a frame is drawn). */
   update(camera, width, height) {
     if (!this.objects.length) return;
     const box = this._box.makeEmpty();

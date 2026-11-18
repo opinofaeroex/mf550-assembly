@@ -10,10 +10,12 @@
  * Events: 'state' {active, error?}
  */
 export class CameraOverlay extends EventTarget {
-  constructor({ container, video }) {
+  /** constraints (v1.5, from the performance profile): { width, height, frameRate } of the camera feed. */
+  constructor({ container, video, constraints = { width: 1280, height: 720, frameRate: 30 } }) {
     super();
     this.container = container;
     this.video = video;
+    this.constraints = constraints;
     this.stream = null;
   }
 
@@ -24,7 +26,11 @@ export class CameraOverlay extends EventTarget {
     try {
       this.stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: this.constraints.width }, height: { ideal: this.constraints.height },
+          frameRate: { ideal: this.constraints.frameRate, max: this.constraints.frameRate },
+        },
       });
     } catch (err) {
       this.stream = null;

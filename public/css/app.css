@@ -514,3 +514,31 @@ kbd { font: 600 11.5px/1 var(--mono); padding: 3px 6px; border-radius: 5px; bord
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation-duration: 0.01s !important; }
 }
+
+/* ---------- performance (v1.5) ---------- */
+/* lighter profiles: no blur behind the step card (it is re-computed on every frame the 3D view changes) */
+html[data-perf="balanced"] .step-card, html[data-perf="low"] .step-card { backdrop-filter: none; background: rgba(16, 21, 27, .95); }
+html[data-perf="balanced"] .dialog::backdrop, html[data-perf="low"] .dialog::backdrop { backdrop-filter: none; }
+.help-h { margin: 16px 0 6px; font-size: 13.5px; }
+.perf-setting { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.perf-setting select { flex: 1; min-width: 220px; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 6px 8px; color: var(--text); }
+.perf-hud {
+  position: fixed; right: 10px; top: 64px; z-index: 60; width: 300px; padding: 8px 10px; border-radius: 8px;
+  background: rgba(6, 9, 12, .9); border: 1px solid var(--line-2); font: 11.5px/1.35 var(--mono); color: var(--text-2);
+  pointer-events: none;
+}
+.perf-hud .ph-title { color: var(--text); font-weight: 700; margin-bottom: 4px; display: flex; justify-content: space-between; }
+.perf-hud .ph-title small { color: var(--text-3, #7f8a96); font-weight: 400; }
+.perf-hud .ph-row { display: flex; justify-content: space-between; gap: 8px; }
+.perf-hud .ph-row b { color: var(--text); font-weight: 600; text-align: right; }
+.perf-hud .ph-wrap b { font-weight: 400; font-size: 10.5px; max-width: 190px; overflow-wrap: anywhere; }
+.perf-hud .ph-ok b { color: #3ddc84; }
+.perf-hud .ph-bad b { color: #ff6b6b; }
+.bench-banner {
+  position: fixed; left: 50%; top: 70px; transform: translateX(-50%); z-index: 60; padding: 8px 14px; border-radius: 99px;
+  background: rgba(6, 9, 12, .9); border: 1px solid var(--accent); font: 600 13px var(--sans); pointer-events: none;
+}
+.bench-report { width: min(760px, calc(100% - 32px)); }
+.bench-report form > p, .bench-report table, .bench-report .bench-actions { margin-left: 18px; margin-right: 18px; }
+.bench-table th { text-align: left; padding: 3px 14px 3px 0; font-size: 12px; color: var(--text); }
+.bench-actions { display: flex; gap: 8px; margin-bottom: 16px; }

@@ -30,6 +30,12 @@ import * as THREE from 'three';
  * follows the model's floor lift while the parts move. Transitions orbit around the
  * target (direction slerp + distance log-lerp) instead of cutting through the model.
  *
+ * v1.5: the plans are deterministic (geometry + ghosting option), so they are computed once by
+ * tools/precompute-camera.cjs into assets/model/camera-plans.json and only looked up at run
+ * time — no sight-line ray casting on the device. The file is used only if its fingerprint
+ * matches this model and these camera settings; otherwise the runtime evaluation above runs
+ * (in slices of perf.planningBudgetMs per frame).
+ *
  * Modes: 'auto' (follows every step), 'paused' (the user moved the view: nothing is
  * forced until the next step or Refocus), 'off' (disabled by the user), 'ar' (WebXR).
  * Events: 'state' {mode}, 'arrived' {pos}.
@@ -47,9 +53,10 @@ export class CameraController extends EventTarget {
    * @param {(partId: string, pos: number) => boolean} o.isSolid  drawn opaque at that step
    * @param {object} [o.cfg]
    */
-  constructor({ viewer, model, loaded, explode, isSolid, cfg = {} }) {
+  constructor({ viewer, model, loaded, explode, isSolid, cfg = {}, variant = () => 'ghost' }) {
     super();
-    Object.assign(this, { viewer, model, loaded, explode, isSolid });
+    Object.assign(this, { viewer, model, loaded, explode, isSolid, variant });
+    this.precomputed = null;
     this.cfg = {
       padding: 1.3, minRadius: 0.07, maxTravelShown: 0.22, transition: [0.9, 1.6], syncBudgetMs: 40, frameBudgetMs: 4,
       weights: { visibility: 3, motion: 1, elevation: 0.6, continuity: 0.5 }, ...cfg,
@@ -98,6 +105,34 @@ export class CameraController extends EventTarget {
     this.queue = [];
     if (this.goal) this.goal.final = true;      // keep the current view; new plans apply from the next step
     if (this.pos !== null) this.#schedule(this.pos);
+  }
+
+  /** Fingerprint of everything a plan depends on (model, explode scale, camera settings). */
+  static planKey(model, cfg, fov, explodeScale) {
+    const m = model.meta;
+    return JSON.stringify({ glb: m.glb, convertedAt: m.convertedAt, parts: m.partInstances, steps: model.stepCount,
+      explodeScale, fov, padding: cfg.padding, minRadius: cfg.minRadius, maxTravelShown: cfg.maxTravelShown,
+      elevations: ELEVATIONS, azimuthStep: AZIMUTH_STEP });
+  }
+
+  /** Use precomputed plans (assets/model/camera-plans.json) if they were made for this model. */
+  usePrecomputed(data, key) {
+    this.precomputed = data && data.key === key ? data : null;
+    this.plans.clear();
+    if (this.pos !== null) this.#schedule(this.pos);
+    return !!this.precomputed;
+  }
+
+  /** Plans of every step for the current ghosting option (input of tools/precompute-camera.cjs). */
+  exportPlans() {
+    const r = (v) => Math.round(v * 1e6) / 1e6;
+    const out = [];
+    for (let k = 0; k < this.model.stepCount; k++) {
+      const p = this.plan(k);
+      out.push({ target: p.target.toArray().map(r), radius: r(p.radius), motion: p.motion ? p.motion.toArray().map(r) : null,
+        partCount: p.partCount, travelShown: r(p.travelShown), vis: p.candidates.map((c) => Math.round(c.visibility * 1e4) / 1e4) });
+    }
+    return out;
   }
 
   /**
@@ -191,6 +226,12 @@ export class CameraController extends EventTarget {
     let plan = this.plans.get(pos);
     if (plan) return plan;
     const isStep = pos >= 0 && pos < this.model.stepCount;
+    const pre = isStep && this.precomputed && this.precomputed.variants[this.variant()];
+    if (pre && pre[pos]) {
+      plan = this.#fromPrecomputed(pos, pre[pos]);
+      this.plans.set(pos, plan);
+      return plan;
+    }
     plan = this.#withState(pos, (f) => {
       const T = this.#offset();
       if (!isStep) {
@@ -244,15 +285,7 @@ export class CameraController extends EventTarget {
         }
       }
       const dist = radius / Math.sin(THREE.MathUtils.degToRad(this.viewer.camera.fov) / 2) * this.cfg.padding;
-      const candidates = [];
-      for (const elev of ELEVATIONS) {
-        for (let azim = 0; azim < 360; azim += AZIMUTH_STEP) {
-          const e = THREE.MathUtils.degToRad(elev), a = THREE.MathUtils.degToRad(azim);
-          const dir = new THREE.Vector3(Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a));
-          const motionAngle = motion ? THREE.MathUtils.radToDeg(Math.acos(Math.min(1, Math.abs(dir.dot(motion))))) : 90;
-          candidates.push({ dir, elev, azim, visibility: null, motionAngle, cam: center.clone().addScaledVector(dir, dist) });
-        }
-      }
+      const candidates = this.#candidates(center, motion, dist);
       return {
         pos, target: center, radius, candidates, motion, partCount: ids.length, travelShown: shown,
         samples, occluders, next: 0, ready: false,
@@ -260,6 +293,30 @@ export class CameraController extends EventTarget {
     });
     this.plans.set(pos, plan);
     return plan;
+  }
+
+  /** A plan from camera-plans.json: no scene changes, no ray casting. */
+  #fromPrecomputed(pos, d) {
+    const center = new THREE.Vector3().fromArray(d.target);
+    const motion = d.motion ? new THREE.Vector3().fromArray(d.motion) : null;
+    const dist = d.radius / Math.sin(THREE.MathUtils.degToRad(this.viewer.camera.fov) / 2) * this.cfg.padding;
+    const candidates = this.#candidates(center, motion, dist);
+    candidates.forEach((c, i) => { c.visibility = d.vis[i]; });
+    return { pos, target: center, radius: d.radius, candidates, motion, partCount: d.partCount, travelShown: d.travelShown,
+      next: candidates.length, ready: true, precomputed: true };
+  }
+
+  #candidates(center, motion, dist) {
+    const candidates = [];
+    for (const elev of ELEVATIONS) {
+      for (let azim = 0; azim < 360; azim += AZIMUTH_STEP) {
+        const e = THREE.MathUtils.degToRad(elev), a = THREE.MathUtils.degToRad(azim);
+        const dir = new THREE.Vector3(Math.cos(e) * Math.sin(a), Math.sin(e), Math.cos(e) * Math.cos(a));
+        const motionAngle = motion ? THREE.MathUtils.radToDeg(Math.acos(Math.min(1, Math.abs(dir.dot(motion))))) : 90;
+        candidates.push({ dir, elev, azim, visibility: null, motionAngle, cam: center.clone().addScaledVector(dir, dist) });
+      }
+    }
+    return candidates;
   }
 
   /** Evaluate sight lines of a plan's candidates within a time budget (ms). */
@@ -388,13 +445,16 @@ export class CameraController extends EventTarget {
 
   // ------------------------------------------------------------------ motion
   /** Goal in world space for the current viewport and model lift. */
-  #goalWorld() {
+  #goalWorld(out = { target: new THREE.Vector3(), position: new THREE.Vector3() }) {
     const g = this.goal;
     const v = this.viewer;
-    const target = v.modelRoot.localToWorld(g.target.clone());
+    const target = v.modelRoot.localToWorld(out.target.copy(g.target));
     const dist = v.fitDistance(g.radius, this.cfg.padding);
-    return { target, position: target.clone().addScaledVector(g.dir, dist) };
+    out.position.copy(target).addScaledVector(g.dir, dist);
+    return out;
   }
+
+  #gw = { target: new THREE.Vector3(), position: new THREE.Vector3() };
 
   #place(target, position) {
     this.viewer.controls.target.copy(target);
@@ -405,7 +465,7 @@ export class CameraController extends EventTarget {
     if (this.viewer.renderer.xr.isPresenting) return;
     this.#pump();
     if (this.mode !== 'auto' || !this.goal) return;
-    const { target: gT, position: gP } = this.#goalWorld();
+    const { target: gT, position: gP } = this.#goalWorld(this.#gw);
     const tw = this.tween;
     if (!tw) { this.#place(gT, gP); return; }
     tw.t = Math.min(1, tw.t + dt / tw.dur);

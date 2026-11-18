@@ -129,15 +129,20 @@ async function launch() {
   });
 }
 
-async function openApp(browser, init, viewport = { width: 1280, height: 800 }, { setup, audio } = {}) {
+/** v1.5: sections [1]–[12] test the full-detail behaviour; headless Chromium renders in software,
+ *  which the app would otherwise detect as "Low performance". Section [13] tests the profiles. */
+const pinProfile = (id) => `try { localStorage.setItem('mf550.perf.profile', '${id}'); } catch (e) {}`;
+
+async function openApp(browser, init, viewport = { width: 1280, height: 800 }, { setup, audio, profile = 'high', query = '' } = {}) {
   const page = await browser.newPage({ viewport });
+  if (profile) await page.addInitScript(pinProfile(profile));
   await page.addInitScript(audioSpy(audio));
   if (init) await page.addInitScript(init);
   if (setup) await setup(page);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
-  await page.goto(`${BASE}/`);
+  await page.goto(`${BASE}/${query}`);
   await page.waitForFunction(() => window.app && window.app.seq && window.app.narrator, null, { timeout: 120000 });
   return { page, errors };
 }
@@ -779,6 +784,7 @@ async function testAR(browser) {
     return;
   }
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
+  await page.addInitScript(pinProfile('high'));
   await page.addInitScript(speechMock() + fakeTracker);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -1196,6 +1202,218 @@ async function testVoiceAssets(browser) {
   await page.close();
 }
 
+
+async function testPerformance(browser) {
+  console.log('\n[13] performance profiles (v1.5)');
+  // automatic choice from the WebGL renderer string (pure function)
+  {
+    const { page } = await openApp(browser, speechMock());
+    const det = await page.evaluate(async () => {
+      const { detectProfile, isSoftware } = await import('./js/perf/Profiles.js');
+      const nav = { hardwareConcurrency: 8, deviceMemory: 8 };
+      const d = (renderer) => detectProfile({ renderer, software: isSoftware(renderer) }, nav).id;
+      return {
+        pi5: d('ANGLE (Broadcom, V3D 7.1.10.2, OpenGL ES 3.1 Mesa 25.0.7)'), pi4: d('V3D 4.2.14.0'),
+        llvmpipe: d('llvmpipe (LLVM 19.1.7, 128 bits)'), swiftshader: d('ANGLE (Google, Vulkan 1.3.0 (SwiftShader Device (Subzero)), SwiftShader driver)'),
+        nvidia: d('ANGLE (NVIDIA, NVIDIA GeForce RTX 3060 (0x00002504) Direct3D11 vs_5_0 ps_5_0, D3D11)'),
+        mali: d('Mali-G610'), small: detectProfile({ renderer: 'Intel(R) UHD Graphics' }, { hardwareConcurrency: 4, deviceMemory: 4 }).id,
+      };
+    });
+    check(det.pi5 === 'balanced' && det.pi4 === 'low' && det.llvmpipe === 'low' && det.swiftshader === 'low' && det.nvidia === 'high' && det.mali === 'balanced' && det.small === 'balanced',
+      `automatic profile: Pi 5 (V3D 7) → ${det.pi5}, Pi 4 (V3D 4) → ${det.pi4}, llvmpipe / SwiftShader → ${det.llvmpipe} / ${det.swiftshader}, desktop GPU → ${det.nvidia}, Mali → ${det.mali}, 4 cores + 4 GB → ${det.small}`);
+
+    // the three model tiers: same components, names, BOM ids, transforms; geometry within the stated tolerance
+    const tiers = await page.evaluate(async () => {
+      const THREE = await import('three');
+      const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+      const { MeshoptDecoder } = await import('three/addons/libs/meshopt_decoder.module.js');
+      const info = await (await fetch('assets/model/model-tiers.json', { cache: 'no-store' })).json();
+      const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+      const load = async (file) => (await loader.loadAsync('assets/model/' + file)).scene;
+      const describe = (root) => {
+        root.updateMatrixWorld(true);
+        const nodes = [], boxes = new Map();
+        let tris = 0, meshes = 0;
+        root.traverse((o) => {
+          nodes.push(`${o.name}|${o.userData.nid || ''}|${o.position.toArray().map((x) => x.toFixed(9))}|${o.quaternion.toArray().map((x) => x.toFixed(9))}|${o.scale.toArray().map((x) => x.toFixed(9))}|${o.isMesh ? o.material.name : ''}`);
+          if (o.isMesh) { meshes++; tris += o.geometry.index.count / 3; }
+          if (o.userData.nid) boxes.set(o.userData.nid, new THREE.Box3().setFromObject(o));
+        });
+        return { sig: nodes.join('\n'), tris, meshes, boxes };
+      };
+      const high = describe(await load(info.high.file));
+      const out = { high: { tris: high.tris, meshes: high.meshes } };
+      for (const t of ['balanced', 'low']) {
+        const d = describe(await load(info.tiers[t].file));
+        let dev = 0;
+        for (const [id, b] of high.boxes) {
+          const o = d.boxes.get(id);
+          dev = Math.max(dev, Math.abs(o.min.x - b.min.x), Math.abs(o.min.y - b.min.y), Math.abs(o.min.z - b.min.z), Math.abs(o.max.x - b.max.x), Math.abs(o.max.y - b.max.y), Math.abs(o.max.z - b.max.z));
+        }
+        out[t] = { same: d.sig === high.sig, tris: d.tris, meshes: d.meshes, maxBoxDevMm: +(dev * 1000).toFixed(3), limitMm: info.tiers[t].maxErrorMm,
+          recordedMm: info.tiers[t].measuredBoundsMm, kB: Math.round(info.tiers[t].bytes / 1024) };
+      }
+      return out;
+    });
+    for (const t of ['balanced', 'low']) {
+      const x = tiers[t];
+      // the error target is meshoptimizer's metric, not a hard bound: the measured change is recorded by the tool
+      check(x.same && x.meshes === tiers.high.meshes && x.tris < tiers.high.tris * 0.3 && x.maxBoxDevMm <= x.recordedMm + 0.005 && x.maxBoxDevMm <= 1.5 * x.limitMm,
+        `${t} model: identical node tree (names, BOM ids, transforms, materials, ${x.meshes} meshes), ${tiers.high.tris} → ${x.tris} triangles, component bounds moved ≤ ${x.maxBoxDevMm} mm (target ${x.limitMm} mm, recorded ${x.recordedMm} mm), ${x.kB} kB`);
+    }
+
+    // precomputed camera plans = the runtime planner (both ghosting options)
+    const plans = await page.evaluate(() => {
+      const c = app.cameraCtl;
+      const pre = c.precomputed;
+      if (!pre) return { loaded: false };
+      const steps = [0, 12, 29, 40, 55, 68];
+      let worstVis = 0, worstT = 0, worstR = 0, same = true;
+      for (const ghost of [true, false]) {
+        app.setOption('ghost', ghost);
+        for (const k of steps) {
+          const p = c.plan(k);
+          c.usePrecomputed(null, '');
+          const r = c.plan(k);
+          worstT = Math.max(worstT, p.target.distanceTo(r.target));
+          worstR = Math.max(worstR, Math.abs(p.radius - r.radius));
+          p.candidates.forEach((x, i) => { worstVis = Math.max(worstVis, Math.abs(x.visibility - r.candidates[i].visibility)); });
+          same = same && p.precomputed && !r.precomputed;
+          c.usePrecomputed(pre, pre.key);
+        }
+      }
+      app.setOption('ghost', true);
+      const stale = c.usePrecomputed({ ...pre, key: 'other model' }, pre.key);
+      c.usePrecomputed(pre, pre.key);
+      return { loaded: true, same, worstVis, worstTmm: worstT * 1000, worstRmm: worstR * 1000, staleIgnored: !stale };
+    });
+    check(plans.loaded && plans.same && plans.worstVis < 2e-4 && plans.worstTmm < 0.01 && plans.worstRmm < 0.01 && plans.staleIgnored,
+      `precomputed camera plans equal the runtime planner (6 steps × 2 ghost options: visibility Δ ${plans.worstVis?.toExponential(1)}, target Δ ${plans.worstTmm?.toFixed(4)} mm); a file for another model is ignored`);
+    await page.close();
+  }
+
+  // profiles as loaded by the app
+  for (const prof of ['balanced', 'low']) {
+    const { page, errors } = await openApp(browser, speechMock(), undefined, { profile: null, query: `?profile=${prof}` });
+    await waitFor(page, () => document.getElementById('loader').style.display === 'none', null, 20000);
+    const r = await page.evaluate(() => ({ id: app.perf.id, tier: app.modelTier, pr: app.viewer.renderer.getPixelRatio(), aa: app.viewer.renderer.getContext().getContextAttributes().antialias,
+      cap: app.perf.settings.maxFps, edgesOn: app.opts.edges, blur: getComputedStyle(document.querySelector('.step-card')).backdropFilter, plans: !!app.cameraCtl.precomputed,
+      worker: app.gestures.cfg.worker, gfps: app.gestures.cfg.fps, aw: app.gestures.cfg.analysisWidth, cam: app.cameraView.constraints }));
+    const ok = prof === 'balanced'
+      ? r.tier === 'balanced' && r.pr <= 1 && r.aa === true && r.cap === 30 && r.edgesOn && r.blur === 'none' && r.gfps === 12 && r.cam.width === 1280
+      : r.tier === 'low' && r.pr <= 0.75 && r.aa === false && r.cap === 30 && !r.edgesOn && r.blur === 'none' && r.gfps === 8 && r.aw === 320 && r.cam.width === 640;
+    check(ok && r.id === prof && r.plans && r.worker && errors.length === 0,
+      `?profile=${prof}: model ${r.tier}, pixel ratio ${r.pr}, MSAA ${r.aa}, ${r.cap} fps cap, edges ${r.edgesOn ? 'on' : 'off'}, no backdrop blur, gestures ${r.gfps} Hz at ${r.aw} px in a worker, camera ${r.cam.width}×${r.cam.height}@${r.cam.frameRate}`);
+    await page.close();
+  }
+
+  // demand rendering, static transforms, analytic floor lift (High profile)
+  {
+    const { page, errors } = await openApp(browser, speechMock());
+    await waitFor(page, () => document.getElementById('loader').style.display === 'none', null, 20000);
+    await page.evaluate(() => app.seq.goTo(-2, { animate: false }));
+    // frame-based windows (independent of how fast this machine renders)
+    const settled = await waitFor(page, () => {
+      const s = app.viewer.stats;
+      if (window.__lr !== s.renders) { window.__lr = s.renders; window.__lt = s.ticks; return false; }
+      return s.ticks - window.__lt >= 3;
+    }, null, 120000);
+    const ticksWindow = (n, action) => page.evaluate(async ([n, action]) => {
+      const s = app.viewer.stats; const r0 = s.renders, t0 = s.ticks;
+      if (action === 'select') app.select({ row: app.model.bom[3] });
+      if (action === 'step') app.seq.goTo(10);
+      while (s.ticks - t0 < n) await new Promise((r) => setTimeout(r, 20));
+      if (action === 'select') app.select(null);
+      return { renders: s.renders - r0, ticks: s.ticks - t0 };
+    }, [n, action]);
+    const idle = await ticksWindow(4);
+    const sel = (await ticksWindow(2, 'select')).renders;
+    const anim = await ticksWindow(4, 'step');
+    check(settled && idle.ticks >= 4 && idle.renders === 0 && sel >= 1 && anim.renders >= anim.ticks - 1,
+      `on-demand rendering: still view ${idle.renders} draws in ${idle.ticks} loop frames; a BOM selection draws (${sel}); the step animation draws every frame (${anim.renders} / ${anim.ticks})`);
+    // invariant: every world matrix equals a full forced recomputation (no stale transforms), at several poses
+    const inv = await page.evaluate(async () => {
+      const THREE = await import('three');
+      const v = app.viewer;
+      let worst = 0, worstLift = 0, checked = 0;
+      for (const pos of [-1, 3, 29, 40, 68, -2]) {
+        app.seq.goTo(pos);
+        for (let i = 0; i < 6; i++) { await new Promise((r) => setTimeout(r, 300)); }
+        app.cameraCtl.focus(pos);                                          // also uses localToWorld paths
+        v.scene.updateMatrixWorld();                                       // what the renderer does
+        const snap = [];
+        v.scene.traverse((o) => snap.push([o, o.matrixWorld.clone()]));
+        v.scene.traverse((o) => { if (o.matrixAutoUpdate) THREE.Object3D.prototype.updateMatrix.call(o); });
+        v.scene.updateMatrixWorld(true);                                   // stock three.js: recompute everything
+        for (const [o, m] of snap) { for (let i = 0; i < 16; i++) worst = Math.max(worst, Math.abs(m.elements[i] - o.matrixWorld.elements[i])); checked++; }
+        const y = v.modelRoot.position.y; v.modelRoot.position.y = 0; v.modelRoot.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(v.model);
+        v.modelRoot.position.y = y; v.modelRoot.updateMatrixWorld(true);
+        worstLift = Math.max(worstLift, Math.abs(box.min.y - app.explode.lowestPoint()));
+      }
+      return { worst, worstLift, checked };
+    });
+    check(inv.worst < 1e-9 && inv.worstLift < 1e-9,
+      `static transforms: ${inv.checked} world matrices at 6 poses equal a full recomputation (max Δ ${inv.worst.toExponential(1)}); analytic floor lift = bounding-box lift (Δ ${inv.worstLift.toExponential(1)} m)`);
+    check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+    await page.close();
+  }
+
+  // gesture tracking off the main thread: async trackers keep at most one frame in flight; late results are dropped
+  {
+    const asyncTracker = `(() => {
+      window.__fakeHands = []; window.__detectCalls = 0; window.__inflight = 0; window.__maxInflight = 0;
+      window.__MF550_TEST_TRACKER__ = () => ({
+        landmarker: null, delegate: null, async: true, stats: { mode: 'worker', inferMs: 0, mainMs: 0 },
+        async init() { this.landmarker = {}; this.delegate = 'TEST'; },
+        detect() { throw new Error('sync detect must not be used'); },
+        detectAsync() { window.__detectCalls++; window.__inflight++; window.__maxInflight = Math.max(window.__maxInflight, window.__inflight);
+          return new Promise((r) => setTimeout(() => { window.__inflight--; this.stats.inferMs = 120; r({ hands: window.__fakeHands }); }, 120)); },
+        close() { this.landmarker = null; },
+      });
+    })();`;
+    const { page, errors } = await openApp(browser, speechMock() + asyncTracker);
+    await page.evaluate(() => app.gestures.enable());
+    await waitFor(page, () => app.gestures.status.phase === 'on', null, 20000);
+    await page.waitForTimeout(2000);
+    const g = await page.evaluate(() => ({ calls: window.__detectCalls, max: window.__maxInflight, stats: app.gestures.perfStats }));
+    await page.evaluate(() => app.gestures.disable());
+    const after = await page.evaluate(async () => { const n = window.__detectCalls; await new Promise((r) => setTimeout(r, 600)); return window.__detectCalls - n; });
+    check(g.calls >= 3 && g.max === 1 && after === 0 && g.stats.mode === 'worker' && errors.length === 0,
+      `async (worker) tracking: ${g.calls} frames analysed in 2 s with a 120 ms model, never more than ${g.max} in flight, nothing after disabling; dashboard reports ${g.stats.mode}, ${g.stats.inferMs} ms`);
+    await page.close();
+  }
+
+  // development dashboard (hidden by default) and the display-quality setting
+  {
+    const { page, errors } = await openApp(browser, speechMock());
+    await waitFor(page, () => document.getElementById('loader').style.display === 'none', null, 20000);
+    const hud0 = await page.evaluate(() => document.querySelector('.perf-hud').hidden);
+    await page.keyboard.press('Control+Shift+P');
+    await page.waitForTimeout(700);
+    const hud = await page.evaluate(() => ({ hidden: document.querySelector('.perf-hud').hidden, text: document.querySelector('.perf-hud').innerText }));
+    await page.keyboard.press('Control+Shift+P');
+    const opts = await page.evaluate(() => [...document.querySelectorAll('#perf-profile option')].map((o) => o.value));
+    const loaderGone = await page.evaluate(() => getComputedStyle(document.getElementById('loader')).display);
+    const want = ['Frames / s', 'Frame time', 'Draw calls', 'Triangles', 'Meshes', 'JS heap', 'Gestures', 'Camera', 'Model', 'GPU', 'Acceleration'];
+    check(hud0 && !hud.hidden && want.every((w) => hud.text.includes(w)) && /SOFTWARE/.test(hud.text),
+      `performance dashboard hidden by default, Ctrl+Shift+P shows FPS, frame time, draw calls, triangles, meshes, memory, camera/gesture rates, model load and the WebGL renderer (here: software rendering flagged)`);
+    check(opts.join() === 'auto,high,balanced,low' && loaderGone === 'none' && errors.length === 0,
+      `Display quality offers ${opts.join(' / ')}; the loader (and its spinner) leaves the page after loading`);
+    await page.close();
+  }
+
+  // on-device benchmark (?bench): runs the scripted sequence and reports every phase
+  {
+    const { page, errors } = await openApp(browser, speechMock(), undefined, { query: '?bench' });
+    const done = await waitFor(page, () => !!window.__benchReport, null, 120000);
+    const r = await page.evaluate(() => window.__benchReport);
+    check(done && r.phases.length === 6 && r.phases.every((p) => p.seconds > 0) && r.profile === 'high' && errors.length === 0,
+      `?bench: ${r ? r.phases.length : 0} phases measured (${r ? r.phases.map((p) => `${p.phase}: ${p.drawnFps} fps`).join('; ') : ''})`);
+    await page.close();
+  }
+}
+
 (async () => {
   await startServer();
   const browser = await launch();
@@ -1211,6 +1429,7 @@ async function testVoiceAssets(browser) {
     if (run('archrome')) await testARCapabilities(browser);
     if (run('branding')) await testBrandingAndBom(browser);
     if (run('voice')) await testVoiceAssets(browser);
+    if (run('perf')) await testPerformance(browser);
   } finally {
     await browser.close();
     if (server) server.kill();
