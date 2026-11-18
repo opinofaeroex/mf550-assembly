@@ -4,6 +4,7 @@
 export const CONFIG = {
   /** Product name shown in the interface (the CAD/internal identifier stays MF-550-210-B). */
   productName: 'Mist-Fit 550',
+  version: '1.5.0',
 
   assemblyUrl: 'assets/model/assembly.json',
   modelDir: 'assets/model/',
@@ -48,6 +49,10 @@ export const CONFIG = {
     delegate: 'GPU',              // falls back to CPU automatically
     fps: 15,                      // hand-tracking rate (the 3D view keeps its own frame rate)
     camera: { width: 640, height: 480, facingMode: 'user' },
+    worker: true,                 // v1.5: inference in a Web Worker (main thread if unavailable)
+    analysisWidth: 640,           // v1.5: frames are downscaled to this width for analysis
+    // fps, camera size, worker, analysisWidth and delegate are overridden by the performance
+    // profile (perf/Profiles.js) — e.g. Raspberry Pi 4: 8 Hz, 320 px analysis, CPU in a worker
     detection: { minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.6, minTrackingConfidence: 0.5 },
     minHandScore: 0.7,            // handedness confidence required to accept a hand as left/right
     inputMirrored: false,         // raw camera frames are analysed; the preview is mirrored by CSS only
