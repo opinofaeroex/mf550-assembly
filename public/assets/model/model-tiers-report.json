@@ -1,0 +1,826 @@
+[
+ {
+  "tier": "balanced",
+  "maxErrorMm": 0.2,
+  "measuredBoundsMm": 0.145,
+  "file": "public/assets/model/MF-550-210-B.balanced.glb",
+  "bytes": 480528,
+  "uniqueTriangles": [
+   141390,
+   44364
+  ],
+  "renderedTriangles": [
+   468764,
+   94746
+  ],
+  "reduction": "80 %",
+  "structure": "identical (nodes, names, extras/nid, transforms, hierarchy, mesh instancing, materials)",
+  "vertices": "subset of the source vertices (bit-identical quantised positions and normals)",
+  "meshes": [
+   {
+    "mesh": 0,
+    "instances": 18,
+    "trianglesBefore": 2644,
+    "trianglesAfter": 292,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 1,
+    "instances": 1,
+    "trianglesBefore": 4258,
+    "trianglesAfter": 1720,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 2,
+    "instances": 1,
+    "trianglesBefore": 1052,
+    "trianglesAfter": 198,
+    "maxErrorMm": 0.179
+   },
+   {
+    "mesh": 3,
+    "instances": 1,
+    "trianglesBefore": 3944,
+    "trianglesAfter": 922,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 3,
+    "instances": 1,
+    "trianglesBefore": 1078,
+    "trianglesAfter": 78,
+    "maxErrorMm": 0.196
+   },
+   {
+    "mesh": 4,
+    "instances": 14,
+    "trianglesBefore": 4614,
+    "trianglesAfter": 870,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 5,
+    "instances": 12,
+    "trianglesBefore": 776,
+    "trianglesAfter": 130,
+    "maxErrorMm": 0.191
+   },
+   {
+    "mesh": 6,
+    "instances": 2,
+    "trianglesBefore": 3736,
+    "trianglesAfter": 1258,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 7,
+    "instances": 2,
+    "trianglesBefore": 2452,
+    "trianglesAfter": 152,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 8,
+    "instances": 2,
+    "trianglesBefore": 72,
+    "trianglesAfter": 29,
+    "maxErrorMm": 0.182
+   },
+   {
+    "mesh": 8,
+    "instances": 2,
+    "trianglesBefore": 8648,
+    "trianglesAfter": 788,
+    "maxErrorMm": 0.2
+   },
+   {
+    "mesh": 9,
+    "instances": 44,
+    "trianglesBefore": 1268,
+    "trianglesAfter": 132,
+    "maxErrorMm": 0.194
+   },
+   {
+    "mesh": 10,
+    "instances": 14,
+    "trianglesBefore": 792,
+    "trianglesAfter": 128,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 11,
+    "instances": 4,
+    "trianglesBefore": 324,
+    "trianglesAfter": 106,
+    "maxErrorMm": 0.19
+   },
+   {
+    "mesh": 11,
+    "instances": 4,
+    "trianglesBefore": 348,
+    "trianglesAfter": 125,
+    "maxErrorMm": 0.195
+   },
+   {
+    "mesh": 12,
+    "instances": 2,
+    "trianglesBefore": 2030,
+    "trianglesAfter": 416,
+    "maxErrorMm": 0.197
+   },
+   {
+    "mesh": 13,
+    "instances": 38,
+    "trianglesBefore": 1482,
+    "trianglesAfter": 146,
+    "maxErrorMm": 0.196
+   },
+   {
+    "mesh": 14,
+    "instances": 1,
+    "trianglesBefore": 4172,
+    "trianglesAfter": 1770,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 15,
+    "instances": 1,
+    "trianglesBefore": 32,
+    "trianglesAfter": 32,
+    "maxErrorMm": 0
+   },
+   {
+    "mesh": 16,
+    "instances": 1,
+    "trianglesBefore": 2512,
+    "trianglesAfter": 886,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 17,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 90,
+    "maxErrorMm": 0.182
+   },
+   {
+    "mesh": 18,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 94,
+    "maxErrorMm": 0.184
+   },
+   {
+    "mesh": 19,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 92,
+    "maxErrorMm": 0.181
+   },
+   {
+    "mesh": 20,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 94,
+    "maxErrorMm": 0.187
+   },
+   {
+    "mesh": 21,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 90,
+    "maxErrorMm": 0.187
+   },
+   {
+    "mesh": 22,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 92,
+    "maxErrorMm": 0.185
+   },
+   {
+    "mesh": 23,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 94,
+    "maxErrorMm": 0.179
+   },
+   {
+    "mesh": 24,
+    "instances": 1,
+    "trianglesBefore": 162,
+    "trianglesAfter": 100,
+    "maxErrorMm": 0.182
+   },
+   {
+    "mesh": 25,
+    "instances": 1,
+    "trianglesBefore": 2804,
+    "trianglesAfter": 2368,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 26,
+    "instances": 1,
+    "trianglesBefore": 1232,
+    "trianglesAfter": 616,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 27,
+    "instances": 1,
+    "trianglesBefore": 10790,
+    "trianglesAfter": 3734,
+    "maxErrorMm": 0.197
+   },
+   {
+    "mesh": 28,
+    "instances": 1,
+    "trianglesBefore": 3452,
+    "trianglesAfter": 2180,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 29,
+    "instances": 1,
+    "trianglesBefore": 2876,
+    "trianglesAfter": 808,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 30,
+    "instances": 6,
+    "trianglesBefore": 3710,
+    "trianglesAfter": 198,
+    "maxErrorMm": 0.192
+   },
+   {
+    "mesh": 31,
+    "instances": 4,
+    "trianglesBefore": 1732,
+    "trianglesAfter": 462,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 32,
+    "instances": 4,
+    "trianglesBefore": 624,
+    "trianglesAfter": 430,
+    "maxErrorMm": 0.191
+   },
+   {
+    "mesh": 33,
+    "instances": 4,
+    "trianglesBefore": 1804,
+    "trianglesAfter": 398,
+    "maxErrorMm": 0.194
+   },
+   {
+    "mesh": 34,
+    "instances": 8,
+    "trianglesBefore": 468,
+    "trianglesAfter": 96,
+    "maxErrorMm": 0.194
+   },
+   {
+    "mesh": 35,
+    "instances": 3,
+    "trianglesBefore": 18408,
+    "trianglesAfter": 5056,
+    "maxErrorMm": 0.197
+   },
+   {
+    "mesh": 36,
+    "instances": 1,
+    "trianglesBefore": 12,
+    "trianglesAfter": 12,
+    "maxErrorMm": 0
+   },
+   {
+    "mesh": 37,
+    "instances": 1,
+    "trianglesBefore": 8752,
+    "trianglesAfter": 1940,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 38,
+    "instances": 1,
+    "trianglesBefore": 4844,
+    "trianglesAfter": 1194,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 39,
+    "instances": 1,
+    "trianglesBefore": 2964,
+    "trianglesAfter": 584,
+    "maxErrorMm": 0.197
+   },
+   {
+    "mesh": 40,
+    "instances": 2,
+    "trianglesBefore": 2756,
+    "trianglesAfter": 532,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 41,
+    "instances": 1,
+    "trianglesBefore": 1648,
+    "trianglesAfter": 446,
+    "maxErrorMm": 0.196
+   },
+   {
+    "mesh": 42,
+    "instances": 1,
+    "trianglesBefore": 1526,
+    "trianglesAfter": 398,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 43,
+    "instances": 1,
+    "trianglesBefore": 5208,
+    "trianglesAfter": 1418,
+    "maxErrorMm": 0.2
+   },
+   {
+    "mesh": 44,
+    "instances": 1,
+    "trianglesBefore": 332,
+    "trianglesAfter": 98,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 45,
+    "instances": 1,
+    "trianglesBefore": 1692,
+    "trianglesAfter": 432,
+    "maxErrorMm": 0.192
+   },
+   {
+    "mesh": 46,
+    "instances": 1,
+    "trianglesBefore": 2400,
+    "trianglesAfter": 590,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 47,
+    "instances": 2,
+    "trianglesBefore": 580,
+    "trianglesAfter": 188,
+    "maxErrorMm": 0.193
+   },
+   {
+    "mesh": 48,
+    "instances": 1,
+    "trianglesBefore": 1636,
+    "trianglesAfter": 380,
+    "maxErrorMm": 0.196
+   },
+   {
+    "mesh": 49,
+    "instances": 1,
+    "trianglesBefore": 1076,
+    "trianglesAfter": 208,
+    "maxErrorMm": 0.197
+   },
+   {
+    "mesh": 50,
+    "instances": 2,
+    "trianglesBefore": 842,
+    "trianglesAfter": 236,
+    "maxErrorMm": 0.198
+   },
+   {
+    "mesh": 51,
+    "instances": 1,
+    "trianglesBefore": 754,
+    "trianglesAfter": 264,
+    "maxErrorMm": 0.199
+   },
+   {
+    "mesh": 52,
+    "instances": 1,
+    "trianglesBefore": 8924,
+    "trianglesAfter": 8174,
+    "maxErrorMm": 0.195
+   }
+  ]
+ },
+ {
+  "tier": "low",
+  "maxErrorMm": 0.45,
+  "measuredBoundsMm": 0.541,
+  "file": "public/assets/model/MF-550-210-B.low.glb",
+  "bytes": 403476,
+  "uniqueTriangles": [
+   141390,
+   34139
+  ],
+  "renderedTriangles": [
+   468764,
+   69078
+  ],
+  "reduction": "85 %",
+  "structure": "identical (nodes, names, extras/nid, transforms, hierarchy, mesh instancing, materials)",
+  "vertices": "subset of the source vertices (bit-identical quantised positions and normals)",
+  "meshes": [
+   {
+    "mesh": 0,
+    "instances": 18,
+    "trianglesBefore": 2644,
+    "trianglesAfter": 218,
+    "maxErrorMm": 0.446
+   },
+   {
+    "mesh": 1,
+    "instances": 1,
+    "trianglesBefore": 4258,
+    "trianglesAfter": 1274,
+    "maxErrorMm": 0.447
+   },
+   {
+    "mesh": 2,
+    "instances": 1,
+    "trianglesBefore": 1052,
+    "trianglesAfter": 134,
+    "maxErrorMm": 0.414
+   },
+   {
+    "mesh": 3,
+    "instances": 1,
+    "trianglesBefore": 3944,
+    "trianglesAfter": 486,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 3,
+    "instances": 1,
+    "trianglesBefore": 1078,
+    "trianglesAfter": 50,
+    "maxErrorMm": 0.445
+   },
+   {
+    "mesh": 4,
+    "instances": 14,
+    "trianglesBefore": 4614,
+    "trianglesAfter": 526,
+    "maxErrorMm": 0.436
+   },
+   {
+    "mesh": 5,
+    "instances": 12,
+    "trianglesBefore": 776,
+    "trianglesAfter": 82,
+    "maxErrorMm": 0.439
+   },
+   {
+    "mesh": 6,
+    "instances": 2,
+    "trianglesBefore": 3736,
+    "trianglesAfter": 876,
+    "maxErrorMm": 0.445
+   },
+   {
+    "mesh": 7,
+    "instances": 2,
+    "trianglesBefore": 2452,
+    "trianglesAfter": 106,
+    "maxErrorMm": 0.45
+   },
+   {
+    "mesh": 8,
+    "instances": 2,
+    "trianglesBefore": 72,
+    "trianglesAfter": 24,
+    "maxErrorMm": 0.374
+   },
+   {
+    "mesh": 8,
+    "instances": 2,
+    "trianglesBefore": 8648,
+    "trianglesAfter": 344,
+    "maxErrorMm": 0.449
+   },
+   {
+    "mesh": 9,
+    "instances": 44,
+    "trianglesBefore": 1268,
+    "trianglesAfter": 110,
+    "maxErrorMm": 0.429
+   },
+   {
+    "mesh": 10,
+    "instances": 14,
+    "trianglesBefore": 792,
+    "trianglesAfter": 84,
+    "maxErrorMm": 0.405
+   },
+   {
+    "mesh": 11,
+    "instances": 4,
+    "trianglesBefore": 324,
+    "trianglesAfter": 71,
+    "maxErrorMm": 0.382
+   },
+   {
+    "mesh": 11,
+    "instances": 4,
+    "trianglesBefore": 348,
+    "trianglesAfter": 88,
+    "maxErrorMm": 0.446
+   },
+   {
+    "mesh": 12,
+    "instances": 2,
+    "trianglesBefore": 2030,
+    "trianglesAfter": 312,
+    "maxErrorMm": 0.445
+   },
+   {
+    "mesh": 13,
+    "instances": 38,
+    "trianglesBefore": 1482,
+    "trianglesAfter": 92,
+    "maxErrorMm": 0.424
+   },
+   {
+    "mesh": 14,
+    "instances": 1,
+    "trianglesBefore": 4172,
+    "trianglesAfter": 1348,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 15,
+    "instances": 1,
+    "trianglesBefore": 32,
+    "trianglesAfter": 32,
+    "maxErrorMm": 0
+   },
+   {
+    "mesh": 16,
+    "instances": 1,
+    "trianglesBefore": 2512,
+    "trianglesAfter": 676,
+    "maxErrorMm": 0.449
+   },
+   {
+    "mesh": 17,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 60,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 18,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 70,
+    "maxErrorMm": 0.447
+   },
+   {
+    "mesh": 19,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 62,
+    "maxErrorMm": 0.449
+   },
+   {
+    "mesh": 20,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 66,
+    "maxErrorMm": 0.446
+   },
+   {
+    "mesh": 21,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 64,
+    "maxErrorMm": 0.44
+   },
+   {
+    "mesh": 22,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 64,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 23,
+    "instances": 1,
+    "trianglesBefore": 164,
+    "trianglesAfter": 64,
+    "maxErrorMm": 0.443
+   },
+   {
+    "mesh": 24,
+    "instances": 1,
+    "trianglesBefore": 162,
+    "trianglesAfter": 56,
+    "maxErrorMm": 0.42
+   },
+   {
+    "mesh": 25,
+    "instances": 1,
+    "trianglesBefore": 2804,
+    "trianglesAfter": 1666,
+    "maxErrorMm": 0.449
+   },
+   {
+    "mesh": 26,
+    "instances": 1,
+    "trianglesBefore": 1232,
+    "trianglesAfter": 530,
+    "maxErrorMm": 0.443
+   },
+   {
+    "mesh": 27,
+    "instances": 1,
+    "trianglesBefore": 10790,
+    "trianglesAfter": 2776,
+    "maxErrorMm": 0.447
+   },
+   {
+    "mesh": 28,
+    "instances": 1,
+    "trianglesBefore": 3452,
+    "trianglesAfter": 1528,
+    "maxErrorMm": 0.447
+   },
+   {
+    "mesh": 29,
+    "instances": 1,
+    "trianglesBefore": 2876,
+    "trianglesAfter": 600,
+    "maxErrorMm": 0.439
+   },
+   {
+    "mesh": 30,
+    "instances": 6,
+    "trianglesBefore": 3710,
+    "trianglesAfter": 98,
+    "maxErrorMm": 0.431
+   },
+   {
+    "mesh": 31,
+    "instances": 4,
+    "trianglesBefore": 1732,
+    "trianglesAfter": 314,
+    "maxErrorMm": 0.437
+   },
+   {
+    "mesh": 32,
+    "instances": 4,
+    "trianglesBefore": 624,
+    "trianglesAfter": 414,
+    "maxErrorMm": 0.368
+   },
+   {
+    "mesh": 33,
+    "instances": 4,
+    "trianglesBefore": 1804,
+    "trianglesAfter": 306,
+    "maxErrorMm": 0.438
+   },
+   {
+    "mesh": 34,
+    "instances": 8,
+    "trianglesBefore": 468,
+    "trianglesAfter": 66,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 35,
+    "instances": 3,
+    "trianglesBefore": 18408,
+    "trianglesAfter": 3694,
+    "maxErrorMm": 0.444
+   },
+   {
+    "mesh": 36,
+    "instances": 1,
+    "trianglesBefore": 12,
+    "trianglesAfter": 12,
+    "maxErrorMm": 0
+   },
+   {
+    "mesh": 37,
+    "instances": 1,
+    "trianglesBefore": 8752,
+    "trianglesAfter": 1396,
+    "maxErrorMm": 0.449
+   },
+   {
+    "mesh": 38,
+    "instances": 1,
+    "trianglesBefore": 4844,
+    "trianglesAfter": 926,
+    "maxErrorMm": 0.449
+   },
+   {
+    "mesh": 39,
+    "instances": 1,
+    "trianglesBefore": 2964,
+    "trianglesAfter": 436,
+    "maxErrorMm": 0.445
+   },
+   {
+    "mesh": 40,
+    "instances": 2,
+    "trianglesBefore": 2756,
+    "trianglesAfter": 390,
+    "maxErrorMm": 0.443
+   },
+   {
+    "mesh": 41,
+    "instances": 1,
+    "trianglesBefore": 1648,
+    "trianglesAfter": 324,
+    "maxErrorMm": 0.439
+   },
+   {
+    "mesh": 42,
+    "instances": 1,
+    "trianglesBefore": 1526,
+    "trianglesAfter": 300,
+    "maxErrorMm": 0.442
+   },
+   {
+    "mesh": 43,
+    "instances": 1,
+    "trianglesBefore": 5208,
+    "trianglesAfter": 1090,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 44,
+    "instances": 1,
+    "trianglesBefore": 332,
+    "trianglesAfter": 78,
+    "maxErrorMm": 0.448
+   },
+   {
+    "mesh": 45,
+    "instances": 1,
+    "trianglesBefore": 1692,
+    "trianglesAfter": 306,
+    "maxErrorMm": 0.445
+   },
+   {
+    "mesh": 46,
+    "instances": 1,
+    "trianglesBefore": 2400,
+    "trianglesAfter": 422,
+    "maxErrorMm": 0.446
+   },
+   {
+    "mesh": 47,
+    "instances": 2,
+    "trianglesBefore": 580,
+    "trianglesAfter": 136,
+    "maxErrorMm": 0.445
+   },
+   {
+    "mesh": 48,
+    "instances": 1,
+    "trianglesBefore": 1636,
+    "trianglesAfter": 262,
+    "maxErrorMm": 0.444
+   },
+   {
+    "mesh": 49,
+    "instances": 1,
+    "trianglesBefore": 1076,
+    "trianglesAfter": 148,
+    "maxErrorMm": 0.438
+   },
+   {
+    "mesh": 50,
+    "instances": 2,
+    "trianglesBefore": 842,
+    "trianglesAfter": 160,
+    "maxErrorMm": 0.447
+   },
+   {
+    "mesh": 51,
+    "instances": 1,
+    "trianglesBefore": 754,
+    "trianglesAfter": 206,
+    "maxErrorMm": 0.45
+   },
+   {
+    "mesh": 52,
+    "instances": 1,
+    "trianglesBefore": 8924,
+    "trianglesAfter": 8116,
+    "maxErrorMm": 0.435
+   }
+  ]
+ }
+]
