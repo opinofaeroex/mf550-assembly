@@ -1,5 +1,6 @@
 import { CameraManager } from './CameraManager.js';
 import { HandTracker, physicalHand } from './HandTracker.js';
+import { WorkerHandTracker } from './WorkerHandTracker.js';
 import { classifyGesture } from './GestureClassifier.js';
 import { GestureTrigger } from './GestureTrigger.js';
 
@@ -23,7 +24,10 @@ export class GestureController extends EventTarget {
     super();
     this.cfg = cfg;
     this.camera = new CameraManager(video);
-    this.createTracker = createTracker || ((c) => new HandTracker(c));
+    // v1.5: inference in a Web Worker where possible (cfg.worker), main thread otherwise
+    this.createTracker = createTracker || ((c) => (c.worker && WorkerHandTracker.supported() ? new WorkerHandTracker(c) : new HandTracker(c)));
+    this.gen = 0;
+    this.inflight = false;
     this.tracker = null;
     this.trigger = new GestureTrigger(cfg.trigger);
     this.swap = false;
@@ -127,27 +131,72 @@ export class GestureController extends EventTarget {
 
   #stopLoop() {
     this.running = false;
+    this.inflight = false;
+    this.gen = (this.gen || 0) + 1;      // results of frames sent before this are dropped
     cancelAnimationFrame(this.raf);
   }
 
-  /** One camera frame: throttled to cfg.fps so the 3D view keeps its frame rate. */
+  /**
+   * One camera frame: throttled to cfg.fps so the 3D view keeps its frame rate.
+   * v1.5: trackers with detectAsync (WorkerHandTracker) run inference off the main thread;
+   * at most one frame is in flight, so a slow device analyses fewer frames instead of queueing.
+   */
   loop() {
     if (!this.running) return;
     const now = performance.now();
     const v = this.camera.video;
-    if (now - this.lastRun >= 1000 / this.cfg.fps && v.readyState >= 2 && v.videoWidth > 0) {
+    if (!this.inflight && now - this.lastRun >= 1000 / this.cfg.fps && v.readyState >= 2 && v.videoWidth > 0) {
       this.lastRun = now;
       const ts = Math.max(Math.round(now), this.lastTs + 1);   // MediaPipe needs increasing timestamps
       this.lastTs = ts;
-      let res = null;
-      try {
-        res = this.tracker.detect(v, ts);
-      } catch (e) {
-        console.warn('[gestures] tracking error:', e);
+      const frame = { width: v.videoWidth, height: v.videoHeight };
+      if (this.tracker.async && this.tracker.detectAsync) {
+        this.inflight = true;
+        const gen = this.gen;
+        this.tracker.detectAsync(v, ts).then((res) => {
+          if (gen !== this.gen) return;
+          this.inflight = false;
+          if (!this.running) return;
+          this.#count();
+          this.process(res, performance.now(), frame);
+        }, (e) => {
+          if (gen !== this.gen) return;
+          this.inflight = false;
+          console.warn('[gestures] tracking error:', e);
+        });
+      } else {
+        let res = null;
+        const t0 = performance.now();
+        try {
+          res = this.tracker.detect(v, ts);
+        } catch (e) {
+          console.warn('[gestures] tracking error:', e);
+        }
+        this.mainMs = performance.now() - t0;
+        if (res) { this.#count(); this.process(res, now, frame); }
       }
-      if (res) this.process(res, now, { width: v.videoWidth, height: v.videoHeight });
     }
     this.#schedule();
+  }
+
+  /** Analysed frames per second and per-frame costs (performance dashboard). */
+  #count() {
+    const now = performance.now();
+    this.rateWin = this.rateWin || { t: now, n: 0, hz: 0 };
+    const w = this.rateWin;
+    w.n++;
+    if (now - w.t >= 1000) { w.hz = (w.n * 1000) / (now - w.t); w.t = now; w.n = 0; }
+  }
+
+  get perfStats() {
+    const t = this.tracker;
+    const s = (t && t.stats) || {};
+    return {
+      running: !!this.running, hz: this.rateWin ? this.rateWin.hz : 0,
+      mode: s.mode || 'main', delegate: (t && t.delegate) || null,
+      inferMs: s.inferMs ?? this.mainMs ?? 0, mainMs: s.mode === 'worker' ? s.mainMs : (this.mainMs ?? s.mainMs ?? 0),
+      fps: this.cfg.fps, analysisWidth: this.cfg.analysisWidth || this.cfg.camera.width,
+    };
   }
 
   /** Classify the user's right hand and feed the trigger. Exposed for tests. */
