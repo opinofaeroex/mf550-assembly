@@ -41,6 +41,18 @@ import { GesturePanel } from './ui/GesturePanel.js';
 import { CONFIG } from './config.js';
 import { chooseProfile, saveProfile, PROFILES, SELECTABLE } from './perf/Profiles.js';
 import { PerfMonitor } from './perf/PerfMonitor.js';
+import { UnitRig } from './unit/UnitRig.js';
+import { UnitSequencer } from './unit/UnitSequencer.js';
+import { UnitCamera } from './unit/UnitCamera.js';
+
+/** v2.0: which tutorial to show — URL ?tutorial=unit|parts > saved choice > CONFIG default. */
+function chooseTutorial() {
+  const T = CONFIG.tutorials;
+  const q = new URLSearchParams(location.search).get('tutorial');
+  if (q && T[q]) return q;
+  try { const v = localStorage.getItem('mf550.tutorial'); if (v && T[v]) return v; } catch { /* storage unavailable */ }
+  return T.default;
+}
 
 const $ = (id) => document.getElementById(id);
 
@@ -49,6 +61,10 @@ class App {
     // v1.5 performance profile (perf/Profiles.js): URL ?profile= > saved choice > automatic
     this.perf = chooseProfile();
     document.documentElement.dataset.perf = this.perf.id;
+    this.tutorial = chooseTutorial();
+    this.unit = this.tutorial === 'unit';
+    this.tut = CONFIG.tutorials[this.tutorial];
+    document.documentElement.dataset.tutorial = this.tutorial;
     this.metrics = { t0: performance.now(), modelLoadMs: null, readyMs: null };
     this.opts = { ghost: true, edges: this.perf.settings.edges !== 'none', focus: true, isolate: false };
     this.selection = null;
@@ -64,11 +80,11 @@ class App {
     this.viewer = new Viewer($('viewport'), this.perf.settings);
     try {
       this.#loader('Loading assembly data…', 0.05);
-      this.model = await loadAssembly(CONFIG.assemblyUrl);
+      this.model = await loadAssembly(this.tut.assemblyUrl);
       this.#loader('Loading 3D model…', 0.1);
       const S = this.perf.settings;
       // camera plans are fetched in parallel with the model (small JSON, optional)
-      this.cameraPlans = S.cameraPlans === 'precomputed'
+      this.cameraPlans = !this.unit && S.cameraPlans === 'precomputed'
         ? fetch(CONFIG.modelDir + 'camera-plans.json').then((r) => (r.ok ? r.json() : null)).catch(() => null) : Promise.resolve(null);
       const { url, tier } = await this.#modelFile(S.model);
       const t = performance.now();
@@ -84,24 +100,35 @@ class App {
     const { model, loaded, viewer } = this;
     const S = this.perf.settings;
     viewer.setModel(loaded.root);
-    const isHardware = (id) => { const n = model.node(id); const s = model.steps[n.effectiveStep ?? n.step]; return !!s && s.kind === 'fasten'; };
+    const isHardware = this.unit
+      ? (id) => /Rivet|Nut\b|Nut \(|Screw|Bolt|Washer|Clip Nut|Strain Relief/i.test(model.node(id).name)
+      : (id) => { const n = model.node(id); const s = model.steps[n.effectiveStep ?? n.step]; return !!s && s.kind === 'fasten'; };
     this.appearance = new Appearance(loaded, { onChange: () => viewer.requestRender(), freeze: (o) => viewer.freeze(o), isHardware });
-    this.explode = new ExplodeController(model, loaded.objects, CONFIG.explodeScale);
+    this.explode = new ExplodeController(model, loaded.objects, this.unit ? 0 : CONFIG.explodeScale);
     this.explode.onChange = () => viewer.requestRender();
-    if (S.analyticLift) {
-      this.explode.prepareBounds(viewer.modelRoot, [...loaded.meshesByPart.values()].flat());
-      viewer.liftProvider = () => this.explode.lowestPoint();
+    if (this.unit) {
+      // v2.0 unit tutorial: data-driven timeline (unit/), the main body stays on the floor
+      viewer.fixedLift = 0;
+      this.rig = new UnitRig({ viewer, model, loaded, base: this.tut.modelDir });
+      try { await this.rig.ready; } catch (err) { console.warn('[unit] tool models not loaded:', err); }
+      this.seq = new UnitSequencer(model, this.rig, { loop: CONFIG.animation.loop });
+    } else {
+      if (S.analyticLift) {
+        this.explode.prepareBounds(viewer.modelRoot, [...loaded.meshesByPart.values()].flat());
+        viewer.liftProvider = () => this.explode.lowestPoint();
+      }
+      this.seq = new Sequencer(model, this.explode, { loop: CONFIG.animation.loop, timing: CONFIG.animation.timing });
     }
-    this.seq = new Sequencer(model, this.explode, { loop: CONFIG.animation.loop, timing: CONFIG.animation.timing });
     model.meta.displayName = CONFIG.productName;          // visible product name (internal id stays meta.product)
     model.root.label = CONFIG.productName;
     this.picker = new Picker(viewer, this.appearance);
     this.stepCallout = new Callout($('callout-layer'), 'step');
     this.selCallout = new Callout($('callout-layer'), 'sel');
     this.stepCallout.onChange = this.selCallout.onChange = () => viewer.requestRender();
-    this.activeParts = model.steps.map((s) => new Set(s.nodes.flatMap((id) => model.partsUnder(id))));
+    this.activeParts = model.steps.map((s) => new Set([...s.nodes.flatMap((id) => model.partsUnder(id)),
+      ...(s.tracks ? s.tracks.parts.filter((tr) => model.node(tr.node).step !== null && model.node(tr.node).step <= model.steps.indexOf(s)).map((tr) => tr.node) : [])]));
     // parts of the (sub-)assembly being worked on; null = whole product
-    this.stepContext = model.steps.map((s) => (s.assembly === model.rootId ? null
+    this.stepContext = model.steps.map((s) => (this.unit || s.assembly === model.rootId ? null
       : new Set(s.assemblyInstances.flatMap((id) => model.partsUnder(id)))));
 
     viewer.onUpdate.push((dt) => {
@@ -109,14 +136,14 @@ class App {
       if (!S.calloutsOnRender) this.#updateCallouts();
     });
     if (S.calloutsOnRender) viewer.onRender.push(() => this.#updateCallouts());   // callouts follow drawn frames
-    // automatic close-up of each step's components (scene/CameraController.js)
-    this.cameraCtl = new CameraController({
+    // automatic close-up of each step's components (scene/CameraController.js; unit/UnitCamera.js in v2.0)
+    this.cameraCtl = this.unit ? new UnitCamera({ viewer, model, loaded, rig: this.rig }) : new CameraController({
       viewer, model, loaded, explode: this.explode, cfg: { ...CONFIG.camera, frameBudgetMs: S.planningBudgetMs },
       isSolid: (id, pos) => this.#isSolid(id, pos),
       variant: () => (this.opts.ghost ? 'ghost' : 'solid'),
     });
     const plans = await this.cameraPlans;
-    this.cameraCtl.usePrecomputed(plans, CameraController.planKey(model, this.cameraCtl.cfg, viewer.camera.fov, CONFIG.explodeScale));
+    if (!this.unit) this.cameraCtl.usePrecomputed(plans, CameraController.planKey(model, this.cameraCtl.cfg, viewer.camera.fov, CONFIG.explodeScale));
     viewer.controls.addEventListener('start', () => {   // user orbit / zoom / pan
       viewer.cancelCameraTween();
       this.cameraCtl.pauseByUser();
@@ -145,6 +172,7 @@ class App {
     this.appearance.setEdgesVisible(this.opts.edges);
     setTimeout(() => { if (this.opts.edges) this.#buildEdges(); }, 60);
 
+    this.#initTutorialSwitch();
     this.#loader('Ready', 1);
     setTimeout(() => {
       $('loader').classList.add('is-done');
@@ -162,13 +190,14 @@ class App {
 
   /** Model file of the profile's tier (tools/optimize-model.mjs); the full model if it is missing. */
   async #modelFile(tier) {
-    const full = { url: CONFIG.modelDir + this.model.meta.glb, tier: 'high' };
+    const dir = this.tut.modelDir;
+    const full = { url: dir + this.model.meta.glb, tier: 'high' };
     if (!tier || tier === 'high') return full;
     try {
-      const r = await fetch(CONFIG.modelDir + 'model-tiers.json');
+      const r = await fetch(dir + 'model-tiers.json');
       const tiers = r.ok ? (await r.json()).tiers : null;
       const t = tiers && tiers[tier];
-      if (t && t.file) return { url: CONFIG.modelDir + t.file, tier };
+      if (t && t.file) return { url: dir + t.file, tier };
     } catch { /* no tiers: full model */ }
     console.warn(`[perf] model tier "${tier}" not found, loading the full model`);
     return full;
@@ -237,16 +266,26 @@ class App {
     const m = this.model.meta;
     $('product-title').textContent = CONFIG.productName;
     document.title = `${CONFIG.productName} · Interactive Assembly Instructions`;
-    $('meta-chips').innerHTML = [
+    $('meta-chips').innerHTML = (this.unit ? [
+      `<span class="chip"><b>${m.partInstances}</b> components</span>`,
+      `<span class="chip"><b>${this.model.stepCount}</b> steps</span>`,
+      `<span class="chip"><b>9</b> phases</span>`,
+    ] : [
       `<span class="chip"><b>${m.partInstances}</b> part instances</span>`,
       `<span class="chip"><b>${this.model.bom.length}</b> BOM lines</span>`,
       `<span class="chip"><b>${this.model.stepCount}</b> steps</span>`,
-    ].join('');
+    ]).join('');
     $('btn-help').addEventListener('click', () => $('help-dialog').showModal());
     const note = `Data source: the product's STEP CAD model, converted with ${m.converter}. The STEP file contains geometry, colours, component names and the hierarchy (encoded in body names). `
       + `It does not contain ${m.unavailable.join(', ')}; these are shown as "Not in STEP file"${m.bomSource ? ` unless supplied by the BOM export ${m.bomSource}` : ''}. The assembly order is ${m.sequenceSource}.`;
-    $('help-data-note').textContent = note;
-    $('sidebar-foot').textContent = `${m.partInstances} instances · ${m.uniqueMeshes} unique meshes · order derived from geometry (STEP has no assembly sequence)`;
+    $('help-data-note').textContent = this.unit
+      ? `Data source: the grouped CAD assembly MF-550-210-B_GROUPED_ASSEMBLY (STEP AP242), converted with ${m.converter}. `
+        + 'The installation sequence, the tool operations and the paths are authored in pipeline/unit/ and checked against the CAD geometry '
+        + '(collision checks); hardware sizes are measured from the CAD and marked where they require engineering confirmation (docs/unit-engineering-report.md).'
+      : note;
+    $('sidebar-foot').textContent = this.unit
+      ? `${m.partInstances} components · ${this.model.stepCount} installation steps · sizes measured from CAD`
+      : `${m.partInstances} instances · ${m.uniqueMeshes} unique meshes · order derived from geometry (STEP has no assembly sequence)`;
   }
 
   // ---------------------------------------------------------------- panels
@@ -261,7 +300,7 @@ class App {
       tabs: [...document.querySelectorAll('.tab')],
       panels: [...document.querySelectorAll('[data-panel]')],
     });
-    this.bom.showTab('bom');
+    this.bom.showTab(this.unit ? 'steps' : 'bom');   // v2.0: the installation tutorial opens on its steps
     this.bom.addEventListener('select-row', (e) => this.select({ row: e.detail.row }));
     this.bom.addEventListener('select-part-group', (e) => {
       const entry = e.detail.entry;
@@ -280,6 +319,21 @@ class App {
     $('details-isolate').addEventListener('click', () => this.#setOpt('isolate', !this.opts.isolate));
 
     $('sheet-handle').addEventListener('click', () => $('sidebar').classList.toggle('is-open'));
+    // v2.0: collapsible side panel (desktop) — the 3D view takes the freed width; remembered
+    const layout = document.querySelector('.layout');
+    const setCollapsed = (c) => {
+      layout.classList.toggle('panel-collapsed', c);
+      const b = $('panel-toggle');
+      b.setAttribute('aria-expanded', String(!c));
+      b.title = c ? 'Show the side panel ( [ )' : 'Collapse the side panel ( [ )';
+      b.setAttribute('aria-label', b.title);
+      try { localStorage.setItem('mf550.panel.collapsed', JSON.stringify(c)); } catch { /* storage unavailable */ }
+    };
+    let collapsed = false;
+    try { collapsed = JSON.parse(localStorage.getItem('mf550.panel.collapsed') || 'false') === true; } catch { /* default */ }
+    setCollapsed(collapsed);
+    $('panel-toggle').addEventListener('click', () => setCollapsed(!layout.classList.contains('panel-collapsed')));
+    this.togglePanel = () => setCollapsed(!layout.classList.contains('panel-collapsed'));
 
     const tool = (id, opt, after) => {
       const b = $(id);
@@ -505,7 +559,7 @@ class App {
     });
     const installed = model.partsInstalledBefore(pos >= N ? N : Math.max(0, pos) + (seq.isStep ? 1 : 0));
     $('progress-label').textContent = seq.isStep ? `Step ${pos + 1} / ${N}` : pos === ASSEMBLED ? `Overview · 0 / ${N}` : `Parts kit · 0 / ${N}`;
-    const where = seq.isStep ? ` · in ${displayName(model.node(model.steps[pos].assembly))}` : '';
+    const where = !seq.isStep ? '' : this.unit ? ` · phase ${model.steps[pos].phase}` : ` · in ${displayName(model.node(model.steps[pos].assembly))}`;
     $('progress-sub').textContent = `${pos === ASSEMBLED ? model.meta.partInstances : installed} / ${model.meta.partInstances} parts placed${where}`;
     $('progress').setAttribute('aria-valuenow', String(pos + 2));
     $('progress').setAttribute('aria-valuetext', $('progress-label').textContent);
@@ -528,12 +582,19 @@ class App {
     const { seq, model } = this;
     if (!seq.isStep) { this.stepCallout.hide(); return; }
     const s = model.steps[seq.pos];
+    if (this.unit) {
+      const ids = s.nodes.length ? s.nodes : s.focus;
+      if (!ids.length || ids.length > 40) { this.stepCallout.hide(); return; }
+      this.stepCallout.set(ids.map((id) => this.loaded.objects.get(id)), null, s.title);
+      return;
+    }
     if (this.selection && this.selection.row.item === s.item) { this.stepCallout.hide(); return; }
     this.stepCallout.set(s.nodes.map((id) => this.loaded.objects.get(id)), null, `${s.qty > 1 ? s.qty + '× ' : ''}${displayName(model.node(s.nodes[0]).kind === 'assembly' ? model.node(s.nodes[0]) : s)}`);
   }
 
   #refreshAppearance() {
     if (!this.appearance) return;
+    if (this.unit) { this.#refreshUnitAppearance(); return; }
     const { seq, model } = this;
     const pos = seq.pos;
     const active = seq.isStep ? this.activeParts[pos] : null;
@@ -555,6 +616,47 @@ class App {
       }
       this.appearance.set(id, st);
     }
+  }
+
+  /**
+   * v2.0 unit tutorial: parts of later steps are not installed yet (hidden); the parts of the
+   * current step are highlighted; in steps inside the unit (camera.xray) the rest is ghosted.
+   */
+  #refreshUnitAppearance() {
+    const { seq, model } = this;
+    const pos = seq.pos;
+    const active = seq.isStep ? this.activeParts[pos] : null;
+    const xray = seq.isStep && model.steps[pos].camera && model.steps[pos].camera.xray;
+    const sel = this.selection ? this.selection.partSet : null;
+    for (const id of model.partIds) {
+      const s = model.node(id).step;
+      let st = STATE.NORMAL;
+      if (seq.isStep) {
+        if (s !== null && s > pos) st = STATE.HIDDEN;
+        else if (active.has(id)) st = STATE.ACTIVE;
+        else if (xray && this.opts.ghost) st = STATE.GHOST;
+      }
+      if (sel && st !== STATE.HIDDEN) {
+        if (sel.has(id)) st = STATE.SELECTED;
+        else if (this.opts.isolate) st = STATE.GHOST;
+      }
+      this.appearance.set(id, st);
+    }
+  }
+
+  // ---------------------------------------------------------- tutorial switch (v2.0)
+  #initTutorialSwitch() {
+    const box = $('tutorial-switch');
+    if (!box) return;
+    box.innerHTML = Object.entries(CONFIG.tutorials).filter(([k]) => k !== 'default')
+      .map(([k, t]) => `<button type="button" role="radio" data-tutorial="${k}" aria-checked="${k === this.tutorial}" class="${k === this.tutorial ? 'is-on' : ''}">${t.label}</button>`).join('');
+    box.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tutorial]');
+      if (!b || b.dataset.tutorial === this.tutorial) return;
+      try { localStorage.setItem('mf550.tutorial', b.dataset.tutorial); } catch { /* storage unavailable */ }
+      const q = new URLSearchParams(location.search); q.set('tutorial', b.dataset.tutorial);
+      location.href = `${location.pathname}?${q}`;
+    });
   }
 
   /** Is a part drawn opaque at a position? (mirrors #refreshAppearance; used for camera sight lines) */
@@ -662,6 +764,7 @@ class App {
       else if (k === 'c' || k === 'C') this.cameraCtl.refocus();
       else if (k === 'g' || k === 'G') this.#setOpt('ghost', !this.opts.ghost);
       else if (k === 'i' || k === 'I') this.#setOpt('isolate', !this.opts.isolate);
+      else if (k === '[') this.togglePanel && this.togglePanel();
       else if (k === 'Escape') this.select(null);
     });
   }

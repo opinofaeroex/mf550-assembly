@@ -1,0 +1,10678 @@
+{
+ "source": "MF-550-210-B_GROUPED_ASSEMBLY.step",
+ "units": "mm",
+ "up": "Y",
+ "front": "+X (access door)",
+ "parts": {
+  "Unit Body": {
+   "name": "Unit Body",
+   "group": "MAIN BODY",
+   "bbox": [
+    -379.381,
+    -316.758,
+    -189.285,
+    0.008,
+    316.751,
+    189.285
+   ],
+   "centre": [
+    -189.686,
+    -0.004,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Filter Base": {
+   "name": "Filter Base",
+   "group": "MAIN BODY",
+   "bbox": [
+    -376.61,
+    94.501,
+    -187.333,
+    -1.945,
+    129.434,
+    187.333
+   ],
+   "centre": [
+    -189.278,
+    111.968,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Back Panel": {
+   "name": "Back Panel",
+   "group": "MAIN BODY",
+   "bbox": [
+    -378.619,
+    -316.751,
+    -187.325,
+    -346.869,
+    316.751,
+    187.325
+   ],
+   "centre": [
+    -362.744,
+    0.0,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Track Mount Leg": {
+   "name": "Track Mount Leg",
+   "group": "MAIN BODY",
+   "bbox": [
+    -376.603,
+    -314.766,
+    -188.516,
+    -1.953,
+    -89.827,
+    -175.212
+   ],
+   "centre": [
+    -189.278,
+    -202.297,
+    -181.864
+   ],
+   "fastener": false
+  },
+  "Track Mount Leg (1)": {
+   "name": "Track Mount Leg (1)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -376.603,
+    -314.766,
+    175.212,
+    -1.953,
+    -89.827,
+    188.516
+   ],
+   "centre": [
+    -189.278,
+    -202.297,
+    181.864
+   ],
+   "fastener": false
+  },
+  "Spring Nut Angle": {
+   "name": "Spring Nut Angle",
+   "group": "MAIN BODY",
+   "bbox": [
+    -52.753,
+    -284.562,
+    -173.839,
+    -1.945,
+    -260.781,
+    173.839
+   ],
+   "centre": [
+    -27.349,
+    -272.672,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Clip Nut": {
+   "name": "Clip Nut",
+   "group": "MAIN BODY",
+   "bbox": [
+    -13.357,
+    -283.267,
+    -121.539,
+    -1.038,
+    -259.061,
+    -107.061
+   ],
+   "centre": [
+    -7.197,
+    -271.164,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -1.038,
+    -273.348,
+    -114.3
+   ],
+   "tip": [
+    -13.357,
+    -273.348,
+    -114.3
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Spring Nut Angle"
+   ]
+  },
+  "Clip Nut (1)": {
+   "name": "Clip Nut (1)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -13.357,
+    -283.267,
+    107.061,
+    -1.038,
+    -259.061,
+    121.539
+   ],
+   "centre": [
+    -7.197,
+    -271.164,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -1.038,
+    -273.348,
+    114.3
+   ],
+   "tip": [
+    -13.357,
+    -273.348,
+    114.3
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Spring Nut Angle"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (2)": {
+   "name": "Self-Tapping Pan Head Screw (2)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -28.192,
+    -275.887,
+    170.067,
+    -20.163,
+    -267.857,
+    182.594
+   ],
+   "centre": [
+    -24.178,
+    -271.872,
+    176.331
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -24.178,
+    -271.872,
+    170.067
+   ],
+   "tip": [
+    -24.178,
+    -271.872,
+    182.594
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Spring Nut Angle",
+    "Track Mount Leg (1)"
+   ]
+  },
+  "Self-Tapping Pan Head Screw": {
+   "name": "Self-Tapping Pan Head Screw",
+   "group": "MAIN BODY",
+   "bbox": [
+    -48.218,
+    -276.862,
+    170.067,
+    -38.238,
+    -266.882,
+    182.594
+   ],
+   "centre": [
+    -43.228,
+    -271.872,
+    176.331
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -43.228,
+    -271.872,
+    170.067
+   ],
+   "tip": [
+    -43.228,
+    -271.872,
+    182.594
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Spring Nut Angle",
+    "Track Mount Leg (1)"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (3)": {
+   "name": "Self-Tapping Pan Head Screw (3)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -29.787,
+    -277.481,
+    -182.594,
+    -18.569,
+    -266.263,
+    -170.067
+   ],
+   "centre": [
+    -24.178,
+    -271.872,
+    -176.331
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -24.178,
+    -271.872,
+    -170.067
+   ],
+   "tip": [
+    -24.178,
+    -271.872,
+    -182.594
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Spring Nut Angle",
+    "Track Mount Leg"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (1)": {
+   "name": "Self-Tapping Pan Head Screw (1)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -48.258,
+    -276.902,
+    -182.594,
+    -38.198,
+    -266.842,
+    -170.067
+   ],
+   "centre": [
+    -43.228,
+    -271.872,
+    -176.331
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -43.228,
+    -271.872,
+    -170.067
+   ],
+   "tip": [
+    -43.228,
+    -271.872,
+    -182.594
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Spring Nut Angle",
+    "Track Mount Leg"
+   ]
+  },
+  "Filter Element Track": {
+   "name": "Filter Element Track",
+   "group": "MAIN BODY",
+   "bbox": [
+    -377.007,
+    -257.472,
+    -174.633,
+    -11.478,
+    -198.719,
+    174.633
+   ],
+   "centre": [
+    -194.243,
+    -228.095,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Bellmouth Support Track": {
+   "name": "Bellmouth Support Track",
+   "group": "MAIN BODY",
+   "bbox": [
+    -376.61,
+    -142.378,
+    -174.633,
+    -1.8,
+    -112.994,
+    174.633
+   ],
+   "centre": [
+    -189.205,
+    -127.686,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Gauge Box Cover": {
+   "name": "Gauge Box Cover",
+   "group": "MAIN BODY",
+   "bbox": [
+    -51.194,
+    -76.552,
+    -190.192,
+    -9.919,
+    12.348,
+    -189.278
+   ],
+   "centre": [
+    -30.556,
+    -32.102,
+    -189.735
+   ],
+   "fastener": false
+  },
+  "Clip Nut (6)": {
+   "name": "Clip Nut (6)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -13.357,
+    -138.414,
+    107.061,
+    -1.038,
+    -114.208,
+    121.539
+   ],
+   "centre": [
+    -7.197,
+    -126.311,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -1.038,
+    -124.127,
+    114.3
+   ],
+   "tip": [
+    -13.357,
+    -124.127,
+    114.3
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track",
+    "Clip Nut (12)"
+   ]
+  },
+  "Clip Nut (7)": {
+   "name": "Clip Nut (7)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -13.357,
+    -138.414,
+    -121.539,
+    -1.038,
+    -114.208,
+    -107.061
+   ],
+   "centre": [
+    -7.197,
+    -126.311,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -1.038,
+    -124.127,
+    -114.3
+   ],
+   "tip": [
+    -13.357,
+    -124.127,
+    -114.3
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track",
+    "Clip Nut (5)"
+   ]
+  },
+  "Gauge Mounting Panel": {
+   "name": "Gauge Mounting Panel",
+   "group": "MAIN BODY",
+   "bbox": [
+    -51.435,
+    -78.744,
+    -188.516,
+    -0.762,
+    13.746,
+    -82.274
+   ],
+   "centre": [
+    -26.099,
+    -32.499,
+    -135.395
+   ],
+   "fastener": false
+  },
+  "Gauge Box Enclosure": {
+   "name": "Gauge Box Enclosure",
+   "group": "MAIN BODY",
+   "bbox": [
+    -53.15,
+    -80.134,
+    -188.516,
+    -0.753,
+    15.135,
+    -82.55
+   ],
+   "centre": [
+    -26.951,
+    -32.499,
+    -135.533
+   ],
+   "fastener": false
+  },
+  "Pan Head Machine Screw (3)": {
+   "name": "Pan Head Machine Screw (3)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -51.097,
+    8.776,
+    -174.684,
+    -40.66,
+    18.076,
+    -164.247
+   ],
+   "centre": [
+    -45.879,
+    13.426,
+    -169.466
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    -0.0
+   ],
+   "head": [
+    -45.879,
+    18.076,
+    -169.466
+   ],
+   "tip": [
+    -45.879,
+    8.776,
+    -169.466
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17
+   ],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Gauge Mounting Panel"
+   ]
+  },
+  "Pan Head Machine Screw": {
+   "name": "Pan Head Machine Screw",
+   "group": "MAIN BODY",
+   "bbox": [
+    -50.798,
+    8.776,
+    -123.584,
+    -40.96,
+    18.076,
+    -113.747
+   ],
+   "centre": [
+    -45.879,
+    13.426,
+    -118.666
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    -0.0
+   ],
+   "head": [
+    -45.879,
+    18.076,
+    -118.666
+   ],
+   "tip": [
+    -45.879,
+    8.776,
+    -118.666
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Gauge Mounting Panel"
+   ]
+  },
+  "Pan Head Machine Screw (1)": {
+   "name": "Pan Head Machine Screw (1)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -24.171,
+    8.776,
+    -92.19,
+    -15.453,
+    18.076,
+    -83.471
+   ],
+   "centre": [
+    -19.812,
+    13.426,
+    -87.831
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    -0.0
+   ],
+   "head": [
+    -19.812,
+    18.076,
+    -87.83
+   ],
+   "tip": [
+    -19.812,
+    8.776,
+    -87.83
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Gauge Mounting Panel"
+   ]
+  },
+  "Pan Head Machine Screw (4)": {
+   "name": "Pan Head Machine Screw (4)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -51.157,
+    -83.075,
+    -174.744,
+    -40.6,
+    -73.774,
+    -164.187
+   ],
+   "centre": [
+    -45.879,
+    -78.424,
+    -169.466
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -45.879,
+    -83.075,
+    -169.466
+   ],
+   "tip": [
+    -45.879,
+    -73.774,
+    -169.466
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Gauge Mounting Panel"
+   ]
+  },
+  "Pan Head Machine Screw (2)": {
+   "name": "Pan Head Machine Screw (2)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -51.185,
+    -83.075,
+    -123.971,
+    -40.573,
+    -73.774,
+    -113.36
+   ],
+   "centre": [
+    -45.879,
+    -78.424,
+    -118.666
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -45.879,
+    -83.075,
+    -118.666
+   ],
+   "tip": [
+    -45.879,
+    -73.774,
+    -118.666
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Gauge Mounting Panel"
+   ]
+  },
+  "Pan Head Machine Screw (5)": {
+   "name": "Pan Head Machine Screw (5)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -24.864,
+    -83.075,
+    -92.882,
+    -14.76,
+    -73.774,
+    -82.778
+   ],
+   "centre": [
+    -19.812,
+    -78.424,
+    -87.83
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -19.812,
+    -83.075,
+    -87.83
+   ],
+   "tip": [
+    -19.812,
+    -73.774,
+    -87.83
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Gauge Mounting Panel"
+   ]
+  },
+  "Impeller Bracket Support": {
+   "name": "Impeller Bracket Support",
+   "group": "MAIN BODY",
+   "bbox": [
+    -376.603,
+    68.307,
+    -73.025,
+    -338.503,
+    98.787,
+    73.025
+   ],
+   "centre": [
+    -357.553,
+    83.547,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Impeller Bracket Support (1)": {
+   "name": "Impeller Bracket Support (1)",
+   "group": "MAIN BODY",
+   "bbox": [
+    -40.053,
+    68.307,
+    -73.025,
+    -1.953,
+    98.787,
+    73.025
+   ],
+   "centre": [
+    -21.003,
+    83.547,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Filter Frame Half (1)": {
+   "name": "Filter Frame Half (1)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -369.335,
+    -257.769,
+    -171.45,
+    -1.556,
+    -204.835,
+    170.713
+   ],
+   "centre": [
+    -185.445,
+    -231.302,
+    -0.368
+   ],
+   "fastener": false
+  },
+  "Filter Frame Half": {
+   "name": "Filter Frame Half",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -369.868,
+    -257.769,
+    -170.713,
+    -2.089,
+    -204.835,
+    171.45
+   ],
+   "centre": [
+    -185.978,
+    -231.302,
+    0.368
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar": {
+   "name": "Filter Retaining Bar",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -359.277,
+    -226.197,
+    -170.917,
+    -6.852,
+    -216.672,
+    -161.392
+   ],
+   "centre": [
+    -183.064,
+    -221.435,
+    -166.154
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (1)": {
+   "name": "Filter Retaining Bar (1)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -359.277,
+    -245.932,
+    -170.917,
+    -6.852,
+    -236.407,
+    -161.392
+   ],
+   "centre": [
+    -183.064,
+    -241.169,
+    -166.154
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (6)": {
+   "name": "Filter Retaining Bar (6)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -364.573,
+    -226.197,
+    161.392,
+    -12.148,
+    -216.672,
+    170.917
+   ],
+   "centre": [
+    -188.361,
+    -221.435,
+    166.154
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (2)": {
+   "name": "Filter Retaining Bar (2)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -364.573,
+    -245.932,
+    161.392,
+    -12.148,
+    -236.407,
+    170.917
+   ],
+   "centre": [
+    -188.361,
+    -241.169,
+    166.154
+   ],
+   "fastener": false
+  },
+  "Blind Rivet (24)": {
+   "name": "Blind Rivet (24)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -89.891,
+    -224.565,
+    165.1,
+    -83.629,
+    -218.303,
+    172.568
+   ],
+   "centre": [
+    -86.76,
+    -221.434,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -86.76,
+    -221.434,
+    172.568
+   ],
+   "tip": [
+    -86.76,
+    -221.434,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Retaining Bar (6)"
+   ]
+  },
+  "Blind Rivet (25)": {
+   "name": "Blind Rivet (25)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -89.891,
+    -244.3,
+    165.1,
+    -83.629,
+    -238.039,
+    172.568
+   ],
+   "centre": [
+    -86.76,
+    -241.169,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -86.76,
+    -241.17,
+    172.568
+   ],
+   "tip": [
+    -86.76,
+    -241.17,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Retaining Bar (2)"
+   ]
+  },
+  "Blind Rivet (26)": {
+   "name": "Blind Rivet (26)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -293.091,
+    -224.565,
+    165.1,
+    -286.829,
+    -218.303,
+    172.568
+   ],
+   "centre": [
+    -289.96,
+    -221.434,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -289.96,
+    -221.434,
+    172.568
+   ],
+   "tip": [
+    -289.96,
+    -221.434,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Retaining Bar (6)"
+   ]
+  },
+  "Blind Rivet": {
+   "name": "Blind Rivet",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -293.091,
+    -244.3,
+    165.1,
+    -286.829,
+    -238.039,
+    172.568
+   ],
+   "centre": [
+    -289.96,
+    -241.169,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -289.96,
+    -241.17,
+    172.568
+   ],
+   "tip": [
+    -289.96,
+    -241.17,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Retaining Bar (2)"
+   ]
+  },
+  "Blind Rivet (1)": {
+   "name": "Blind Rivet (1)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -370.986,
+    -218.557,
+    -165.056,
+    -363.518,
+    -212.296,
+    -158.794
+   ],
+   "centre": [
+    -367.252,
+    -215.426,
+    -161.925
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -370.986,
+    -215.427,
+    -161.925
+   ],
+   "tip": [
+    -363.518,
+    -215.427,
+    -161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Frame Half (1)",
+    "Perforated Filter Baffle (1)"
+   ]
+  },
+  "Blind Rivet (2)": {
+   "name": "Blind Rivet (2)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -370.986,
+    -250.307,
+    -165.056,
+    -363.518,
+    -244.046,
+    -158.794
+   ],
+   "centre": [
+    -367.252,
+    -247.176,
+    -161.925
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -370.986,
+    -247.177,
+    -161.925
+   ],
+   "tip": [
+    -363.518,
+    -247.177,
+    -161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Frame Half (1)"
+   ]
+  },
+  "Blind Rivet (3)": {
+   "name": "Blind Rivet (3)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -287.795,
+    -224.565,
+    -172.568,
+    -281.534,
+    -218.303,
+    -165.1
+   ],
+   "centre": [
+    -284.664,
+    -221.434,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -284.664,
+    -221.434,
+    -172.568
+   ],
+   "tip": [
+    -284.664,
+    -221.434,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (1)",
+    "Filter Retaining Bar"
+   ]
+  },
+  "Blind Rivet (4)": {
+   "name": "Blind Rivet (4)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -287.795,
+    -244.3,
+    -172.568,
+    -281.534,
+    -238.039,
+    -165.1
+   ],
+   "centre": [
+    -284.664,
+    -241.169,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -284.664,
+    -241.17,
+    -172.568
+   ],
+   "tip": [
+    -284.664,
+    -241.17,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (1)",
+    "Filter Retaining Bar (1)"
+   ]
+  },
+  "Blind Rivet (5)": {
+   "name": "Blind Rivet (5)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -84.595,
+    -224.565,
+    -172.568,
+    -78.334,
+    -218.303,
+    -165.1
+   ],
+   "centre": [
+    -81.465,
+    -221.434,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -81.464,
+    -221.434,
+    -172.568
+   ],
+   "tip": [
+    -81.464,
+    -221.434,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (1)",
+    "Filter Retaining Bar"
+   ]
+  },
+  "Blind Rivet (6)": {
+   "name": "Blind Rivet (6)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -84.595,
+    -244.3,
+    -172.568,
+    -78.334,
+    -238.039,
+    -165.1
+   ],
+   "centre": [
+    -81.465,
+    -241.169,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -81.464,
+    -241.17,
+    -172.568
+   ],
+   "tip": [
+    -81.464,
+    -241.17,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (1)",
+    "Filter Retaining Bar (1)"
+   ]
+  },
+  "Blind Rivet (7)": {
+   "name": "Blind Rivet (7)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -7.906,
+    -218.557,
+    158.794,
+    -0.438,
+    -212.296,
+    165.056
+   ],
+   "centre": [
+    -4.172,
+    -215.426,
+    161.925
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -0.438,
+    -215.427,
+    161.925
+   ],
+   "tip": [
+    -7.906,
+    -215.427,
+    161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Frame Half (1)",
+    "Perforated Filter Baffle (1)"
+   ]
+  },
+  "Blind Rivet (27)": {
+   "name": "Blind Rivet (27)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -7.906,
+    -250.307,
+    158.794,
+    -0.438,
+    -244.046,
+    165.056
+   ],
+   "centre": [
+    -4.172,
+    -247.176,
+    161.925
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -0.438,
+    -247.177,
+    161.925
+   ],
+   "tip": [
+    -7.906,
+    -247.177,
+    161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half",
+    "Filter Frame Half (1)"
+   ]
+  },
+  "Perforated Filter Baffle": {
+   "name": "Perforated Filter Baffle",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -369.335,
+    -236.407,
+    -170.917,
+    -7.385,
+    -227.226,
+    168.021
+   ],
+   "centre": [
+    -188.36,
+    -231.817,
+    -1.448
+   ],
+   "fastener": false
+  },
+  "Perforated Filter Baffle (1)": {
+   "name": "Perforated Filter Baffle (1)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -368.802,
+    -216.672,
+    -170.917,
+    -6.852,
+    -207.49,
+    168.021
+   ],
+   "centre": [
+    -187.827,
+    -212.081,
+    -1.448
+   ],
+   "fastener": false
+  },
+  "Perforated Filter Baffle (2)": {
+   "name": "Perforated Filter Baffle (2)",
+   "group": "StageFilter1_MechanicalFilter",
+   "bbox": [
+    -364.039,
+    -256.169,
+    -170.917,
+    -2.089,
+    -246.987,
+    168.021
+   ],
+   "centre": [
+    -183.064,
+    -251.578,
+    -1.448
+   ],
+   "fastener": false
+  },
+  "Pleated Filter Housing Half": {
+   "name": "Pleated Filter Housing Half",
+   "group": "HepaFilter",
+   "bbox": [
+    -370.132,
+    134.709,
+    -180.98,
+    -8.71,
+    340.043,
+    180.442
+   ],
+   "centre": [
+    -189.421,
+    237.376,
+    -0.269
+   ],
+   "fastener": false
+  },
+  "Pleated Filter Housing Half (1)": {
+   "name": "Pleated Filter Housing Half (1)",
+   "group": "HepaFilter",
+   "bbox": [
+    -370.665,
+    134.709,
+    -180.442,
+    -9.249,
+    340.043,
+    180.975
+   ],
+   "centre": [
+    -189.957,
+    237.376,
+    0.266
+   ],
+   "fastener": false
+  },
+  "Blind Rivet (28)": {
+   "name": "Blind Rivet (28)",
+   "group": "HepaFilter",
+   "bbox": [
+    -21.371,
+    142.17,
+    174.625,
+    -15.11,
+    148.431,
+    182.093
+   ],
+   "centre": [
+    -18.24,
+    145.3,
+    178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -18.24,
+    145.301,
+    182.093
+   ],
+   "tip": [
+    -18.24,
+    145.301,
+    174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (29)": {
+   "name": "Blind Rivet (29)",
+   "group": "HepaFilter",
+   "bbox": [
+    -21.371,
+    188.208,
+    174.625,
+    -15.11,
+    194.469,
+    182.093
+   ],
+   "centre": [
+    -18.24,
+    191.339,
+    178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -18.24,
+    191.338,
+    182.093
+   ],
+   "tip": [
+    -18.24,
+    191.338,
+    174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (8)": {
+   "name": "Blind Rivet (8)",
+   "group": "HepaFilter",
+   "bbox": [
+    -21.371,
+    234.245,
+    174.625,
+    -15.11,
+    240.506,
+    182.093
+   ],
+   "centre": [
+    -18.24,
+    237.375,
+    178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -18.24,
+    237.376,
+    182.093
+   ],
+   "tip": [
+    -18.24,
+    237.376,
+    174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (9)": {
+   "name": "Blind Rivet (9)",
+   "group": "HepaFilter",
+   "bbox": [
+    -21.371,
+    280.283,
+    174.625,
+    -15.11,
+    286.544,
+    182.093
+   ],
+   "centre": [
+    -18.24,
+    283.413,
+    178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -18.24,
+    283.413,
+    182.093
+   ],
+   "tip": [
+    -18.24,
+    283.413,
+    174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (10)": {
+   "name": "Blind Rivet (10)",
+   "group": "HepaFilter",
+   "bbox": [
+    -21.371,
+    326.32,
+    174.625,
+    -15.11,
+    332.581,
+    182.093
+   ],
+   "centre": [
+    -18.24,
+    329.451,
+    178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -18.24,
+    329.451,
+    182.093
+   ],
+   "tip": [
+    -18.24,
+    329.451,
+    174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (30)": {
+   "name": "Blind Rivet (30)",
+   "group": "HepaFilter",
+   "bbox": [
+    -364.271,
+    142.17,
+    -182.093,
+    -358.01,
+    148.431,
+    -174.625
+   ],
+   "centre": [
+    -361.14,
+    145.3,
+    -178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -361.14,
+    145.301,
+    -182.093
+   ],
+   "tip": [
+    -361.14,
+    145.301,
+    -174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (11)": {
+   "name": "Blind Rivet (11)",
+   "group": "HepaFilter",
+   "bbox": [
+    -364.271,
+    188.208,
+    -182.093,
+    -358.01,
+    194.469,
+    -174.625
+   ],
+   "centre": [
+    -361.14,
+    191.339,
+    -178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -361.14,
+    191.338,
+    -182.093
+   ],
+   "tip": [
+    -361.14,
+    191.338,
+    -174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (12)": {
+   "name": "Blind Rivet (12)",
+   "group": "HepaFilter",
+   "bbox": [
+    -364.271,
+    234.245,
+    -182.093,
+    -358.01,
+    240.506,
+    -174.625
+   ],
+   "centre": [
+    -361.14,
+    237.375,
+    -178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -361.14,
+    237.376,
+    -182.093
+   ],
+   "tip": [
+    -361.14,
+    237.376,
+    -174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (13)": {
+   "name": "Blind Rivet (13)",
+   "group": "HepaFilter",
+   "bbox": [
+    -364.271,
+    280.283,
+    -182.093,
+    -358.01,
+    286.544,
+    -174.625
+   ],
+   "centre": [
+    -361.14,
+    283.413,
+    -178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -361.14,
+    283.413,
+    -182.093
+   ],
+   "tip": [
+    -361.14,
+    283.413,
+    -174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Blind Rivet (31)": {
+   "name": "Blind Rivet (31)",
+   "group": "HepaFilter",
+   "bbox": [
+    -364.271,
+    326.32,
+    -182.093,
+    -358.01,
+    332.581,
+    -174.625
+   ],
+   "centre": [
+    -361.14,
+    329.451,
+    -178.359
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -361.14,
+    329.451,
+    -182.093
+   ],
+   "tip": [
+    -361.14,
+    329.451,
+    -174.625
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Pleated Filter Element",
+    "Pleated Filter Housing Half",
+    "Pleated Filter Housing Half (1)"
+   ]
+  },
+  "Pleated Filter Element": {
+   "name": "Pleated Filter Element",
+   "group": "HepaFilter",
+   "bbox": [
+    -364.849,
+    145.301,
+    -179.388,
+    -9.249,
+    329.451,
+    179.388
+   ],
+   "centre": [
+    -187.049,
+    237.376,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Filter Gasket": {
+   "name": "Filter Gasket",
+   "group": "HepaFilter",
+   "bbox": [
+    -370.665,
+    129.426,
+    -181.242,
+    -8.715,
+    135.776,
+    180.708
+   ],
+   "centre": [
+    -189.69,
+    132.601,
+    -0.267
+   ],
+   "fastener": false
+  },
+  "Filter Frame Half (2)": {
+   "name": "Filter Frame Half (2)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -373.434,
+    -199.793,
+    -170.713,
+    -5.655,
+    -146.86,
+    171.45
+   ],
+   "centre": [
+    -189.544,
+    -173.327,
+    0.368
+   ],
+   "fastener": false
+  },
+  "Filter Frame Half (3)": {
+   "name": "Filter Frame Half (3)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -372.901,
+    -199.793,
+    -171.45,
+    -5.121,
+    -146.86,
+    170.713
+   ],
+   "centre": [
+    -189.011,
+    -173.327,
+    -0.368
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (3)": {
+   "name": "Filter Retaining Bar (3)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -368.138,
+    -168.221,
+    161.392,
+    -15.713,
+    -158.696,
+    170.917
+   ],
+   "centre": [
+    -191.925,
+    -163.459,
+    166.154
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (4)": {
+   "name": "Filter Retaining Bar (4)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -368.138,
+    -187.957,
+    161.392,
+    -15.713,
+    -178.432,
+    170.917
+   ],
+   "centre": [
+    -191.925,
+    -183.195,
+    166.154
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (5)": {
+   "name": "Filter Retaining Bar (5)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -362.842,
+    -168.221,
+    -170.917,
+    -10.417,
+    -158.696,
+    -161.392
+   ],
+   "centre": [
+    -186.629,
+    -163.459,
+    -166.154
+   ],
+   "fastener": false
+  },
+  "Filter Retaining Bar (7)": {
+   "name": "Filter Retaining Bar (7)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -362.842,
+    -187.957,
+    -170.917,
+    -10.417,
+    -178.432,
+    -161.392
+   ],
+   "centre": [
+    -186.629,
+    -183.195,
+    -166.154
+   ],
+   "fastener": false
+  },
+  "Blind Rivet (14)": {
+   "name": "Blind Rivet (14)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -291.36,
+    -166.589,
+    -172.568,
+    -285.099,
+    -160.328,
+    -165.1
+   ],
+   "centre": [
+    -288.23,
+    -163.459,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -288.23,
+    -163.459,
+    -172.568
+   ],
+   "tip": [
+    -288.23,
+    -163.459,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (3)",
+    "Filter Retaining Bar (5)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (15)": {
+   "name": "Blind Rivet (15)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -291.36,
+    -186.325,
+    -172.568,
+    -285.099,
+    -180.064,
+    -165.1
+   ],
+   "centre": [
+    -288.23,
+    -183.195,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -288.23,
+    -183.194,
+    -172.568
+   ],
+   "tip": [
+    -288.23,
+    -183.194,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (3)",
+    "Filter Retaining Bar (7)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (16)": {
+   "name": "Blind Rivet (16)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -88.16,
+    -166.589,
+    -172.568,
+    -81.899,
+    -160.328,
+    -165.1
+   ],
+   "centre": [
+    -85.029,
+    -163.459,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -85.03,
+    -163.459,
+    -172.568
+   ],
+   "tip": [
+    -85.03,
+    -163.459,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (3)",
+    "Filter Retaining Bar (5)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (17)": {
+   "name": "Blind Rivet (17)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -88.16,
+    -186.325,
+    -172.568,
+    -81.899,
+    -180.064,
+    -165.1
+   ],
+   "centre": [
+    -85.029,
+    -183.195,
+    -168.834
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -85.03,
+    -183.194,
+    -172.568
+   ],
+   "tip": [
+    -85.03,
+    -183.194,
+    -165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (3)",
+    "Filter Retaining Bar (7)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (18)": {
+   "name": "Blind Rivet (18)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -11.471,
+    -160.582,
+    158.794,
+    -4.004,
+    -154.321,
+    165.056
+   ],
+   "centre": [
+    -7.737,
+    -157.452,
+    161.925
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -4.004,
+    -157.451,
+    161.925
+   ],
+   "tip": [
+    -11.471,
+    -157.451,
+    161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (21)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (32)": {
+   "name": "Blind Rivet (32)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -11.471,
+    -192.332,
+    158.794,
+    -4.004,
+    -186.071,
+    165.056
+   ],
+   "centre": [
+    -7.737,
+    -189.202,
+    161.925
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -4.004,
+    -189.201,
+    161.925
+   ],
+   "tip": [
+    -11.471,
+    -189.201,
+    161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (22)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (33)": {
+   "name": "Blind Rivet (33)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -93.456,
+    -166.589,
+    165.1,
+    -87.195,
+    -160.328,
+    172.568
+   ],
+   "centre": [
+    -90.326,
+    -163.459,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -90.326,
+    -163.459,
+    172.568
+   ],
+   "tip": [
+    -90.326,
+    -163.459,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (2)",
+    "Filter Retaining Bar (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (19)": {
+   "name": "Blind Rivet (19)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -93.456,
+    -186.325,
+    165.1,
+    -87.195,
+    -180.064,
+    172.568
+   ],
+   "centre": [
+    -90.326,
+    -183.195,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -90.326,
+    -183.194,
+    172.568
+   ],
+   "tip": [
+    -90.326,
+    -183.194,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (2)",
+    "Filter Retaining Bar (4)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (34)": {
+   "name": "Blind Rivet (34)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -296.656,
+    -166.589,
+    165.1,
+    -290.395,
+    -160.328,
+    172.568
+   ],
+   "centre": [
+    -293.525,
+    -163.459,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -293.526,
+    -163.459,
+    172.568
+   ],
+   "tip": [
+    -293.526,
+    -163.459,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (2)",
+    "Filter Retaining Bar (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (20)": {
+   "name": "Blind Rivet (20)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -296.656,
+    -186.325,
+    165.1,
+    -290.395,
+    -180.064,
+    172.568
+   ],
+   "centre": [
+    -293.525,
+    -183.195,
+    168.834
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -293.526,
+    -183.194,
+    172.568
+   ],
+   "tip": [
+    -293.526,
+    -183.194,
+    165.1
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Frame Half (2)",
+    "Filter Retaining Bar (4)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (35)": {
+   "name": "Blind Rivet (35)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -374.552,
+    -160.582,
+    -165.056,
+    -367.084,
+    -154.321,
+    -158.794
+   ],
+   "centre": [
+    -370.818,
+    -157.452,
+    -161.925
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -374.552,
+    -157.451,
+    -161.925
+   ],
+   "tip": [
+    -367.084,
+    -157.451,
+    -161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (23)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (36)": {
+   "name": "Blind Rivet (36)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -374.552,
+    -192.332,
+    -165.056,
+    -367.084,
+    -186.071,
+    -158.794
+   ],
+   "centre": [
+    -370.818,
+    -189.202,
+    -161.925
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -374.552,
+    -189.201,
+    -161.925
+   ],
+   "tip": [
+    -367.084,
+    -189.201,
+    -161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (37)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Mesh Filter Media": {
+   "name": "Mesh Filter Media",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -372.504,
+    -194.361,
+    -170.158,
+    -6.585,
+    -152.292,
+    170.361
+   ],
+   "centre": [
+    -189.544,
+    -173.327,
+    0.102
+   ],
+   "fastener": false
+  },
+  "Blind Rivet (21)": {
+   "name": "Blind Rivet (21)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -11.471,
+    -160.582,
+    158.794,
+    -4.004,
+    -154.321,
+    165.056
+   ],
+   "centre": [
+    -7.737,
+    -157.452,
+    161.925
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -4.004,
+    -157.451,
+    161.925
+   ],
+   "tip": [
+    -11.471,
+    -157.451,
+    161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (18)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (22)": {
+   "name": "Blind Rivet (22)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -11.471,
+    -192.332,
+    158.794,
+    -4.004,
+    -186.071,
+    165.056
+   ],
+   "centre": [
+    -7.737,
+    -189.202,
+    161.925
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -4.004,
+    -189.201,
+    161.925
+   ],
+   "tip": [
+    -11.471,
+    -189.201,
+    161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (32)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (23)": {
+   "name": "Blind Rivet (23)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -374.552,
+    -160.582,
+    -165.056,
+    -367.084,
+    -154.321,
+    -158.794
+   ],
+   "centre": [
+    -370.818,
+    -157.452,
+    -161.925
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -374.552,
+    -157.451,
+    -161.925
+   ],
+   "tip": [
+    -367.084,
+    -157.451,
+    -161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (35)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Blind Rivet (37)": {
+   "name": "Blind Rivet (37)",
+   "group": "StageFilter2_MechanicalFilter",
+   "bbox": [
+    -374.552,
+    -192.332,
+    -165.056,
+    -367.084,
+    -186.071,
+    -158.794
+   ],
+   "centre": [
+    -370.818,
+    -189.202,
+    -161.925
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -374.552,
+    -189.201,
+    -161.925
+   ],
+   "tip": [
+    -367.084,
+    -189.201,
+    -161.925
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 2.54,
+     "from_head": 2.692,
+     "len": 4.775
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 5.74
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Blind Rivet (36)",
+    "Filter Frame Half (2)",
+    "Filter Frame Half (3)",
+    "Mesh Filter Media"
+   ]
+  },
+  "Pressure Gauge": {
+   "name": "Pressure Gauge",
+   "group": null,
+   "bbox": [
+    -46.228,
+    -72.501,
+    -178.48,
+    15.748,
+    7.503,
+    -98.476
+   ],
+   "centre": [
+    -15.24,
+    -32.499,
+    -138.478
+   ],
+   "fastener": false
+  },
+  "Hex Flange Bolt (5)": {
+   "name": "Hex Flange Bolt (5)",
+   "group": null,
+   "bbox": [
+    -31.664,
+    82.912,
+    49.664,
+    -16.691,
+    109.086,
+    64.636
+   ],
+   "centre": [
+    -24.178,
+    95.999,
+    57.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -24.178,
+    109.086,
+    57.15
+   ],
+   "tip": [
+    -24.178,
+    82.912,
+    57.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Clip Nut (14)",
+    "Filter Base",
+    "Impeller Bracket Support (1)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Hex Flange Bolt": {
+   "name": "Hex Flange Bolt",
+   "group": null,
+   "bbox": [
+    -18.896,
+    82.912,
+    -64.569,
+    -4.059,
+    109.086,
+    -49.731
+   ],
+   "centre": [
+    -11.478,
+    95.999,
+    -57.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -11.478,
+    109.086,
+    -57.15
+   ],
+   "tip": [
+    -11.478,
+    82.912,
+    -57.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Filter Base",
+    "Impeller Bracket Support (1)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Hex Flange Bolt (1)": {
+   "name": "Hex Flange Bolt (1)",
+   "group": null,
+   "bbox": [
+    -348.838,
+    82.912,
+    -64.311,
+    -334.517,
+    109.086,
+    -49.989
+   ],
+   "centre": [
+    -341.678,
+    95.999,
+    -57.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -341.678,
+    109.086,
+    -57.15
+   ],
+   "tip": [
+    -341.678,
+    82.912,
+    -57.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Clip Nut (13)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Hex Flange Bolt (2)": {
+   "name": "Hex Flange Bolt (2)",
+   "group": null,
+   "bbox": [
+    -349.139,
+    82.912,
+    49.689,
+    -334.216,
+    109.086,
+    64.611
+   ],
+   "centre": [
+    -341.678,
+    95.999,
+    57.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -341.678,
+    109.086,
+    57.15
+   ],
+   "tip": [
+    -341.678,
+    82.912,
+    57.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Clip Nut (17)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (4)": {
+   "name": "Self-Tapping Pan Head Screw (4)",
+   "group": null,
+   "bbox": [
+    -22.43,
+    -117.539,
+    71.201,
+    -12.431,
+    -105.012,
+    81.199
+   ],
+   "centre": [
+    -17.43,
+    -111.275,
+    76.2
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -17.431,
+    -117.539,
+    76.2
+   ],
+   "tip": [
+    -17.431,
+    -105.012,
+    76.2
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track"
+   ]
+  },
+  "Clip Nut (12)": {
+   "name": "Clip Nut (12)",
+   "group": null,
+   "bbox": [
+    -9.725,
+    -138.411,
+    107.061,
+    2.594,
+    -114.205,
+    121.539
+   ],
+   "centre": [
+    -3.566,
+    -126.308,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    2.594,
+    -124.123,
+    114.3
+   ],
+   "tip": [
+    -9.725,
+    -124.123,
+    114.3
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Bellmouth Support Track",
+    "Clip Nut (6)",
+    "Hex Flange Bolt (3)",
+    "Unit Body"
+   ]
+  },
+  "Clip Nut (5)": {
+   "name": "Clip Nut (5)",
+   "group": null,
+   "bbox": [
+    -9.725,
+    -138.411,
+    -121.539,
+    2.594,
+    -114.205,
+    -107.061
+   ],
+   "centre": [
+    -3.566,
+    -126.308,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    2.594,
+    -124.123,
+    -114.3
+   ],
+   "tip": [
+    -9.725,
+    -124.123,
+    -114.3
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Bellmouth Support Track",
+    "Clip Nut (7)",
+    "Hex Flange Bolt (6)",
+    "Unit Body"
+   ]
+  },
+  "Filter Clamp Hex Bolt (1)": {
+   "name": "Filter Clamp Hex Bolt (1)",
+   "group": null,
+   "bbox": [
+    -197.463,
+    320.447,
+    193.589,
+    -181.156,
+    364.643,
+    209.896
+   ],
+   "centre": [
+    -189.31,
+    342.545,
+    201.743
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -189.309,
+    320.447,
+    201.743
+   ],
+   "tip": [
+    -189.309,
+    364.643,
+    201.743
+   ],
+   "length": 44.196,
+   "cylinders": [
+    {
+     "d": 9.525,
+     "from_head": 6.096,
+     "len": 0.853
+    }
+   ],
+   "across_flats": [
+    14.12
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket (1)",
+    "Filter Clamp Knob",
+    "Hex Nut"
+   ]
+  },
+  "Hex Nut": {
+   "name": "Hex Nut",
+   "group": null,
+   "bbox": [
+    -197.881,
+    327.773,
+    193.171,
+    -180.738,
+    336.109,
+    210.314
+   ],
+   "centre": [
+    -189.31,
+    331.941,
+    201.743
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -189.309,
+    327.774,
+    201.743
+   ],
+   "tip": [
+    -189.309,
+    336.109,
+    201.743
+   ],
+   "length": 8.334,
+   "cylinders": [
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 8.334
+    }
+   ],
+   "across_flats": [
+    14.2
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket (1)",
+    "Filter Clamp Hex Bolt (1)"
+   ]
+  },
+  "Filter Clamp Hex Bolt": {
+   "name": "Filter Clamp Hex Bolt",
+   "group": null,
+   "bbox": [
+    -197.463,
+    320.18,
+    -209.896,
+    -181.156,
+    364.376,
+    -193.589
+   ],
+   "centre": [
+    -189.31,
+    342.278,
+    -201.743
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -189.309,
+    320.18,
+    -201.743
+   ],
+   "tip": [
+    -189.309,
+    364.376,
+    -201.743
+   ],
+   "length": 44.196,
+   "cylinders": [
+    {
+     "d": 9.525,
+     "from_head": 6.096,
+     "len": 0.853
+    }
+   ],
+   "across_flats": [
+    14.12
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket",
+    "Filter Clamp Knob (1)",
+    "Hex Nut (1)"
+   ]
+  },
+  "Hex Nut (1)": {
+   "name": "Hex Nut (1)",
+   "group": null,
+   "bbox": [
+    -198.183,
+    327.773,
+    -210.616,
+    -180.436,
+    336.109,
+    -192.869
+   ],
+   "centre": [
+    -189.31,
+    331.941,
+    -201.743
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -189.309,
+    327.774,
+    -201.743
+   ],
+   "tip": [
+    -189.309,
+    336.109,
+    -201.743
+   ],
+   "length": 8.334,
+   "cylinders": [
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 8.334
+    }
+   ],
+   "across_flats": [
+    14.2
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket",
+    "Filter Clamp Hex Bolt"
+   ]
+  },
+  "Filter Clamp Knob": {
+   "name": "Filter Clamp Knob",
+   "group": null,
+   "bbox": [
+    -209.279,
+    350.075,
+    181.773,
+    -169.339,
+    379.444,
+    221.713
+   ],
+   "centre": [
+    -189.309,
+    364.76,
+    201.743
+   ],
+   "fastener": false
+  },
+  "Filter Clamp Knob (1)": {
+   "name": "Filter Clamp Knob (1)",
+   "group": null,
+   "bbox": [
+    -209.279,
+    350.075,
+    -221.713,
+    -169.339,
+    379.444,
+    -181.773
+   ],
+   "centre": [
+    -189.309,
+    364.76,
+    -201.743
+   ],
+   "fastener": false
+  },
+  "Closed-End Rivet": {
+   "name": "Closed-End Rivet",
+   "group": null,
+   "bbox": [
+    -49.533,
+    -292.497,
+    182.928,
+    -43.272,
+    -286.236,
+    190.395
+   ],
+   "centre": [
+    -46.403,
+    -289.366,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -46.403,
+    -289.366,
+    190.395
+   ],
+   "tip": [
+    -46.403,
+    -289.366,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg (1)",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (1)": {
+   "name": "Closed-End Rivet (1)",
+   "group": null,
+   "bbox": [
+    -192.408,
+    -292.497,
+    182.928,
+    -186.147,
+    -286.236,
+    190.395
+   ],
+   "centre": [
+    -189.277,
+    -289.366,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -189.278,
+    -289.366,
+    190.395
+   ],
+   "tip": [
+    -189.278,
+    -289.366,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg (1)",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (2)": {
+   "name": "Closed-End Rivet (2)",
+   "group": null,
+   "bbox": [
+    -335.283,
+    -292.497,
+    182.928,
+    -329.022,
+    -286.236,
+    190.395
+   ],
+   "centre": [
+    -332.153,
+    -289.366,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -332.153,
+    -289.366,
+    190.395
+   ],
+   "tip": [
+    -332.153,
+    -289.366,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg (1)",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (3)": {
+   "name": "Closed-End Rivet (3)",
+   "group": null,
+   "bbox": [
+    -49.533,
+    -110.42,
+    182.928,
+    -43.272,
+    -104.159,
+    190.395
+   ],
+   "centre": [
+    -46.403,
+    -107.29,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -46.403,
+    -107.29,
+    190.395
+   ],
+   "tip": [
+    -46.403,
+    -107.29,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg (1)",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (29)": {
+   "name": "Closed-End Rivet (29)",
+   "group": null,
+   "bbox": [
+    -192.408,
+    -110.42,
+    182.928,
+    -186.147,
+    -104.159,
+    190.395
+   ],
+   "centre": [
+    -189.277,
+    -107.29,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -189.278,
+    -107.29,
+    190.395
+   ],
+   "tip": [
+    -189.278,
+    -107.29,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg (1)",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (4)": {
+   "name": "Closed-End Rivet (4)",
+   "group": null,
+   "bbox": [
+    -335.283,
+    -110.42,
+    182.928,
+    -329.022,
+    -104.159,
+    190.395
+   ],
+   "centre": [
+    -332.153,
+    -107.29,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -332.153,
+    -107.29,
+    190.395
+   ],
+   "tip": [
+    -332.153,
+    -107.29,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg (1)",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (5)": {
+   "name": "Closed-End Rivet (5)",
+   "group": null,
+   "bbox": [
+    -49.533,
+    100.901,
+    182.928,
+    -43.272,
+    107.163,
+    190.395
+   ],
+   "centre": [
+    -46.403,
+    104.032,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -46.403,
+    104.032,
+    190.395
+   ],
+   "tip": [
+    -46.403,
+    104.032,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (30)": {
+   "name": "Closed-End Rivet (30)",
+   "group": null,
+   "bbox": [
+    -192.408,
+    100.901,
+    182.928,
+    -186.147,
+    107.163,
+    190.395
+   ],
+   "centre": [
+    -189.277,
+    104.032,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -189.278,
+    104.032,
+    190.395
+   ],
+   "tip": [
+    -189.278,
+    104.032,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (6)": {
+   "name": "Closed-End Rivet (6)",
+   "group": null,
+   "bbox": [
+    -335.283,
+    100.901,
+    182.928,
+    -329.022,
+    107.163,
+    190.395
+   ],
+   "centre": [
+    -332.153,
+    104.032,
+    186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    1.0
+   ],
+   "head": [
+    -332.153,
+    104.032,
+    190.395
+   ],
+   "tip": [
+    -332.153,
+    104.032,
+    182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (31)": {
+   "name": "Closed-End Rivet (31)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    100.895,
+    139.744,
+    1.118,
+    107.156,
+    146.006
+   ],
+   "centre": [
+    -2.616,
+    104.025,
+    142.875
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    1.118,
+    104.026,
+    142.875
+   ],
+   "tip": [
+    -6.35,
+    104.026,
+    142.875
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (7)": {
+   "name": "Closed-End Rivet (7)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    100.895,
+    -3.131,
+    1.118,
+    107.156,
+    3.131
+   ],
+   "centre": [
+    -2.616,
+    104.025,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    1.118,
+    104.026,
+    -0.0
+   ],
+   "tip": [
+    -6.35,
+    104.026,
+    -0.0
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (8)": {
+   "name": "Closed-End Rivet (8)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    100.895,
+    -146.006,
+    1.118,
+    107.156,
+    -139.744
+   ],
+   "centre": [
+    -2.616,
+    104.025,
+    -142.875
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    1.118,
+    104.026,
+    -142.875
+   ],
+   "tip": [
+    -6.35,
+    104.026,
+    -142.875
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (9)": {
+   "name": "Closed-End Rivet (9)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    6.439,
+    -107.906,
+    1.118,
+    12.7,
+    -101.644
+   ],
+   "centre": [
+    -2.616,
+    9.569,
+    -104.775
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "head": [
+    1.118,
+    9.569,
+    -104.775
+   ],
+   "tip": [
+    -6.35,
+    9.569,
+    -104.775
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (10)": {
+   "name": "Closed-End Rivet (10)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    6.439,
+    -174.581,
+    1.118,
+    12.7,
+    -168.319
+   ],
+   "centre": [
+    -2.616,
+    9.569,
+    -171.45
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "head": [
+    1.118,
+    9.569,
+    -171.45
+   ],
+   "tip": [
+    -6.35,
+    9.569,
+    -171.45
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (11)": {
+   "name": "Closed-End Rivet (11)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    -77.699,
+    -107.906,
+    1.118,
+    -71.437,
+    -101.644
+   ],
+   "centre": [
+    -2.616,
+    -74.568,
+    -104.775
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    0.0
+   ],
+   "head": [
+    1.118,
+    -74.568,
+    -104.775
+   ],
+   "tip": [
+    -6.35,
+    -74.568,
+    -104.775
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (12)": {
+   "name": "Closed-End Rivet (12)",
+   "group": null,
+   "bbox": [
+    -6.35,
+    -77.699,
+    -174.581,
+    1.118,
+    -71.437,
+    -168.319
+   ],
+   "centre": [
+    -2.616,
+    -74.568,
+    -171.45
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    1.118,
+    -74.568,
+    -171.45
+   ],
+   "tip": [
+    -6.35,
+    -74.568,
+    -171.45
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Gauge Box Enclosure",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (13)": {
+   "name": "Closed-End Rivet (13)",
+   "group": null,
+   "bbox": [
+    -49.533,
+    100.901,
+    -190.395,
+    -43.272,
+    107.163,
+    -182.928
+   ],
+   "centre": [
+    -46.403,
+    104.032,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -46.403,
+    104.032,
+    -190.395
+   ],
+   "tip": [
+    -46.403,
+    104.032,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (32)": {
+   "name": "Closed-End Rivet (32)",
+   "group": null,
+   "bbox": [
+    -192.408,
+    100.901,
+    -190.395,
+    -186.147,
+    107.163,
+    -182.928
+   ],
+   "centre": [
+    -189.277,
+    104.032,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -189.278,
+    104.032,
+    -190.395
+   ],
+   "tip": [
+    -189.278,
+    104.032,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (14)": {
+   "name": "Closed-End Rivet (14)",
+   "group": null,
+   "bbox": [
+    -335.283,
+    100.901,
+    -190.395,
+    -329.022,
+    107.163,
+    -182.928
+   ],
+   "centre": [
+    -332.153,
+    104.032,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -332.153,
+    104.032,
+    -190.395
+   ],
+   "tip": [
+    -332.153,
+    104.032,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Filter Base",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (15)": {
+   "name": "Closed-End Rivet (15)",
+   "group": null,
+   "bbox": [
+    -49.533,
+    -110.42,
+    -190.395,
+    -43.272,
+    -104.159,
+    -182.928
+   ],
+   "centre": [
+    -46.403,
+    -107.29,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -46.403,
+    -107.29,
+    -190.395
+   ],
+   "tip": [
+    -46.403,
+    -107.29,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (16)": {
+   "name": "Closed-End Rivet (16)",
+   "group": null,
+   "bbox": [
+    -192.408,
+    -110.42,
+    -190.395,
+    -186.147,
+    -104.159,
+    -182.928
+   ],
+   "centre": [
+    -189.277,
+    -107.29,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -189.278,
+    -107.29,
+    -190.395
+   ],
+   "tip": [
+    -189.278,
+    -107.29,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (33)": {
+   "name": "Closed-End Rivet (33)",
+   "group": null,
+   "bbox": [
+    -335.283,
+    -110.42,
+    -190.395,
+    -329.022,
+    -104.159,
+    -182.928
+   ],
+   "centre": [
+    -332.153,
+    -107.29,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -332.153,
+    -107.29,
+    -190.395
+   ],
+   "tip": [
+    -332.153,
+    -107.29,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (17)": {
+   "name": "Closed-End Rivet (17)",
+   "group": null,
+   "bbox": [
+    -49.533,
+    -292.497,
+    -190.395,
+    -43.272,
+    -286.236,
+    -182.928
+   ],
+   "centre": [
+    -46.403,
+    -289.366,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -46.403,
+    -289.366,
+    -190.395
+   ],
+   "tip": [
+    -46.403,
+    -289.366,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (34)": {
+   "name": "Closed-End Rivet (34)",
+   "group": null,
+   "bbox": [
+    -192.408,
+    -292.497,
+    -190.395,
+    -186.147,
+    -286.236,
+    -182.928
+   ],
+   "centre": [
+    -189.277,
+    -289.366,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -189.278,
+    -289.366,
+    -190.395
+   ],
+   "tip": [
+    -189.278,
+    -289.366,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (18)": {
+   "name": "Closed-End Rivet (18)",
+   "group": null,
+   "bbox": [
+    -335.283,
+    -292.497,
+    -190.395,
+    -329.022,
+    -286.236,
+    -182.928
+   ],
+   "centre": [
+    -332.153,
+    -289.366,
+    -186.661
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -332.153,
+    -289.366,
+    -190.395
+   ],
+   "tip": [
+    -332.153,
+    -289.366,
+    -182.928
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Track Mount Leg",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (19)": {
+   "name": "Closed-End Rivet (19)",
+   "group": null,
+   "bbox": [
+    -379.736,
+    100.901,
+    -146.006,
+    -372.269,
+    107.163,
+    -139.744
+   ],
+   "centre": [
+    -376.002,
+    104.032,
+    -142.875
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -379.736,
+    104.032,
+    -142.875
+   ],
+   "tip": [
+    -372.269,
+    104.032,
+    -142.875
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Filter Base"
+   ]
+  },
+  "Closed-End Rivet (20)": {
+   "name": "Closed-End Rivet (20)",
+   "group": null,
+   "bbox": [
+    -379.736,
+    100.901,
+    -3.131,
+    -372.269,
+    107.163,
+    3.131
+   ],
+   "centre": [
+    -376.002,
+    104.032,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "head": [
+    -379.736,
+    104.032,
+    0.0
+   ],
+   "tip": [
+    -372.269,
+    104.032,
+    0.0
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Filter Base"
+   ]
+  },
+  "Closed-End Rivet (21)": {
+   "name": "Closed-End Rivet (21)",
+   "group": null,
+   "bbox": [
+    -379.736,
+    100.901,
+    139.744,
+    -372.269,
+    107.163,
+    146.006
+   ],
+   "centre": [
+    -376.002,
+    104.032,
+    142.875
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -379.736,
+    104.032,
+    142.875
+   ],
+   "tip": [
+    -372.269,
+    104.032,
+    142.875
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Filter Base"
+   ]
+  },
+  "Closed-End Rivet (22)": {
+   "name": "Closed-End Rivet (22)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    288.22,
+    -182.121,
+    -373.031,
+    294.481,
+    -175.86
+   ],
+   "centre": [
+    -376.764,
+    291.351,
+    -178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    291.351,
+    -178.991
+   ],
+   "tip": [
+    -373.031,
+    291.351,
+    -178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (23)": {
+   "name": "Closed-End Rivet (23)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    142.472,
+    -182.121,
+    -373.031,
+    148.734,
+    -175.86
+   ],
+   "centre": [
+    -376.764,
+    145.603,
+    -178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    145.603,
+    -178.991
+   ],
+   "tip": [
+    -373.031,
+    145.603,
+    -178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (35)": {
+   "name": "Closed-End Rivet (35)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    -3.179,
+    -182.121,
+    -373.031,
+    3.082,
+    -175.86
+   ],
+   "centre": [
+    -376.764,
+    -0.048,
+    -178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    -0.048,
+    -178.991
+   ],
+   "tip": [
+    -373.031,
+    -0.048,
+    -178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (24)": {
+   "name": "Closed-End Rivet (24)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    -148.83,
+    -182.121,
+    -373.031,
+    -142.569,
+    -175.86
+   ],
+   "centre": [
+    -376.764,
+    -145.7,
+    -178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    -145.699,
+    -178.991
+   ],
+   "tip": [
+    -373.031,
+    -145.699,
+    -178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (36)": {
+   "name": "Closed-End Rivet (36)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    -294.481,
+    -182.121,
+    -373.031,
+    -288.22,
+    -175.86
+   ],
+   "centre": [
+    -376.764,
+    -291.351,
+    -178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    -291.351,
+    -178.991
+   ],
+   "tip": [
+    -373.031,
+    -291.351,
+    -178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (25)": {
+   "name": "Closed-End Rivet (25)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    -294.481,
+    175.86,
+    -373.031,
+    -288.22,
+    182.121
+   ],
+   "centre": [
+    -376.764,
+    -291.351,
+    178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    -291.351,
+    178.991
+   ],
+   "tip": [
+    -373.031,
+    -291.351,
+    178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (39)": {
+   "name": "Closed-End Rivet (39)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    -148.83,
+    175.86,
+    -373.031,
+    -142.569,
+    182.121
+   ],
+   "centre": [
+    -376.764,
+    -145.7,
+    178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    -145.699,
+    178.991
+   ],
+   "tip": [
+    -373.031,
+    -145.699,
+    178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (37)": {
+   "name": "Closed-End Rivet (37)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    -3.179,
+    175.86,
+    -373.031,
+    3.082,
+    182.121
+   ],
+   "centre": [
+    -376.764,
+    -0.048,
+    178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    -0.048,
+    178.991
+   ],
+   "tip": [
+    -373.031,
+    -0.048,
+    178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (26)": {
+   "name": "Closed-End Rivet (26)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    142.472,
+    175.86,
+    -373.031,
+    148.734,
+    182.121
+   ],
+   "centre": [
+    -376.764,
+    145.603,
+    178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    145.603,
+    178.991
+   ],
+   "tip": [
+    -373.031,
+    145.603,
+    178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Closed-End Rivet (27)": {
+   "name": "Closed-End Rivet (27)",
+   "group": null,
+   "bbox": [
+    -380.498,
+    288.22,
+    175.86,
+    -373.031,
+    294.481,
+    182.121
+   ],
+   "centre": [
+    -376.764,
+    291.351,
+    178.99
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -380.498,
+    291.351,
+    178.991
+   ],
+   "tip": [
+    -373.031,
+    291.351,
+    178.991
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Back Panel",
+    "Unit Body"
+   ]
+  },
+  "Pan Head Machine Screw (12)": {
+   "name": "Pan Head Machine Screw (12)",
+   "group": null,
+   "bbox": [
+    -34.327,
+    2.227,
+    -193.142,
+    -26.786,
+    9.768,
+    -183.842
+   ],
+   "centre": [
+    -30.556,
+    5.998,
+    -188.492
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -30.556,
+    5.998,
+    -193.142
+   ],
+   "tip": [
+    -30.556,
+    5.998,
+    -183.842
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Cover",
+    "Gauge Box Enclosure"
+   ]
+  },
+  "Pan Head Machine Screw (6)": {
+   "name": "Pan Head Machine Screw (6)",
+   "group": null,
+   "bbox": [
+    -34.327,
+    -74.766,
+    -193.142,
+    -26.786,
+    -67.226,
+    -183.842
+   ],
+   "centre": [
+    -30.556,
+    -70.996,
+    -188.492
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -30.556,
+    -70.996,
+    -193.142
+   ],
+   "tip": [
+    -30.556,
+    -70.996,
+    -183.842
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Gauge Box Cover",
+    "Gauge Box Enclosure"
+   ]
+  },
+  "Pan Head Machine Screw (10)": {
+   "name": "Pan Head Machine Screw (10)",
+   "group": null,
+   "bbox": [
+    -381.569,
+    211.38,
+    42.664,
+    -372.269,
+    218.921,
+    50.205
+   ],
+   "centre": [
+    -376.919,
+    215.15,
+    46.434
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -381.569,
+    215.151,
+    46.434
+   ],
+   "tip": [
+    -372.269,
+    215.151,
+    46.434
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Back Panel"
+   ]
+  },
+  "Pan Head Machine Screw (11)": {
+   "name": "Pan Head Machine Screw (11)",
+   "group": null,
+   "bbox": [
+    -381.569,
+    211.38,
+    -50.205,
+    -372.269,
+    218.921,
+    -42.664
+   ],
+   "centre": [
+    -376.919,
+    215.15,
+    -46.434
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "head": [
+    -381.569,
+    215.151,
+    -46.434
+   ],
+   "tip": [
+    -372.269,
+    215.151,
+    -46.434
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Back Panel"
+   ]
+  },
+  "Clip Nut (17)": {
+   "name": "Clip Nut (17)",
+   "group": null,
+   "bbox": [
+    -351.849,
+    88.144,
+    49.911,
+    -327.141,
+    100.463,
+    64.389
+   ],
+   "centre": [
+    -339.495,
+    94.303,
+    57.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -341.678,
+    100.463,
+    57.15
+   ],
+   "tip": [
+    -341.678,
+    88.144,
+    57.15
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.58
+   ],
+   "contacts": [
+    "Filter Base",
+    "Hex Flange Bolt (2)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Clip Nut (13)": {
+   "name": "Clip Nut (13)",
+   "group": null,
+   "bbox": [
+    -351.596,
+    88.144,
+    -64.389,
+    -327.39,
+    100.463,
+    -49.911
+   ],
+   "centre": [
+    -339.493,
+    94.303,
+    -57.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -341.678,
+    100.463,
+    -57.15
+   ],
+   "tip": [
+    -341.678,
+    88.144,
+    -57.15
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.58
+   ],
+   "contacts": [
+    "Filter Base",
+    "Hex Flange Bolt (1)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Clip Nut (16)": {
+   "name": "Clip Nut (16)",
+   "group": null,
+   "bbox": [
+    -51.165,
+    88.144,
+    -64.389,
+    -26.959,
+    100.463,
+    -49.911
+   ],
+   "centre": [
+    -39.062,
+    94.303,
+    -57.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    1.0,
+    -0.0
+   ],
+   "head": [
+    -36.878,
+    100.463,
+    -57.15
+   ],
+   "tip": [
+    -36.878,
+    88.144,
+    -57.15
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Filter Base",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Clip Nut (14)": {
+   "name": "Clip Nut (14)",
+   "group": null,
+   "bbox": [
+    -51.165,
+    88.144,
+    49.911,
+    -26.959,
+    100.463,
+    64.389
+   ],
+   "centre": [
+    -39.062,
+    94.303,
+    57.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    1.0,
+    -0.0
+   ],
+   "head": [
+    -36.878,
+    100.463,
+    57.15
+   ],
+   "tip": [
+    -36.878,
+    88.144,
+    57.15
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Filter Base",
+    "Hex Flange Bolt (5)",
+    "Motor Mounting Bracket"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (9)": {
+   "name": "Self-Tapping Pan Head Screw (9)",
+   "group": null,
+   "bbox": [
+    -22.821,
+    -117.539,
+    -81.591,
+    -12.04,
+    -105.012,
+    -70.809
+   ],
+   "centre": [
+    -17.431,
+    -111.275,
+    -76.2
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -17.431,
+    -117.539,
+    -76.2
+   ],
+   "tip": [
+    -17.431,
+    -105.012,
+    -76.2
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (7)": {
+   "name": "Self-Tapping Pan Head Screw (7)",
+   "group": null,
+   "bbox": [
+    -96.057,
+    -117.539,
+    -155.223,
+    -84.855,
+    -105.012,
+    -144.021
+   ],
+   "centre": [
+    -90.456,
+    -111.275,
+    -149.622
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -90.456,
+    -117.539,
+    -149.622
+   ],
+   "tip": [
+    -90.456,
+    -105.012,
+    -149.622
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (5)": {
+   "name": "Self-Tapping Pan Head Screw (5)",
+   "group": null,
+   "bbox": [
+    -292.836,
+    -117.539,
+    -155.152,
+    -281.776,
+    -105.012,
+    -144.092
+   ],
+   "centre": [
+    -287.306,
+    -111.275,
+    -149.622
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -287.306,
+    -117.539,
+    -149.622
+   ],
+   "tip": [
+    -287.306,
+    -105.012,
+    -149.622
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (6)": {
+   "name": "Self-Tapping Pan Head Screw (6)",
+   "group": null,
+   "bbox": [
+    -365.472,
+    -117.539,
+    -81.341,
+    -355.189,
+    -105.012,
+    -71.059
+   ],
+   "centre": [
+    -360.331,
+    -111.275,
+    -76.2
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -360.331,
+    -117.539,
+    -76.2
+   ],
+   "tip": [
+    -360.331,
+    -105.012,
+    -76.2
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Support Track"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (10)": {
+   "name": "Self-Tapping Pan Head Screw (10)",
+   "group": null,
+   "bbox": [
+    -364.835,
+    -117.539,
+    71.696,
+    -355.827,
+    -105.012,
+    80.704
+   ],
+   "centre": [
+    -360.331,
+    -111.275,
+    76.2
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -360.331,
+    -117.539,
+    76.2
+   ],
+   "tip": [
+    -360.331,
+    -105.012,
+    76.2
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Support Track"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (11)": {
+   "name": "Self-Tapping Pan Head Screw (11)",
+   "group": null,
+   "bbox": [
+    -291.457,
+    -117.539,
+    145.47,
+    -283.154,
+    -105.012,
+    153.773
+   ],
+   "centre": [
+    -287.305,
+    -111.275,
+    149.621
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -287.306,
+    -117.539,
+    149.622
+   ],
+   "tip": [
+    -287.306,
+    -105.012,
+    149.622
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track"
+   ]
+  },
+  "Self-Tapping Pan Head Screw (8)": {
+   "name": "Self-Tapping Pan Head Screw (8)",
+   "group": null,
+   "bbox": [
+    -95.112,
+    -117.539,
+    144.965,
+    -85.799,
+    -105.012,
+    154.278
+   ],
+   "centre": [
+    -90.456,
+    -111.275,
+    149.621
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -90.456,
+    -117.539,
+    149.622
+   ],
+   "tip": [
+    -90.456,
+    -105.012,
+    149.622
+   ],
+   "length": 12.527,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 3.002,
+     "len": 8.838
+    },
+    {
+     "d": 7.938,
+     "from_head": 1.415,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Bellmouth Support Track"
+   ]
+  },
+  "Motor Mounting Bracket": {
+   "name": "Motor Mounting Bracket",
+   "group": null,
+   "bbox": [
+    -347.234,
+    100.463,
+    -73.025,
+    -5.921,
+    116.338,
+    73.025
+   ],
+   "centre": [
+    -176.577,
+    108.4,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Bellmouth Mounting Plate": {
+   "name": "Bellmouth Mounting Plate",
+   "group": null,
+   "bbox": [
+    -354.378,
+    -114.537,
+    -155.575,
+    1.222,
+    -113.775,
+    155.575
+   ],
+   "centre": [
+    -176.578,
+    -114.156,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Access Door": {
+   "name": "Access Door",
+   "group": null,
+   "bbox": [
+    7.188,
+    -283.674,
+    -188.913,
+    9.83,
+    -113.798,
+    188.913
+   ],
+   "centre": [
+    8.509,
+    -198.736,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Door Frame": {
+   "name": "Door Frame",
+   "group": null,
+   "bbox": [
+    -5.512,
+    -257.473,
+    -161.131,
+    7.188,
+    -139.998,
+    161.131
+   ],
+   "centre": [
+    0.838,
+    -198.736,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Closed-End Rivet (40)": {
+   "name": "Closed-End Rivet (40)",
+   "group": null,
+   "bbox": [
+    3.48,
+    -160.592,
+    -149.181,
+    10.947,
+    -154.33,
+    -142.919
+   ],
+   "centre": [
+    7.213,
+    -157.461,
+    -146.05
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    10.947,
+    -157.461,
+    -146.05
+   ],
+   "tip": [
+    3.48,
+    -157.461,
+    -146.05
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Door Frame"
+   ]
+  },
+  "Closed-End Rivet (41)": {
+   "name": "Closed-End Rivet (41)",
+   "group": null,
+   "bbox": [
+    3.48,
+    -160.592,
+    -3.131,
+    10.947,
+    -154.33,
+    3.131
+   ],
+   "centre": [
+    7.213,
+    -157.461,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    10.947,
+    -157.461,
+    -0.0
+   ],
+   "tip": [
+    3.48,
+    -157.461,
+    -0.0
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Door Frame"
+   ]
+  },
+  "Closed-End Rivet (28)": {
+   "name": "Closed-End Rivet (28)",
+   "group": null,
+   "bbox": [
+    3.48,
+    -160.592,
+    142.919,
+    10.947,
+    -154.33,
+    149.181
+   ],
+   "centre": [
+    7.213,
+    -157.461,
+    146.05
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    10.947,
+    -157.461,
+    146.05
+   ],
+   "tip": [
+    3.48,
+    -157.461,
+    146.05
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Door Frame"
+   ]
+  },
+  "Closed-End Rivet (42)": {
+   "name": "Closed-End Rivet (42)",
+   "group": null,
+   "bbox": [
+    3.48,
+    -243.142,
+    142.919,
+    10.947,
+    -236.88,
+    149.181
+   ],
+   "centre": [
+    7.213,
+    -240.011,
+    146.05
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    10.947,
+    -240.011,
+    146.05
+   ],
+   "tip": [
+    3.48,
+    -240.011,
+    146.05
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Door Frame"
+   ]
+  },
+  "Closed-End Rivet (38)": {
+   "name": "Closed-End Rivet (38)",
+   "group": null,
+   "bbox": [
+    3.48,
+    -243.142,
+    -3.131,
+    10.947,
+    -236.88,
+    3.131
+   ],
+   "centre": [
+    7.213,
+    -240.011,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    10.947,
+    -240.011,
+    -0.0
+   ],
+   "tip": [
+    3.48,
+    -240.011,
+    -0.0
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Door Frame"
+   ]
+  },
+  "Closed-End Rivet (43)": {
+   "name": "Closed-End Rivet (43)",
+   "group": null,
+   "bbox": [
+    3.48,
+    -243.142,
+    -149.181,
+    10.947,
+    -236.88,
+    -142.919
+   ],
+   "centre": [
+    7.213,
+    -240.011,
+    -146.05
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    10.947,
+    -240.011,
+    -146.05
+   ],
+   "tip": [
+    3.48,
+    -240.011,
+    -146.05
+   ],
+   "length": 7.468,
+   "cylinders": [
+    {
+     "d": 2.032,
+     "from_head": 0.0,
+     "len": 0.61
+    },
+    {
+     "d": 3.969,
+     "from_head": 1.118,
+     "len": 6.299
+    },
+    {
+     "d": 6.261,
+     "from_head": 0.762,
+     "len": 0.356
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Door Frame"
+   ]
+  },
+  "Filter Clamp": {
+   "name": "Filter Clamp",
+   "group": null,
+   "bbox": [
+    -203.523,
+    331.025,
+    -211.858,
+    -175.096,
+    350.091,
+    211.843
+   ],
+   "centre": [
+    -189.31,
+    340.558,
+    -0.008
+   ],
+   "fastener": false
+  },
+  "Impeller Guard": {
+   "name": "Impeller Guard",
+   "group": null,
+   "bbox": [
+    -348.028,
+    117.48,
+    -158.758,
+    -30.52,
+    128.6,
+    158.758
+   ],
+   "centre": [
+    -189.274,
+    123.04,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Clip Nut (8)": {
+   "name": "Clip Nut (8)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -7.773,
+    -315.957,
+    94.361,
+    4.547,
+    -291.751,
+    108.839
+   ],
+   "centre": [
+    -1.613,
+    -303.854,
+    101.6
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    4.547,
+    -301.669,
+    101.6
+   ],
+   "tip": [
+    -7.772,
+    -301.669,
+    101.6
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Unit Body"
+   ]
+  },
+  "Clip Nut (15)": {
+   "name": "Clip Nut (15)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -7.773,
+    -315.957,
+    -108.839,
+    4.547,
+    -291.751,
+    -94.361
+   ],
+   "centre": [
+    -1.613,
+    -303.854,
+    -101.6
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    4.547,
+    -301.669,
+    -101.6
+   ],
+   "tip": [
+    -7.772,
+    -301.669,
+    -101.6
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Unit Body"
+   ]
+  },
+  "Clip Nut (2)": {
+   "name": "Clip Nut (2)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -96.139,
+    -315.957,
+    -193.824,
+    -81.661,
+    -291.751,
+    -181.505
+   ],
+   "centre": [
+    -88.9,
+    -303.854,
+    -187.665
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -88.9,
+    -301.669,
+    -193.824
+   ],
+   "tip": [
+    -88.9,
+    -301.669,
+    -181.505
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Unit Body"
+   ]
+  },
+  "Clip Nut (9)": {
+   "name": "Clip Nut (9)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -299.339,
+    -315.957,
+    -193.824,
+    -284.861,
+    -291.751,
+    -181.505
+   ],
+   "centre": [
+    -292.1,
+    -303.854,
+    -187.665
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -292.1,
+    -301.669,
+    -193.824
+   ],
+   "tip": [
+    -292.1,
+    -301.669,
+    -181.505
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.52,
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Unit Body"
+   ]
+  },
+  "Clip Nut (10)": {
+   "name": "Clip Nut (10)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -383.165,
+    -315.957,
+    -108.839,
+    -370.846,
+    -291.751,
+    -94.361
+   ],
+   "centre": [
+    -377.005,
+    -303.854,
+    -101.6
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -383.165,
+    -301.669,
+    -101.6
+   ],
+   "tip": [
+    -370.846,
+    -301.669,
+    -101.6
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Back Panel"
+   ]
+  },
+  "Clip Nut (11)": {
+   "name": "Clip Nut (11)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -383.165,
+    -315.957,
+    94.361,
+    -370.846,
+    -291.751,
+    108.839
+   ],
+   "centre": [
+    -377.005,
+    -303.854,
+    101.6
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -383.165,
+    -301.669,
+    101.6
+   ],
+   "tip": [
+    -370.846,
+    -301.669,
+    101.6
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Back Panel"
+   ]
+  },
+  "Clip Nut (3)": {
+   "name": "Clip Nut (3)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -299.339,
+    -315.957,
+    181.505,
+    -284.861,
+    -291.751,
+    193.824
+   ],
+   "centre": [
+    -292.1,
+    -303.854,
+    187.665
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -292.1,
+    -301.669,
+    193.824
+   ],
+   "tip": [
+    -292.1,
+    -301.669,
+    181.505
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Unit Body"
+   ]
+  },
+  "Clip Nut (4)": {
+   "name": "Clip Nut (4)",
+   "group": "Nuts_Base",
+   "bbox": [
+    -96.139,
+    -315.957,
+    181.505,
+    -81.661,
+    -291.751,
+    193.824
+   ],
+   "centre": [
+    -88.9,
+    -303.854,
+    187.665
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -88.9,
+    -301.669,
+    193.824
+   ],
+   "tip": [
+    -88.9,
+    -301.669,
+    181.505
+   ],
+   "length": 12.319,
+   "cylinders": [
+    {
+     "d": 5.156,
+     "from_head": 5.309,
+     "len": 7.01
+    },
+    {
+     "d": 7.814,
+     "from_head": 8.357,
+     "len": 2.057
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.0,
+     "len": 0.914
+    },
+    {
+     "d": 14.478,
+     "from_head": 5.309,
+     "len": 0.914
+    }
+   ],
+   "across_flats": [
+    9.53,
+    12.7,
+    13.49,
+    14.46,
+    19.84,
+    26.75,
+    28.57
+   ],
+   "contacts": [
+    "Unit Body"
+   ]
+  },
+  "1_Cable Strain Relief": {
+   "name": "1_Cable Strain Relief",
+   "group": "L_Connector",
+   "bbox": [
+    -407.544,
+    27.566,
+    -16.135,
+    -362.877,
+    59.836,
+    16.135
+   ],
+   "centre": [
+    -385.211,
+    43.701,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -407.543,
+    43.701,
+    0.0
+   ],
+   "tip": [
+    -363.887,
+    43.701,
+    0.0
+   ],
+   "length": 43.656,
+   "cylinders": [
+    {
+     "d": 8.731,
+     "from_head": 4.366,
+     "len": 13.891
+    },
+    {
+     "d": 12.7,
+     "from_head": 0.0,
+     "len": 4.366
+    },
+    {
+     "d": 15.799,
+     "from_head": 18.256,
+     "len": 25.4
+    },
+    {
+     "d": 21.336,
+     "from_head": 18.256,
+     "len": 5.588
+    },
+    {
+     "d": 23.622,
+     "from_head": 5.947,
+     "len": 0.149
+    }
+   ],
+   "across_flats": [
+    23.88
+   ],
+   "contacts": [
+    "2_Strain Relief Nut",
+    "Back Panel"
+   ]
+  },
+  "2_Strain Relief Nut": {
+   "name": "2_Strain Relief Nut",
+   "group": "L_Connector",
+   "bbox": [
+    -377.857,
+    28.461,
+    -15.24,
+    -371.189,
+    58.941,
+    15.24
+   ],
+   "centre": [
+    -374.523,
+    43.701,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    -377.857,
+    43.701,
+    0.0
+   ],
+   "tip": [
+    -371.189,
+    43.701,
+    0.0
+   ],
+   "length": 6.668,
+   "cylinders": [
+    {
+     "d": 0.813,
+     "from_head": 1.588,
+     "len": 4.674
+    },
+    {
+     "d": 19.05,
+     "from_head": 0.0,
+     "len": 6.668
+    },
+    {
+     "d": 30.48,
+     "from_head": 0.0,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    26.4
+   ],
+   "contacts": [
+    "1_Cable Strain Relief",
+    "Back Panel"
+   ]
+  },
+  "External Tooth Lock Washer (2)": {
+   "name": "External Tooth Lock Washer (2)",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -142.269,
+    101.644,
+    34.309,
+    -129.569,
+    102.914,
+    47.009
+   ],
+   "centre": [
+    -135.919,
+    102.279,
+    40.659
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -135.919,
+    101.644,
+    40.659
+   ],
+   "tip": [
+    -135.919,
+    102.914,
+    40.659
+   ],
+   "length": 1.27,
+   "cylinders": [
+    {
+     "d": 6.604,
+     "from_head": 0.318,
+     "len": 0.635
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.318,
+     "len": 0.635
+    }
+   ],
+   "across_flats": [
+    1.59,
+    12.7
+   ],
+   "contacts": [
+    "Motor Mounting Bracket",
+    "Motor Mounting Hex Bolt"
+   ]
+  },
+  "External Tooth Lock Washer (3)": {
+   "name": "External Tooth Lock Washer (3)",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -223.622,
+    101.644,
+    34.273,
+    -210.85,
+    102.914,
+    47.044
+   ],
+   "centre": [
+    -217.236,
+    102.279,
+    40.659
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -217.236,
+    101.644,
+    40.659
+   ],
+   "tip": [
+    -217.236,
+    102.914,
+    40.659
+   ],
+   "length": 1.27,
+   "cylinders": [
+    {
+     "d": 6.604,
+     "from_head": 0.318,
+     "len": 0.635
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.318,
+     "len": 0.635
+    }
+   ],
+   "across_flats": [
+    1.59,
+    12.7
+   ],
+   "contacts": [
+    "Motor Mounting Bracket",
+    "Motor Mounting Hex Bolt (2)"
+   ]
+  },
+  "External Tooth Lock Washer": {
+   "name": "External Tooth Lock Washer",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -223.635,
+    101.644,
+    -47.058,
+    -210.837,
+    102.914,
+    -34.259
+   ],
+   "centre": [
+    -217.236,
+    102.279,
+    -40.659
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -217.236,
+    101.644,
+    -40.659
+   ],
+   "tip": [
+    -217.236,
+    102.914,
+    -40.659
+   ],
+   "length": 1.27,
+   "cylinders": [
+    {
+     "d": 6.604,
+     "from_head": 0.318,
+     "len": 0.635
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.318,
+     "len": 0.635
+    }
+   ],
+   "across_flats": [
+    1.59,
+    12.7
+   ],
+   "contacts": [
+    "Motor Mounting Bracket",
+    "Motor Mounting Hex Bolt (1)"
+   ]
+  },
+  "External Tooth Lock Washer (1)": {
+   "name": "External Tooth Lock Washer (1)",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -142.318,
+    101.644,
+    -47.058,
+    -129.52,
+    102.914,
+    -34.259
+   ],
+   "centre": [
+    -135.919,
+    102.279,
+    -40.659
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -135.919,
+    101.644,
+    -40.659
+   ],
+   "tip": [
+    -135.919,
+    102.914,
+    -40.659
+   ],
+   "length": 1.27,
+   "cylinders": [
+    {
+     "d": 6.604,
+     "from_head": 0.318,
+     "len": 0.635
+    },
+    {
+     "d": 9.525,
+     "from_head": 0.318,
+     "len": 0.635
+    }
+   ],
+   "across_flats": [
+    1.59,
+    12.7
+   ],
+   "contacts": [
+    "Motor Mounting Bracket",
+    "Motor Mounting Hex Bolt (3)"
+   ]
+  },
+  "Motor Mounting Hex Bolt": {
+   "name": "Motor Mounting Hex Bolt",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -141.612,
+    90.597,
+    34.966,
+    -130.226,
+    106.949,
+    46.351
+   ],
+   "centre": [
+    -135.919,
+    98.773,
+    40.659
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    1.0,
+    -0.0
+   ],
+   "head": [
+    -135.919,
+    106.949,
+    40.659
+   ],
+   "tip": [
+    -135.919,
+    90.597,
+    40.659
+   ],
+   "length": 16.352,
+   "cylinders": [
+    {
+     "d": 6.0,
+     "from_head": 4.352,
+     "len": 10.73
+    }
+   ],
+   "across_flats": [
+    9.86
+   ],
+   "contacts": [
+    "External Tooth Lock Washer (2)",
+    "Impeller Drive Motor"
+   ]
+  },
+  "Motor Mounting Hex Bolt (2)": {
+   "name": "Motor Mounting Hex Bolt (2)",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -222.929,
+    90.597,
+    34.966,
+    -211.544,
+    106.949,
+    46.351
+   ],
+   "centre": [
+    -217.237,
+    98.773,
+    40.659
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -217.236,
+    106.949,
+    40.659
+   ],
+   "tip": [
+    -217.236,
+    90.597,
+    40.659
+   ],
+   "length": 16.352,
+   "cylinders": [
+    {
+     "d": 6.0,
+     "from_head": 4.352,
+     "len": 10.73
+    }
+   ],
+   "across_flats": [
+    9.86
+   ],
+   "contacts": [
+    "External Tooth Lock Washer (3)",
+    "Impeller Drive Motor"
+   ]
+  },
+  "Motor Mounting Hex Bolt (1)": {
+   "name": "Motor Mounting Hex Bolt (1)",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -222.929,
+    90.597,
+    -46.351,
+    -211.544,
+    106.949,
+    -34.966
+   ],
+   "centre": [
+    -217.237,
+    98.773,
+    -40.659
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -217.236,
+    106.949,
+    -40.659
+   ],
+   "tip": [
+    -217.236,
+    90.597,
+    -40.659
+   ],
+   "length": 16.352,
+   "cylinders": [
+    {
+     "d": 6.0,
+     "from_head": 4.352,
+     "len": 10.73
+    }
+   ],
+   "across_flats": [
+    9.86
+   ],
+   "contacts": [
+    "External Tooth Lock Washer",
+    "Impeller Drive Motor"
+   ]
+  },
+  "Motor Mounting Hex Bolt (3)": {
+   "name": "Motor Mounting Hex Bolt (3)",
+   "group": "Hardware_M_mountingBracket",
+   "bbox": [
+    -141.612,
+    90.597,
+    -46.351,
+    -130.226,
+    106.949,
+    -34.966
+   ],
+   "centre": [
+    -135.919,
+    98.773,
+    -40.659
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    1.0,
+    0.0
+   ],
+   "head": [
+    -135.919,
+    106.949,
+    -40.659
+   ],
+   "tip": [
+    -135.919,
+    90.597,
+    -40.659
+   ],
+   "length": 16.352,
+   "cylinders": [
+    {
+     "d": 6.0,
+     "from_head": 4.352,
+     "len": 10.73
+    }
+   ],
+   "across_flats": [
+    9.86
+   ],
+   "contacts": [
+    "External Tooth Lock Washer (1)",
+    "Impeller Drive Motor"
+   ]
+  },
+  "Impeller Blade (3)": {
+   "name": "Impeller Blade (3)",
+   "group": "Impeller",
+   "bbox": [
+    -107.346,
+    -68.541,
+    -0.752,
+    -51.298,
+    42.967,
+    88.514
+   ],
+   "centre": [
+    -79.322,
+    -12.787,
+    43.881
+   ],
+   "fastener": false
+  },
+  "Impeller Blade (6)": {
+   "name": "Impeller Blade (6)",
+   "group": "Impeller",
+   "bbox": [
+    -118.334,
+    -68.541,
+    -82.646,
+    -50.577,
+    42.967,
+    -0.73
+   ],
+   "centre": [
+    -84.456,
+    -12.787,
+    -41.688
+   ],
+   "fastener": false
+  },
+  "Impeller Blade": {
+   "name": "Impeller Blade",
+   "group": "Impeller",
+   "bbox": [
+    -177.33,
+    -68.541,
+    -125.28,
+    -88.064,
+    42.967,
+    -69.232
+   ],
+   "centre": [
+    -132.697,
+    -12.787,
+    -97.256
+   ],
+   "fastener": false
+  },
+  "Impeller Blade (4)": {
+   "name": "Impeller Blade (4)",
+   "group": "Impeller",
+   "bbox": [
+    -259.224,
+    -68.541,
+    -126.001,
+    -177.308,
+    42.967,
+    -58.244
+   ],
+   "centre": [
+    -218.266,
+    -12.787,
+    -92.123
+   ],
+   "fastener": false
+  },
+  "Impeller Blade (2)": {
+   "name": "Impeller Blade (2)",
+   "group": "Impeller",
+   "bbox": [
+    -301.857,
+    -68.541,
+    -88.514,
+    -245.809,
+    42.967,
+    0.752
+   ],
+   "centre": [
+    -273.833,
+    -12.787,
+    -43.881
+   ],
+   "fastener": false
+  },
+  "Impeller Blade (1)": {
+   "name": "Impeller Blade (1)",
+   "group": "Impeller",
+   "bbox": [
+    -302.579,
+    -68.541,
+    0.73,
+    -234.821,
+    42.967,
+    82.646
+   ],
+   "centre": [
+    -268.7,
+    -12.787,
+    41.688
+   ],
+   "fastener": false
+  },
+  "Impeller Blade (7)": {
+   "name": "Impeller Blade (7)",
+   "group": "Impeller",
+   "bbox": [
+    -265.091,
+    -68.541,
+    69.232,
+    -175.826,
+    42.967,
+    125.28
+   ],
+   "centre": [
+    -220.459,
+    -12.787,
+    97.256
+   ],
+   "fastener": false
+  },
+  "Impeller Blade (5)": {
+   "name": "Impeller Blade (5)",
+   "group": "Impeller",
+   "bbox": [
+    -175.847,
+    -68.541,
+    58.244,
+    -93.932,
+    42.967,
+    126.001
+   ],
+   "centre": [
+    -134.889,
+    -12.787,
+    92.123
+   ],
+   "fastener": false
+  },
+  "Impeller Shroud": {
+   "name": "Impeller Shroud",
+   "group": "Impeller",
+   "bbox": [
+    -302.578,
+    -91.164,
+    -126.0,
+    -50.578,
+    -35.037,
+    126.0
+   ],
+   "centre": [
+    -176.578,
+    -63.1,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Impeller Back Plate": {
+   "name": "Impeller Back Plate",
+   "group": "Impeller",
+   "bbox": [
+    -302.578,
+    42.963,
+    -126.0,
+    -50.578,
+    44.963,
+    126.0
+   ],
+   "centre": [
+    -176.578,
+    43.963,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Impeller Drive Motor": {
+   "name": "Impeller Drive Motor",
+   "group": "Impeller",
+   "bbox": [
+    -261.078,
+    -16.037,
+    -84.011,
+    -92.567,
+    106.963,
+    84.011
+   ],
+   "centre": [
+    -176.822,
+    45.463,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Impeller Inlet Bellmouth": {
+   "name": "Impeller Inlet Bellmouth",
+   "group": "Impeller",
+   "bbox": [
+    -316.578,
+    -116.037,
+    -140.0,
+    -36.578,
+    -64.967,
+    140.0
+   ],
+   "centre": [
+    -176.578,
+    -90.502,
+    0.0
+   ],
+   "fastener": false
+  },
+  "Hex Flange Bolt (8)": {
+   "name": "Hex Flange Bolt (8)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -119.202,
+    -123.161,
+    -119.525,
+    -104.453,
+    -96.987,
+    -104.776
+   ],
+   "centre": [
+    -111.828,
+    -110.074,
+    -112.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -111.828,
+    -123.161,
+    -112.15
+   ],
+   "tip": [
+    -111.828,
+    -96.987,
+    -112.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Nut",
+    "Impeller Inlet Bellmouth"
+   ]
+  },
+  "Hex Flange Bolt (11)": {
+   "name": "Hex Flange Bolt (11)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -248.548,
+    -123.161,
+    -119.37,
+    -234.108,
+    -96.987,
+    -104.93
+   ],
+   "centre": [
+    -241.328,
+    -110.074,
+    -112.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -241.328,
+    -123.161,
+    -112.15
+   ],
+   "tip": [
+    -241.328,
+    -96.987,
+    -112.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Nut (5)",
+    "Impeller Inlet Bellmouth"
+   ]
+  },
+  "Hex Flange Bolt (12)": {
+   "name": "Hex Flange Bolt (12)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -313.632,
+    -123.161,
+    -7.555,
+    -298.523,
+    -96.987,
+    7.555
+   ],
+   "centre": [
+    -306.077,
+    -110.074,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -306.078,
+    -123.161,
+    0.0
+   ],
+   "tip": [
+    -306.078,
+    -96.987,
+    0.0
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Nut (4)",
+    "Impeller Inlet Bellmouth"
+   ]
+  },
+  "Hex Flange Bolt (13)": {
+   "name": "Hex Flange Bolt (13)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -248.702,
+    -123.161,
+    104.776,
+    -233.953,
+    -96.987,
+    119.525
+   ],
+   "centre": [
+    -241.327,
+    -110.074,
+    112.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -241.328,
+    -123.161,
+    112.15
+   ],
+   "tip": [
+    -241.328,
+    -96.987,
+    112.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Nut (1)",
+    "Impeller Inlet Bellmouth"
+   ]
+  },
+  "Hex Flange Bolt (9)": {
+   "name": "Hex Flange Bolt (9)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -119.048,
+    -123.161,
+    104.93,
+    -104.608,
+    -96.987,
+    119.37
+   ],
+   "centre": [
+    -111.828,
+    -110.074,
+    112.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -111.828,
+    -123.161,
+    112.15
+   ],
+   "tip": [
+    -111.828,
+    -96.987,
+    112.15
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Nut (2)",
+    "Impeller Inlet Bellmouth"
+   ]
+  },
+  "Hex Flange Bolt (7)": {
+   "name": "Hex Flange Bolt (7)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -54.632,
+    -123.161,
+    -7.555,
+    -39.523,
+    -96.987,
+    7.555
+   ],
+   "centre": [
+    -47.078,
+    -110.074,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -47.078,
+    -123.161,
+    0.0
+   ],
+   "tip": [
+    -47.078,
+    -96.987,
+    0.0
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Nut (3)",
+    "Impeller Inlet Bellmouth"
+   ]
+  },
+  "Hex Flange Nut (2)": {
+   "name": "Hex Flange Nut (2)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -119.583,
+    -113.861,
+    104.395,
+    -104.073,
+    -108.139,
+    119.905
+   ],
+   "centre": [
+    -111.828,
+    -111.0,
+    112.15
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -111.828,
+    -113.775,
+    112.15
+   ],
+   "tip": [
+    -111.828,
+    -108.139,
+    112.15
+   ],
+   "length": 5.636,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 0.0,
+     "len": 5.636
+    },
+    {
+     "d": 14.834,
+     "from_head": 0.0,
+     "len": 0.476
+    }
+   ],
+   "across_flats": [
+    11.0
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Bolt (9)"
+   ]
+  },
+  "Hex Flange Nut (1)": {
+   "name": "Hex Flange Nut (1)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -249.083,
+    -113.861,
+    104.395,
+    -233.573,
+    -108.139,
+    119.905
+   ],
+   "centre": [
+    -241.328,
+    -111.0,
+    112.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -241.328,
+    -113.775,
+    112.15
+   ],
+   "tip": [
+    -241.328,
+    -108.139,
+    112.15
+   ],
+   "length": 5.636,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 0.0,
+     "len": 5.636
+    },
+    {
+     "d": 14.834,
+     "from_head": 0.0,
+     "len": 0.476
+    }
+   ],
+   "across_flats": [
+    11.0
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Bolt (13)"
+   ]
+  },
+  "Hex Flange Nut (4)": {
+   "name": "Hex Flange Nut (4)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -314.106,
+    -113.861,
+    -8.029,
+    -298.049,
+    -108.139,
+    8.029
+   ],
+   "centre": [
+    -306.077,
+    -111.0,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    0.0
+   ],
+   "head": [
+    -306.078,
+    -113.775,
+    0.0
+   ],
+   "tip": [
+    -306.078,
+    -108.139,
+    0.0
+   ],
+   "length": 5.636,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 0.0,
+     "len": 5.636
+    },
+    {
+     "d": 14.834,
+     "from_head": 0.0,
+     "len": 0.476
+    }
+   ],
+   "across_flats": [
+    11.0
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Bolt (12)"
+   ]
+  },
+  "Hex Flange Nut (5)": {
+   "name": "Hex Flange Nut (5)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -249.083,
+    -113.861,
+    -119.905,
+    -233.573,
+    -108.139,
+    -104.395
+   ],
+   "centre": [
+    -241.328,
+    -111.0,
+    -112.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -241.328,
+    -113.775,
+    -112.15
+   ],
+   "tip": [
+    -241.328,
+    -108.139,
+    -112.15
+   ],
+   "length": 5.636,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 0.0,
+     "len": 5.636
+    },
+    {
+     "d": 14.834,
+     "from_head": 0.0,
+     "len": 0.476
+    }
+   ],
+   "across_flats": [
+    11.0
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Bolt (11)"
+   ]
+  },
+  "Hex Flange Nut": {
+   "name": "Hex Flange Nut",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -119.583,
+    -113.861,
+    -119.905,
+    -104.073,
+    -108.139,
+    -104.395
+   ],
+   "centre": [
+    -111.828,
+    -111.0,
+    -112.15
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -111.828,
+    -113.775,
+    -112.15
+   ],
+   "tip": [
+    -111.828,
+    -108.139,
+    -112.15
+   ],
+   "length": 5.636,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 0.0,
+     "len": 5.636
+    },
+    {
+     "d": 14.834,
+     "from_head": 0.0,
+     "len": 0.476
+    }
+   ],
+   "across_flats": [
+    11.0
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Bolt (8)"
+   ]
+  },
+  "Hex Flange Nut (3)": {
+   "name": "Hex Flange Nut (3)",
+   "group": "Hardware_BellmouthMountingPlate",
+   "bbox": [
+    -55.106,
+    -113.861,
+    -8.029,
+    -39.049,
+    -108.139,
+    8.029
+   ],
+   "centre": [
+    -47.078,
+    -111.0,
+    0.0
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -1.0,
+    -0.0
+   ],
+   "head": [
+    -47.078,
+    -113.775,
+    -0.0
+   ],
+   "tip": [
+    -47.078,
+    -108.139,
+    -0.0
+   ],
+   "length": 5.636,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 0.0,
+     "len": 5.636
+    },
+    {
+     "d": 14.834,
+     "from_head": 0.0,
+     "len": 0.476
+    }
+   ],
+   "across_flats": [
+    11.0
+   ],
+   "contacts": [
+    "Bellmouth Mounting Plate",
+    "Hex Flange Bolt (7)"
+   ]
+  },
+  "Hex Flange Bolt (4)": {
+   "name": "Hex Flange Bolt (4)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    -5.963,
+    -280.909,
+    -121.861,
+    20.211,
+    -265.788,
+    -106.739
+   ],
+   "centre": [
+    7.124,
+    -273.349,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    20.211,
+    -273.348,
+    -114.3
+   ],
+   "tip": [
+    -5.963,
+    -273.348,
+    -114.3
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Door Bolt Washer (1)"
+   ]
+  },
+  "Hex Flange Bolt (10)": {
+   "name": "Hex Flange Bolt (10)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    -5.963,
+    -280.909,
+    106.739,
+    20.211,
+    -265.788,
+    121.861
+   ],
+   "centre": [
+    7.124,
+    -273.349,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    20.211,
+    -273.348,
+    114.3
+   ],
+   "tip": [
+    -5.963,
+    -273.348,
+    114.3
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Door Bolt Washer (2)"
+   ]
+  },
+  "Hex Flange Bolt (6)": {
+   "name": "Hex Flange Bolt (6)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    -5.963,
+    -131.684,
+    -121.861,
+    20.211,
+    -116.563,
+    -106.739
+   ],
+   "centre": [
+    7.124,
+    -124.124,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    20.211,
+    -124.123,
+    -114.3
+   ],
+   "tip": [
+    -5.963,
+    -124.123,
+    -114.3
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Clip Nut (5)",
+    "Door Bolt Washer (3)"
+   ]
+  },
+  "Hex Flange Bolt (3)": {
+   "name": "Hex Flange Bolt (3)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    -5.963,
+    -131.684,
+    106.739,
+    20.211,
+    -116.563,
+    121.861
+   ],
+   "centre": [
+    7.124,
+    -124.124,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    20.211,
+    -124.123,
+    114.3
+   ],
+   "tip": [
+    -5.963,
+    -124.123,
+    114.3
+   ],
+   "length": 26.174,
+   "cylinders": [
+    {
+     "d": 6.35,
+     "from_head": 7.124,
+     "len": 0.635
+    },
+    {
+     "d": 7.023,
+     "from_head": 0.266,
+     "len": 0.635
+    },
+    {
+     "d": 13.97,
+     "from_head": 6.012,
+     "len": 0.857
+    }
+   ],
+   "across_flats": [
+    9.44
+   ],
+   "contacts": [
+    "Clip Nut (12)",
+    "Door Bolt Washer"
+   ]
+  },
+  "Door Bolt Washer (3)": {
+   "name": "Door Bolt Washer (3)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    9.83,
+    -132.061,
+    -122.238,
+    13.087,
+    -116.186,
+    -106.362
+   ],
+   "centre": [
+    11.459,
+    -124.124,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    13.087,
+    -124.123,
+    -114.3
+   ],
+   "tip": [
+    9.83,
+    -124.123,
+    -114.3
+   ],
+   "length": 3.258,
+   "cylinders": [
+    {
+     "d": 5.556,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 7.144,
+     "from_head": 0.0,
+     "len": 0.794
+    },
+    {
+     "d": 15.081,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 15.875,
+     "from_head": 0.0,
+     "len": 0.794
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Hex Flange Bolt (6)"
+   ]
+  },
+  "Door Bolt Washer (2)": {
+   "name": "Door Bolt Washer (2)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    9.83,
+    -281.286,
+    106.362,
+    13.087,
+    -265.411,
+    122.238
+   ],
+   "centre": [
+    11.459,
+    -273.349,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    13.087,
+    -273.348,
+    114.3
+   ],
+   "tip": [
+    9.83,
+    -273.348,
+    114.3
+   ],
+   "length": 3.258,
+   "cylinders": [
+    {
+     "d": 5.556,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 7.144,
+     "from_head": 0.0,
+     "len": 0.794
+    },
+    {
+     "d": 15.081,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 15.875,
+     "from_head": 0.0,
+     "len": 0.794
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Hex Flange Bolt (10)"
+   ]
+  },
+  "Door Bolt Washer (1)": {
+   "name": "Door Bolt Washer (1)",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    9.83,
+    -281.286,
+    -122.238,
+    13.087,
+    -265.411,
+    -106.362
+   ],
+   "centre": [
+    11.459,
+    -273.349,
+    -114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    13.087,
+    -273.348,
+    -114.3
+   ],
+   "tip": [
+    9.83,
+    -273.348,
+    -114.3
+   ],
+   "length": 3.258,
+   "cylinders": [
+    {
+     "d": 5.556,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 7.144,
+     "from_head": 0.0,
+     "len": 0.794
+    },
+    {
+     "d": 15.081,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 15.875,
+     "from_head": 0.0,
+     "len": 0.794
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Hex Flange Bolt (4)"
+   ]
+  },
+  "Door Bolt Washer": {
+   "name": "Door Bolt Washer",
+   "group": "HardwareDoor_Filters",
+   "bbox": [
+    9.83,
+    -132.061,
+    106.362,
+    13.087,
+    -116.186,
+    122.238
+   ],
+   "centre": [
+    11.459,
+    -124.124,
+    114.3
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    0.0
+   ],
+   "head": [
+    13.087,
+    -124.123,
+    114.3
+   ],
+   "tip": [
+    9.83,
+    -124.123,
+    114.3
+   ],
+   "length": 3.258,
+   "cylinders": [
+    {
+     "d": 5.556,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 7.144,
+     "from_head": 0.0,
+     "len": 0.794
+    },
+    {
+     "d": 15.081,
+     "from_head": 0.794,
+     "len": 2.464
+    },
+    {
+     "d": 15.875,
+     "from_head": 0.0,
+     "len": 0.794
+    }
+   ],
+   "across_flats": [],
+   "contacts": [
+    "Access Door",
+    "Hex Flange Bolt (3)"
+   ]
+  },
+  "Pan Head Machine Screw (8)": {
+   "name": "Pan Head Machine Screw (8)",
+   "group": "FilterClampBoltBracket_Hardware",
+   "bbox": [
+    -192.725,
+    292.117,
+    183.224,
+    -185.185,
+    299.658,
+    192.524
+   ],
+   "centre": [
+    -188.955,
+    295.888,
+    187.874
+   ],
+   "fastener": true,
+   "axis": [
+    -0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -188.955,
+    295.888,
+    192.524
+   ],
+   "tip": [
+    -188.955,
+    295.888,
+    183.224
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket (1)",
+    "Unit Body"
+   ]
+  },
+  "Pan Head Machine Screw (9)": {
+   "name": "Pan Head Machine Screw (9)",
+   "group": "FilterClampBoltBracket_Hardware",
+   "bbox": [
+    -192.686,
+    279.269,
+    183.298,
+    -185.145,
+    286.81,
+    192.598
+   ],
+   "centre": [
+    -188.916,
+    283.039,
+    187.948
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    1.0
+   ],
+   "head": [
+    -188.916,
+    283.039,
+    192.598
+   ],
+   "tip": [
+    -188.916,
+    283.039,
+    183.298
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket (1)",
+    "Unit Body"
+   ]
+  },
+  "Pan Head Machine Screw (13)": {
+   "name": "Pan Head Machine Screw (13)",
+   "group": "FilterClampBoltBracket_Hardware",
+   "bbox": [
+    -193.08,
+    292.343,
+    -192.228,
+    -185.539,
+    299.884,
+    -182.928
+   ],
+   "centre": [
+    -189.31,
+    296.114,
+    -187.578
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    0.0,
+    -1.0
+   ],
+   "head": [
+    -189.309,
+    296.113,
+    -192.228
+   ],
+   "tip": [
+    -189.309,
+    296.113,
+    -182.928
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket",
+    "Unit Body"
+   ]
+  },
+  "Pan Head Machine Screw (7)": {
+   "name": "Pan Head Machine Screw (7)",
+   "group": "FilterClampBoltBracket_Hardware",
+   "bbox": [
+    -193.08,
+    279.643,
+    -192.228,
+    -185.539,
+    287.184,
+    -182.928
+   ],
+   "centre": [
+    -189.31,
+    283.413,
+    -187.578
+   ],
+   "fastener": true,
+   "axis": [
+    0.0,
+    -0.0,
+    -1.0
+   ],
+   "head": [
+    -189.309,
+    283.413,
+    -192.228
+   ],
+   "tip": [
+    -189.309,
+    283.413,
+    -182.928
+   ],
+   "length": 9.3,
+   "cylinders": [
+    {
+     "d": 4.089,
+     "from_head": 2.95,
+     "len": 5.663
+    },
+    {
+     "d": 7.541,
+     "from_head": 1.363,
+     "len": 1.588
+    }
+   ],
+   "across_flats": [
+    3.17,
+    3.18
+   ],
+   "contacts": [
+    "Filter Clamp Bolt Bracket",
+    "Unit Body"
+   ]
+  },
+  "Filter Clamp Bolt Bracket (1)": {
+   "name": "Filter Clamp Bolt Bracket (1)",
+   "group": "FilterClampBoltBracket_Hardware",
+   "bbox": [
+    -200.068,
+    275.25,
+    187.313,
+    -177.843,
+    327.549,
+    209.183
+   ],
+   "centre": [
+    -188.956,
+    301.399,
+    198.248
+   ],
+   "fastener": true,
+   "axis": [
+    1.0,
+    -0.0,
+    -0.0
+   ],
+   "head": [
+    -177.843,
+    324.551,
+    194.806
+   ],
+   "tip": [
+    -200.068,
+    324.551,
+    194.806
+   ],
+   "length": 22.225,
+   "cylinders": [
+    {
+     "d": 2.997,
+     "from_head": 0.0,
+     "len": 22.225
+    },
+    {
+     "d": 5.994,
+     "from_head": 0.0,
+     "len": 22.225
+    }
+   ],
+   "across_flats": [
+    3.0,
+    5.99,
+    11.99,
+    14.99,
+    28.75,
+    98.6
+   ],
+   "contacts": [
+    "Filter Clamp Hex Bolt (1)",
+    "Hex Nut",
+    "Pan Head Machine Screw (8)",
+    "Pan Head Machine Screw (9)",
+    "Unit Body"
+   ]
+  },
+  "Filter Clamp Bolt Bracket": {
+   "name": "Filter Clamp Bolt Bracket",
+   "group": "FilterClampBoltBracket_Hardware",
+   "bbox": [
+    -200.422,
+    275.476,
+    -208.886,
+    -178.197,
+    327.774,
+    -187.017
+   ],
+   "centre": [
+    -189.31,
+    301.625,
+    -197.952
+   ],
+   "fastener": true,
+   "axis": [
+    -1.0,
+    0.0,
+    0.0
+   ],
+   "head": [
+    -200.422,
+    324.777,
+    -194.51
+   ],
+   "tip": [
+    -178.197,
+    324.777,
+    -194.51
+   ],
+   "length": 22.225,
+   "cylinders": [
+    {
+     "d": 2.997,
+     "from_head": 0.0,
+     "len": 22.225
+    },
+    {
+     "d": 5.994,
+     "from_head": 0.0,
+     "len": 22.225
+    }
+   ],
+   "across_flats": [
+    3.0,
+    5.99,
+    11.99,
+    14.99,
+    28.75,
+    98.6
+   ],
+   "contacts": [
+    "Filter Clamp Hex Bolt",
+    "Hex Nut (1)",
+    "Pan Head Machine Screw (13)",
+    "Pan Head Machine Screw (7)",
+    "Unit Body"
+   ]
+  }
+ }
+}

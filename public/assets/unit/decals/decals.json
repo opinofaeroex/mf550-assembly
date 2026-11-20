@@ -1,0 +1,37 @@
+{
+ "source": "MISTFIT550_Decals.png",
+ "method": "homography rectification of the reference photograph (8 CAD-located points)",
+ "face": "front (+X), x = 0 mm",
+ "decals": [
+  {
+   "id": "aeroex-logo",
+   "file": "aeroex-logo.png",
+   "zLeft": 159.0,
+   "zRight": -155.8,
+   "yTop": 276.0,
+   "yBottom": 243.8,
+   "widthMm": 314.8,
+   "heightMm": 32.2
+  },
+  {
+   "id": "mist-fit",
+   "file": "mist-fit.png",
+   "zLeft": 159.5,
+   "zRight": -155.8,
+   "yTop": 234.2,
+   "yBottom": 186.5,
+   "widthMm": 315.2,
+   "heightMm": 47.8
+  },
+  {
+   "id": "mf-550",
+   "file": "mf-550.png",
+   "zLeft": -26.8,
+   "zRight": -155.5,
+   "yTop": 174.5,
+   "yBottom": 151.8,
+   "widthMm": 128.8,
+   "heightMm": 22.8
+  }
+ ]
+}

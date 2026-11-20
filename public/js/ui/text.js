@@ -75,6 +75,7 @@ export function stepFacts(model, pos) {
  * @returns {{badge, kind, title, desc, components, note, speech}}  title/components are HTML
  */
 export function positionText(model, pos) {
+  if (model.meta.tutorial === 'unit') return unitPositionText(model, pos);
   const N = model.stepCount;
   const m = model.meta;
   const product = m.displayName || m.product;      // visible name (CONFIG.productName)
@@ -145,5 +146,55 @@ export function positionText(model, pos) {
   return {
     badge: `Step ${pos + 1} / ${N}`, kind, title: esc(title), desc, components, note,
     speech: `Step ${pos + 1}. ${title}. ${desc}`,
+  };
+}
+
+/**
+ * v2.0 unit-installation tutorial: card text from the authored step data
+ * (pipeline/unit/steps_unit.py). Hardware lines use the measured CAD sizes and always show
+ * their verification status; nothing is stated that the step data does not contain.
+ */
+export function hardwareLine(h) {
+  const size = h.size && h.size !== '—' ? h.size : null;
+  const len = h.length && h.length !== '—' ? h.length : null;
+  const spec = size || len ? [size, len].filter(Boolean).join(' × ') : 'Specification requires engineering confirmation.';
+  return `${h.name} – ${spec} – Quantity: ${h.qty}`;
+}
+
+export function unitPositionText(model, pos) {
+  const N = model.stepCount;
+  const m = model.meta;
+  const product = m.displayName || 'Mist-Fit 550';
+  if (pos === ASSEMBLED) {
+    return {
+      badge: 'Overview', kind: 'Completed unit',
+      title: `${esc(product)} — complete unit`,
+      desc: `${N} installation steps in 9 phases, starting from the assembled and painted main body. Press NEXT STEP to see the components to install.`,
+      components: null, note: null,
+      speech: `${product} unit installation. ${N} steps. Press Next step to see the components.`,
+    };
+  }
+  if (pos === EXPLODED) {
+    return {
+      badge: 'Components', kind: 'Installation kit',
+      title: 'Components and hardware to install',
+      desc: 'The main body with every component, filter module and fastener at its starting point. Press NEXT STEP to start step 1.',
+      components: null, note: null,
+      speech: 'Every component and fastener is shown at its starting point. Press Next step to start step 1.',
+    };
+  }
+  const s = model.steps[pos];
+  const hw = (s.hardware || []).filter((h) => h.name);
+  const lines = hw.map((h) => `<li class="hw-item"><span class="hw-spec">${esc(hardwareLine(h))}</span>`
+    + `<span class="hw-meta">${esc([h.type, h.drive && h.drive !== '—' ? h.drive : null].filter(Boolean).join(' · '))}</span>`
+    + `<span class="hw-status ${/CONFLICT/.test(h.status) ? 'is-conflict' : ''}">${esc(h.status)}${h.confirm && h.confirm !== '—' ? ' — ' + esc(h.confirm) : ''}</span></li>`);
+  const tools = (s.tools || []).map((t) => esc(t.label));
+  const components = (lines.length || tools.length)
+    ? `${lines.length ? `<ul class="hw-list">${lines.join('')}</ul>` : ''}${tools.length ? `<div class="hw-tools"><b>Tools:</b> ${tools.join(' · ')}</div>` : ''}`
+    : null;
+  const note = s.flags && s.flags.length ? s.flags.join(' • ') : null;
+  return {
+    badge: `Step ${pos + 1} / ${N}`, kind: `Phase ${s.phase} · ${s.phaseTitle}`, title: esc(s.title), desc: s.text,
+    components, note, speech: `Step ${pos + 1}. ${s.speech}`,
   };
 }
