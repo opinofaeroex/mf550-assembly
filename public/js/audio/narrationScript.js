@@ -12,11 +12,25 @@ import { spokenText, narrationKey } from './spokenScript.js';
 
 /** Spoken script of a position. */
 export function narrationText(model, pos) {
+  if (model.meta.tutorial === 'unit') return unitSpeech(model, pos);
   return spokenText(model, pos);
+}
+
+/** v2.0 unit tutorial: the authored spoken instruction of each step (browser voice; no recordings yet). */
+function unitSpeech(model, pos) {
+  const N = model.stepCount;
+  if (pos < 0) {
+    return pos === ASSEMBLED
+      ? `Mist Fit five fifty unit installation. ${N} steps, starting from the assembled and painted main body. Press Next step to see the components.`
+      : 'Every component and fastener is shown at its starting point. Press Next step to start step one.';
+  }
+  const s = model.steps[pos];
+  return `Step ${pos + 1}. ${s.speech}`;
 }
 
 /** Recording key of a position and of the position after it (preloaded in the background). */
 export function narrationKeys(model, pos) {
+  if (model.meta.tutorial === 'unit') return { key: null, next: null };
   const next = pos < model.stepCount ? pos + 1 : null;
   return { key: narrationKey(model, pos), next: next === null ? null : narrationKey(model, Math.max(next, ASSEMBLED)) };
 }

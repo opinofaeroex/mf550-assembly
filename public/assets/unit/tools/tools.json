@@ -1,0 +1,235 @@
+{
+ "frame": "origin = working point, +Y = from the working point into the tool; metres",
+ "tools": {
+  "drill": {
+   "file": "drill.glb",
+   "source": "cc2672ec-Drill_with_9-16_Deep_Socket.step",
+   "note": "cordless drill, 1/4in hex to 1/4in square adapter, 9/16in 6-point deep socket",
+   "movingParts": {
+    "socket": {
+     "nodes": [
+      "Deep_Socket_9-16in_1-4in_Drive_6pt"
+     ],
+     "kind": "spin",
+     "acrossFlatsMm": 14.2875,
+     "note": "radially scaled per fastener (measured hex) - supplied size 9/16in",
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ],
+     "pivot": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "adapter": {
+     "nodes": [
+      "Adapter_1-4in_Hex_to_1-4in_Square"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ],
+     "pivot": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    },
+    "chuck": {
+     "nodes": [
+      "Drill_Part_06"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ],
+     "pivot": [
+      0.0,
+      0.116392,
+      -0.006732
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0285,
+     0.0,
+     -0.1602
+    ],
+    [
+     0.0285,
+     0.2289,
+     0.0145
+    ]
+   ],
+   "socketDepthMm": 50.46885188593052
+  },
+  "rivetgun": {
+   "file": "rivetgun.glb",
+   "source": "8a47df54-RivetGun.stp",
+   "note": "ACCUBIRD cordless blind-rivet gun",
+   "movingParts": {
+    "nose": {
+     "nodes": [
+      "ACCUBIRD_RivetGun__s3"
+     ],
+     "kind": "slide",
+     "strokeMm": 2.5,
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ]
+    },
+    "trigger": {
+     "nodes": [
+      "ACCUBIRD_RivetGun__s13"
+     ],
+     "kind": "slide",
+     "strokeMm": 4.0,
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.2447,
+     0.0,
+     -0.033
+    ],
+    [
+     0.033,
+     0.2587,
+     0.033
+    ]
+   ]
+  },
+  "caulking": {
+   "file": "caulking.glb",
+   "source": "Caulking_Dispenser_Complete.step",
+   "note": "screw-driven cartridge dispenser with WEICON HT300 (red) silicone - no trigger: the knob drives the screw",
+   "movingParts": {
+    "knob": {
+     "nodes": [
+      "Screw_with_Knob"
+     ],
+     "kind": "screw",
+     "pitchMm": 2.0,
+     "axis": [
+      0.0,
+      -1.0,
+      0.0
+     ],
+     "pivot": [
+      0.003025,
+      0.396833,
+      4.4e-05
+     ]
+    },
+    "plate": {
+     "nodes": [
+      "Pressure_Plate",
+      "Screw_M5x16_DIN7991",
+      "Cartridge_Plunger"
+     ],
+     "kind": "slide",
+     "axis": [
+      0.0,
+      -1.0,
+      0.0
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0301,
+     0.0,
+     -0.0313
+    ],
+    [
+     0.0361,
+     0.6093,
+     0.0352
+    ]
+   ],
+   "beadColour": "#c8281e"
+  },
+  "marker": {
+   "file": "marker.glb",
+   "source": "27252c7a-Marker.STEP",
+   "note": "Sharpie Fine Point Retractable (black)",
+   "movingParts": {},
+   "boundsM": [
+    [
+     -0.0067,
+     0.0,
+     -0.0067
+    ],
+    [
+     0.0067,
+     0.1656,
+     0.0115
+    ]
+   ],
+   "inkColour": "#111111"
+  },
+  "wrench": {
+   "file": "wrench.glb",
+   "source": "7a13adc8-Wrench.stp",
+   "note": "adjustable wrench, jaws modelled closed - opened on the worm to the nut's measured width",
+   "movingParts": {
+    "jaw": {
+     "nodes": [
+      "Part4"
+     ],
+     "kind": "slide",
+     "axis": [
+      0.0,
+      0.0,
+      -1.0
+     ]
+    },
+    "worm": {
+     "nodes": [
+      "Part2",
+      "Part3"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      0.0,
+      1.0
+     ],
+     "pivot": [
+      0.0361,
+      0.0,
+      -0.020565
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0133,
+     -0.0085,
+     -0.0969
+    ],
+    [
+     0.2202,
+     0.0085,
+     0.0258
+    ]
+   ],
+   "jawClosedAtOrigin": true
+  }
+ }
+}

@@ -57,6 +57,7 @@
         </div>
       </div>
       <div class="meta-chips" id="meta-chips"></div>
+      <div class="tutorial-switch" id="tutorial-switch" role="radiogroup" aria-label="Tutorial"></div>
       <div class="topbar-actions">
         <button class="btn btn-ghost" id="btn-gestures" title="Gesture control: right-hand thumbs up / down" aria-expanded="false" aria-controls="gesture-panel"><svg><use href="#i-hand"/></svg><span class="hide-sm">Gestures</span></button>
         <button class="btn btn-ghost icon-only" id="btn-help" title="Help &amp; shortcuts" aria-label="Help"><svg><use href="#i-help"/></svg></button>
@@ -121,7 +122,7 @@
             <h3><svg><use href="#i-hand"/></svg>Gesture control</h3>
             <button class="btn btn-ghost icon-only" id="gp-close" aria-label="Close gesture control"><svg><use href="#i-close"/></svg></button>
           </header>
-          <p class="gp-help"><b>Right hand only:</b> 👍 thumbs up = <b>next step</b> · 👎 thumbs down = <b>previous step</b>. Hold the gesture briefly; return your hand to neutral before the next one.</p>
+          <p class="gp-help"><b>Right hand only:</b> 👍 thumbs up = <b>next step</b> · 👎 thumbs down = <b>previous step</b>. Hold the gesture for about a quarter of a second; return your hand to neutral before the next one.</p>
           <button class="btn btn-accent gp-toggle" id="gp-toggle" aria-pressed="false">Enable gesture control</button>
           <div class="gp-preview" id="gp-preview" hidden><canvas id="gp-canvas"></canvas></div>
           <dl class="gp-status">
@@ -185,6 +186,7 @@
           <button class="tab is-active" role="tab" data-tab="bom" aria-selected="true">Indented BOM</button>
           <button class="tab" role="tab" data-tab="parts" aria-selected="false">Parts list</button>
           <button class="tab" role="tab" data-tab="steps" aria-selected="false">Steps</button>
+          <button class="panel-toggle" id="panel-toggle" type="button" aria-expanded="true" aria-controls="sidebar" title="Collapse the side panel ( [ )" aria-label="Collapse the side panel"><svg><use href="#i-chev"/></svg></button>
         </nav>
         <div class="search">
           <svg><use href="#i-search"/></svg>
@@ -256,7 +258,7 @@
       <header><h3>How to use</h3><button class="btn btn-ghost icon-only" value="close" aria-label="Close"><svg><use href="#i-close"/></svg></button></header>
       <div class="help-body">
         <p>You control the progression: press <b>NEXT STEP</b> to continue and <b>PREVIOUS STEP</b> to go back (overview → exploded parts kit → steps 1 to the final step). Nothing advances automatically. The current step's animation repeats until you move on; its instruction is spoken once when you enter the step. The highlighted part, the BOM row, the step card and the narration always refer to the same step.</p>
-        <p><b>Hands-free:</b> open <b>Gestures</b> and enable gesture control. Show a <b>right-hand thumbs up 👍</b> for the next step or a <b>thumbs down 👎</b> for the previous step; hold it briefly, then return your hand to neutral. The left hand is ignored.</p>
+        <p><b>Hands-free:</b> open <b>Gestures</b> and enable gesture control. Show a <b>right-hand thumbs up 👍</b> for the next step or a <b>thumbs down 👎</b> for the previous step; hold it for about a quarter of a second, then return your hand to neutral. The left hand is ignored.</p>
         <table class="kbd-table">
           <tr><td><kbd>→</kbd> <kbd>←</kbd></td><td>Next / previous step</td></tr>
           <tr><td><kbd>Space</kbd></td><td>Play / pause / resume narration</td></tr>

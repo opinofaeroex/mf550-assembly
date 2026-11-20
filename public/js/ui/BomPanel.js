@@ -64,6 +64,20 @@ export class BomPanel extends EventTarget {
   }
 
   #renderSteps() {
+    if (this.model.meta.tutorial === 'unit') {
+      // v2.0: grouped by phase, with the hardware of each step and a marker for open engineering items
+      let phase = null; const items = [];
+      this.model.steps.forEach((s, i) => {
+        if (s.phase !== phase) { phase = s.phase; items.push(`<li class="phase-head" aria-hidden="true">Phase ${s.phase} · ${esc(s.phaseTitle)}</li>`); }
+        const hw = (s.hardware || []).filter((h) => h.name).map((h) => `${h.qty}× ${esc(h.name)}`).join(', ');
+        items.push(`<li data-step="${i}"><span class="sn">${String(i + 1).padStart(2, '0')}</span><span class="st">${esc(s.title)}`
+          + `<span class="ss">${hw || esc(s.text.split('. ')[0])}${s.tools && s.tools.length ? ' · ' + s.tools.map((t) => esc(t.label.split(' (')[0])).join(', ') : ''}`
+          + `${s.flags && s.flags.length ? ' · <span class="badge badge-flag">check</span>' : ''}</span></span></li>`);
+      });
+      this.els.stepsList.innerHTML = items.join('');
+      this.stepEls = [...this.els.stepsList.querySelectorAll('li[data-step]')];
+      return;
+    }
     const items = this.model.steps.map((s, i) => {
       const t = positionText(this.model, i);
       const asm = this.model.node(s.assembly);

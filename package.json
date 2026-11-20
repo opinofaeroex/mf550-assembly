@@ -1,6 +1,6 @@
 {
   "name": "mf550-webar",
-  "version": "1.5.0",
+  "version": "2.0.0",
   "private": true,
   "description": "Mist-Fit 550 WebAR assembly instructions by AEROEX Technologies: Raspberry Pi performance profiles, natural neural-voice narration (pre-recorded), automatic close-up camera, right-hand gesture navigation (MediaPipe), 3x exploded view, BOM and WebXR AR, generated from a STEP CAD file.",
   "license": "UNLICENSED",
@@ -16,7 +16,10 @@
     "narration": "python3 tools/narration/generate.py",
     "narration:verify": "python3 tools/narration/verify.py",
     "model:tiers": "node tools/optimize-model.mjs",
-    "camera:plans": "node tools/precompute-camera.cjs"
+    "camera:plans": "node tools/precompute-camera.cjs",
+    "unit:analyse": "python3 pipeline/unit/analyse_unit.py MF-550-210-B_GROUPED_ASSEMBLY.step",
+    "unit:tools": "python3 pipeline/unit/build_tools.py <dir-with-tool-STEPs> public/assets/unit/tools",
+    "unit:build": "python3 pipeline/unit/build_unit.py <converter assembly.json of the grouped STEP>"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.5.1",

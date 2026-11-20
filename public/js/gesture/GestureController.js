@@ -217,7 +217,14 @@ export class GestureController extends EventTarget {
       cls = classifyGesture(right.landmarks, right.world, { aspect: frame.width / frame.height }, c.classifier);
       right.gesture = cls.gesture;
     }
-    const r = this.trigger.update(right ? cls.gesture : null, now);
+    // v2.0: confidence = handedness score × thumb verticality (feeds the smoothed trigger)
+    let conf = 0;
+    if (right) {
+      const tilt = cls.metrics && Number.isFinite(cls.metrics.tiltDeg) ? cls.metrics.tiltDeg : 0;
+      const maxTilt = (c.classifier && c.classifier.maxTiltDeg) || 65;
+      conf = Math.max(0, Math.min(1, (right.score ?? 1) * (1 - 0.4 * Math.min(1, tilt / maxTilt))));
+    }
+    const r = this.trigger.update(right ? cls.gesture : null, now, conf);
     this.dispatchEvent(new CustomEvent('frame', { detail: { hands, right, frame } }));
     this.#set({
       hand: right && hasLeft ? 'both' : right ? 'right' : hasLeft ? 'left' : 'none',

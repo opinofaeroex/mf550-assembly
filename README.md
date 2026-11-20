@@ -1,6 +1,6 @@
 # Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 1.5** (Raspberry Pi performance: profiles, lighter models, on-demand rendering — see [§ 0](#0-whats-new-in-version-15)) · by **AEROEX Technologies**
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.0** (complete unit installation tutorial with tools — see [§ 0](#0-whats-new-in-version-20)) · by **AEROEX Technologies**
 
 Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
 CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
@@ -22,7 +22,32 @@ down, and an augmented-reality mode for phones and tablets.
 
 ---
 
-## 0. What's new in version 1.5
+## 0. What's new in version 2.0
+
+A second tutorial, **Unit installation**, shows how the complete Mist-Fit 550 is installed. It starts from the
+assembled and painted main body and runs 32 steps in 9 phases. It is built from the grouped CAD assembly
+`MF-550-210-B_GROUPED_ASSEMBLY`.
+
+* **Components.** Every component and fastener is brought in along a collision-checked path and seated exactly
+  at its CAD position. Stage Filter 1, Stage Filter 2 and the HEPA filter are installed as independent modules.
+* **Supplied tools.** The tools perform the operations: the drill with a socket sized to each measured hex, the
+  rivet gun with pulled mandrels, the caulking dispenser laying a silicone bead, the marker drawing tightening
+  marks, and the adjustable wrench.
+* **Decals.** The front-panel decals come from the reference photograph.
+* **Hardware specifications.** Every hardware line shows the size measured from the CAD and its verification
+  status. Everything the supplied data does not specify is flagged for engineering confirmation:
+  [docs/unit-engineering-report.md](docs/unit-engineering-report.md).
+* **Interface.** Larger 3D view with a collapsible side panel. The new tutorial opens on its **Steps**.
+* **Gestures.** Faster, smoothed gesture recognition: about 0.25 s instead of 0.33–0.63 s.
+
+The original 69-step **Parts assembly** stays available from the header switch (or `?tutorial=parts`).
+Implementation, architecture, tests and limitations: [docs/unit-tutorial.md](docs/unit-tutorial.md).
+
+| Unit overview | Drill + resized socket | Rivet gun |
+|---|---|---|
+| ![Unit](docs/screenshots/06-unit-overview.png) | ![Drill](docs/screenshots/07-unit-drill-socket.png) | ![Rivet](docs/screenshots/08-unit-rivet-gun.png) |
+
+## 0.0 What's new in version 1.5
 
 Version 1.5 makes the same application run efficiently on a **Raspberry Pi 5** (primary target) and
 a **Raspberry Pi 4** (reduced quality) with Chromium, without removing any function: every

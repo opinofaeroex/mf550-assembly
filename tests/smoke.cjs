@@ -133,9 +133,13 @@ async function launch() {
  *  which the app would otherwise detect as "Low performance". Section [13] tests the profiles. */
 const pinProfile = (id) => `try { localStorage.setItem('mf550.perf.profile', '${id}'); } catch (e) {}`;
 
-async function openApp(browser, init, viewport = { width: 1280, height: 800 }, { setup, audio, profile = 'high', query = '' } = {}) {
+/** v2.0: sections [1]–[13] test the original parts tutorial; section [14] the unit tutorial. */
+const pinTutorial = (id) => `try { localStorage.setItem('mf550.tutorial', '${id}'); localStorage.removeItem('mf550.panel.collapsed'); } catch (e) {}`;
+
+async function openApp(browser, init, viewport = { width: 1280, height: 800 }, { setup, audio, profile = 'high', query = '', tutorial = 'parts' } = {}) {
   const page = await browser.newPage({ viewport });
   if (profile) await page.addInitScript(pinProfile(profile));
+  if (tutorial) await page.addInitScript(pinTutorial(tutorial));
   await page.addInitScript(audioSpy(audio));
   if (init) await page.addInitScript(init);
   if (setup) await setup(page);
@@ -618,25 +622,34 @@ async function testGestures(browser) {
   const unit = await page.evaluate(async () => {
     const { GestureTrigger } = await import('./js/gesture/GestureTrigger.js');
     const { physicalHand } = await import('./js/gesture/HandTracker.js');
-    const T = new GestureTrigger({ stableFrames: 5, minHoldMs: 300, cooldownMs: 1000, neutralFrames: 4, maxGapFrames: 1 });
-    const fires = [];
-    let t = 0;
-    const feed = (g, n, dt = 66) => { for (let i = 0; i < n; i++) { t += dt; const r = T.update(g, t); if (r.fire) fires.push([r.fire, t]); } };
-    feed('up', 1); const single = fires.length;
-    feed('none', 3);
-    feed('up', 4); const four = fires.length;            // 4 frames: not stable yet
-    feed('up', 40); const held = fires.length;           // held ~3 s: exactly one
-    feed('down', 20); const otherWhileLocked = fires.length; // switching gesture without neutral: ignored
-    feed('none', 4); feed('down', 6); const rearmed = fires.length;
-    feed(null, 20); feed('up', 2); feed(null, 1); feed('up', 4); const gap = fires.length;  // 1-frame gap tolerated
+    // v2.0 trigger: time-based, smoothed (gesture/GestureTrigger.js defaults)
+    const run = (hz) => {
+      const T = new GestureTrigger();
+      const fires = []; let t = 0; const dt = 1000 / hz;
+      const feed = (g, n, conf = 1) => { for (let i = 0; i < n; i++) { t += dt; const r = T.update(g, t, conf); if (r.fire) fires.push([r.fire, t]); } };
+      feed(null, 10);
+      feed('up', 1); const single = fires.length;                       // one frame: never
+      feed('none', 8);
+      feed('up', Math.round(0.13 * hz)); const blip = fires.length;      // ~0.13 s blip: never
+      feed('none', 8);
+      const t0 = t; feed('up', Math.round(3 * hz)); const held = fires.length;   // held 3 s: exactly one
+      const latency = fires.length ? Math.round(fires[fires.length - 1][1] - t0) : null;
+      feed('down', Math.round(1.5 * hz)); const otherWhileLocked = fires.length; // opposite gesture without neutral: ignored
+      feed('none', Math.round(0.45 * hz)); feed('down', Math.round(0.6 * hz)); const rearmed = fires.length;
+      feed(null, Math.round(1 * hz)); feed('up', 2); feed(null, 1); feed('up', Math.round(0.4 * hz)); const gap = fires.length;  // 1-frame drop-out
+      feed(null, Math.round(1 * hz)); feed('up', Math.round(2 * hz), 0.35); const lowConf = fires.length;          // low confidence: never
+      return { single, blip, held, latency, otherWhileLocked, rearmed, gap, lowConf, fires: fires.map((f) => f[0]).join(',') };
+    };
+    const r15 = run(15), r8 = run(8);
+    const ok = (r) => r.single === 0 && r.blip === 0 && r.held === 1 && r.otherWhileLocked === 1 && r.rearmed === 2 && r.gap === 3 && r.lowConf === 3;
     return {
-      single, four, held, otherWhileLocked, rearmed, gap, fires: fires.map((f) => f[0]).join(','),
+      ok15: ok(r15), ok8: ok(r8), lat15: r15.latency, lat8: r8.latency, fires: r15.fires + ' | ' + r8.fires,
       hands: [physicalHand('Right'), physicalHand('Right', { inputMirrored: true }), physicalHand('Right', { swap: true }),
         physicalHand('Right', { inputMirrored: true, swap: true }), physicalHand('Left')].join(','),
     };
   });
-  check(unit.single === 0 && unit.four === 0 && unit.held === 1 && unit.otherWhileLocked === 1 && unit.rearmed === 2 && unit.gap === 3,
-    `trigger: 1 frame / 4 frames do not fire, a 3 s hold fires once, re-armed only after neutral, 1-frame drop-out tolerated (${unit.fires})`);
+  check(unit.ok15 && unit.ok8 && unit.lat15 <= 280 && unit.lat8 <= 280,
+    `trigger (v2.0, smoothed): 1 frame / 0.13 s blips never fire, a 3 s hold fires once after ${unit.lat15} ms at 15 Hz / ${unit.lat8} ms at 8 Hz (v1.x: 333 / 625 ms), opposite gesture ignored until neutral, 1-frame drop-out tolerated, low-confidence frames ignored (${unit.fires})`);
   check(unit.hands === 'Right,Left,Left,Right,Left', `handedness: raw frames = physical hand, mirrored input or swap option invert it (${unit.hands})`);
 
   // ---- end to end: fake camera (Chromium) + scripted tracker -----------------------
@@ -785,6 +798,7 @@ async function testAR(browser) {
   }
   const page = await browser.newPage({ viewport: { width: 1000, height: 700 } });
   await page.addInitScript(pinProfile('high'));
+  await page.addInitScript(pinTutorial('parts'));
   await page.addInitScript(speechMock() + fakeTracker);
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
@@ -1414,6 +1428,126 @@ async function testPerformance(browser) {
   }
 }
 
+
+async function testUnit(browser) {
+  console.log('\n[14] unit installation tutorial (v2.0)');
+  const { page, errors } = await openApp(browser, speechMock(), { width: 1400, height: 860 }, { tutorial: 'unit' });
+  await waitFor(page, () => document.getElementById('loader').style.display === 'none', null, 60000);
+  const d = await page.evaluate(() => {
+    const m = app.model;
+    const parts = m.partIds.map((id) => m.node(id));
+    const once = parts.every((n) => Number.isInteger(n.step));
+    const installs = new Map(); m.steps.forEach((s, i) => s.nodes.forEach((id) => installs.set(id, (installs.get(id) || 0) + 1)));
+    const exactlyOnce = parts.every((n) => installs.get(n.id) === 1);
+    // every motion ends at the CAD pose: last key = identity delta (angle = whole turns)
+    // a fastener started by hand in one step and tightened in the next continues from where it was
+    // left: what matters is the LAST track of every part, and the hand-off between the two steps
+    let worstT = 0, worstQ = 0, worstA = 0, handoff = 0;
+    const lastTrack = new Map(), prevEnd = new Map();
+    m.steps.forEach((s, i) => s.tracks.parts.forEach((tr) => {
+      const pe = prevEnd.get(tr.node);
+      if (pe) handoff = Math.max(handoff, Math.hypot(pe[1] - tr.keys[0][1], pe[2] - tr.keys[0][2], pe[3] - tr.keys[0][3]));
+      prevEnd.set(tr.node, Math.hypot(tr.keys[tr.keys.length - 1][1], tr.keys[tr.keys.length - 1][2], tr.keys[tr.keys.length - 1][3]) > 1e-6 ? tr.keys[tr.keys.length - 1] : null);
+      lastTrack.set(tr.node, tr);
+    }));
+    [...lastTrack.values()].forEach((tr) => {
+      const k = tr.keys[tr.keys.length - 1];
+      worstT = Math.max(worstT, Math.hypot(k[1], k[2], k[3]));
+      worstQ = Math.max(worstQ, 1 - Math.abs(k[7]));
+      const turns = k[8] / (2 * Math.PI); worstA = Math.max(worstA, Math.abs(turns - Math.round(turns)));
+    });
+    // independent filter modules: own step each, the whole module and nothing else installed there
+    const grp = (name) => parts.filter((n) => app.model.node(n.parent).name === name).map((n) => n.id);
+    const mod = ['StageFilter1_MechanicalFilter', 'StageFilter2_MechanicalFilter', 'HepaFilter'].map((g) => {
+      const ids = grp(g); const st = new Set(ids.map((id) => m.node(id).step));
+      const s = m.steps[[...st][0]];
+      return { g, n: ids.length, oneStep: st.size === 1, alone: s.nodes.length === ids.length, title: s.title };
+    });
+    // hardware quantities in the steps = quantities in the CAD
+    const base = (n) => n.replace(/\s*\(\d+\)$/, '');
+    const cad = {}; parts.forEach((n) => { const b = base(n.name); if (/Rivet|Nut|Screw|Bolt|Washer/.test(b) && !/Blind Rivet|Spring Nut/.test(b)) cad[b] = (cad[b] || 0) + 1; });
+    const listed = {}; m.steps.forEach((s, i) => (s.hardware || []).forEach((h) => { if (!m.steps.slice(0, i).some((p) => false)) listed[h.name] = (listed[h.name] || 0) + 0; }));
+    const inst = {}; m.steps.forEach((s) => s.nodes.forEach((id) => { const b = base(m.node(id).name); if (b in cad) inst[b] = (inst[b] || 0) + 1; }));
+    const qtyOk = Object.keys(cad).every((b) => inst[b] === cad[b]);
+    const specOk = m.steps.every((s) => (s.hardware || []).every((h) => h.status && (h.size || h.confirm)));
+    const checks = m.steps.flatMap((s) => s.checks); const clear = checks.filter((c) => c.clear).length;
+    const unclearFlagged = m.steps.every((s) => s.checks.every((c) => c.clear) || s.flags.length > 0);
+    const toolSteps = {}; m.steps.forEach((s, i) => s.tracks.tools.forEach((t) => { (toolSteps[t.tool] = toolSteps[t.tool] || []).push(i + 1); }));
+    const socketSizes = [...new Set(m.steps.flatMap((s) => s.tracks.tools.filter((t) => t.tool === 'drill' && !t.bit).map((t) => +t.socketAF.toFixed(2))))];
+    return { N: m.stepCount, tab: app.bom.tab, once, exactlyOnce, worstT, worstQ, worstA, handoff, mod, qtyOk, cad, inst, specOk, clear, checks: checks.length, unclearFlagged,
+      toolSteps, socketSizes, line: document.querySelector('#tutorial-switch [aria-checked="true"]').textContent };
+  });
+  check(d.N >= 23 && d.tab === 'steps' && d.line === 'Unit installation' && errors.length === 0,
+    `unit tutorial loads: ${d.N} steps, side panel opens on Steps, tutorial switch "${d.line}"`);
+  check(d.once && d.exactlyOnce, 'every one of the 220 CAD components is installed in exactly one step');
+  check(d.worstT < 1e-6 && d.worstQ < 1e-6 && d.worstA < 1e-6 && d.handoff < 1e-6,
+    `every part ends exactly at its CAD position (max residual ${d.worstT.toExponential(1)} m); hand-started fasteners continue in the next step from where they were left`);
+  check(d.mod.every((x) => x.oneStep && x.alone), `filter modules independent: ${d.mod.map((x) => `${x.g.replace('_MechanicalFilter', '')} (${x.n} parts) → "${x.title}"`).join('; ')}`);
+  check(d.qtyOk && d.specOk, `hardware quantities equal the CAD (${Object.entries(d.cad).map(([k, v]) => `${k} ${v}`).join(', ')}); every hardware line has a size or a confirmation note and a status`);
+  check(d.clear / d.checks > 0.97 && d.unclearFlagged, `path / tool collision checks: ${d.clear} / ${d.checks} clear; the rest are flagged on their step`);
+  check(['drill', 'rivetgun', 'caulking', 'marker', 'wrench'].every((t) => d.toolSteps[t]) && d.socketSizes.length >= 3,
+    `supplied tools animated: ${Object.entries(d.toolSteps).map(([t, s]) => `${t} (steps ${[...new Set(s)].join(',')})`).join('; ')}; sockets ${d.socketSizes.join(' / ')} mm`);
+
+  // runtime: tool appears only while used, socket engages the fastener, bead grows, nothing duplicates, never auto-advances
+  const rt = await page.evaluate(async () => {
+    const m = app.model; const seq = app.seq; const rig = app.rig;
+    const k = m.steps.findIndex((s) => s.title === 'Tighten the motor mounting bolts');
+    seq.goTo(k); seq.speed = 0;
+    const tr = m.steps[k].tracks.tools[0];
+    rig.apply(k, tr.keys[0][0] - 0.2); const before = rig.tools.drill.group.visible;
+    const spin = tr.sub.socket[0][0] + 0.05;               // socket starts turning
+    rig.apply(k, spin); const during = rig.tools.drill.group.visible;
+    app.viewer.scene.updateMatrixWorld();
+    const sock = rig.tools.drill.group.getWorldPosition(new (rig.tools.drill.group.position.constructor)());
+    const THREE = await import('three');
+    let nearest = Infinity;
+    for (const id of m.steps[k].tracks.parts.map((p) => p.node)) {
+      const b = new THREE.Box3().setFromObject(app.loaded.objects.get(id)); nearest = Math.min(nearest, b.distanceToPoint(sock));
+    }
+    rig.apply(k, m.steps[k].duration); const after = rig.tools.drill.group.visible;
+    // silicone bead grows during its step and stays complete afterwards
+    const kb = m.steps.findIndex((s) => s.tracks.fx.some((f) => f.type === 'bead'));
+    const bead = m.steps[kb].tracks.fx.find((f) => f.type === 'bead');
+    seq.goTo(kb); seq.speed = 0;
+    const mesh = () => rig.fx.get(kb).find((o) => o.userData.fx.type === 'bead');
+    rig.apply(kb, (bead.grow[0] + bead.grow[1]) / 2); const mid = mesh().geometry.drawRange.count;
+    rig.apply(kb, bead.grow[1] + 0.1); const full = mesh().geometry.drawRange.count;
+    seq.goTo(kb + 1); const persists = mesh().visible && mesh().geometry.drawRange.count === full;
+    // loop: same objects every repeat; the sequence never advances on its own
+    const kd = m.steps.findIndex((s) => s.title === 'Fasten the filter cover');
+    seq.goTo(kd); seq.speed = 1;
+    const count = () => { let n = 0; app.viewer.scene.traverse(() => n++); return n; };
+    const n0 = count(); const dur = m.steps[kd].duration;
+    for (let i = 0; i < 3; i++) seq.update(dur + seq.hold + 0.1);
+    for (let f = 0; f < 30; f++) seq.update(0.1);
+    return { before, during, nearestMm: nearest * 1000, after, mid, full, persists, loops: seq.loopCount, pos: seq.pos === kd, sameCount: count() === n0, socketAF: tr.socketAF };
+  });
+  check(!rt.before && rt.during && !rt.after && rt.nearestMm < 2, `drill visible only while used; the ${rt.socketAF} mm socket sits on the bolt head while turning (${rt.nearestMm.toFixed(2)} mm from it)`);
+  check(rt.mid > 0 && rt.mid < rt.full && rt.persists, `silicone bead grows along its path (${rt.mid} → ${rt.full} indices) and stays applied in the following steps`);
+  check(rt.loops >= 3 && rt.pos && rt.sameCount, `step animation loops (${rt.loops}×) without duplicating objects and never advances on its own`);
+
+  // decals after their step, camera behaviour, collapsible panel
+  const ui = await page.evaluate(async () => {
+    const m = app.model; const k = m.steps.findIndex((s) => s.title === 'Apply the front panel decals');
+    app.seq.goTo(k + 1);
+    const decals = app.rig.fx.get(k).filter((o) => o.userData.fx.type === 'decal');
+    const applied = decals.length === 3 && decals.every((o) => o.visible && o.material.map && o.material.map.image);
+    const w0 = document.getElementById('viewport').clientWidth;
+    document.getElementById('panel-toggle').click();
+    let w1 = w0;
+    for (let i = 0; i < 60 && w1 <= w0 + 200; i++) { await new Promise((r) => setTimeout(r, 100)); w1 = document.getElementById('viewport').clientWidth; }
+    document.getElementById('panel-toggle').click();
+    app.cameraCtl.pauseByUser(); const paused = app.cameraCtl.mode;
+    app.next('test'); const resumed = app.cameraCtl.mode;
+    return { applied, w0, w1, paused, resumed };
+  });
+  check(ui.applied, 'front panel decals (AEROEX logo, MIST-FIT, MF-550) applied from the supplied photograph and kept after their step');
+  check(ui.w1 > ui.w0 + 200, `side panel collapses: 3D view ${ui.w0} → ${ui.w1} px wide`);
+  check(ui.paused === 'paused' && ui.resumed === 'auto', 'automatic camera pauses on user orbit and resumes on the next step');
+  check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
+  await page.close();
+}
+
 (async () => {
   await startServer();
   const browser = await launch();
@@ -1430,6 +1564,7 @@ async function testPerformance(browser) {
     if (run('branding')) await testBrandingAndBom(browser);
     if (run('voice')) await testVoiceAssets(browser);
     if (run('perf')) await testPerformance(browser);
+    if (run('unit')) await testUnit(browser);
   } finally {
     await browser.close();
     if (server) server.kill();

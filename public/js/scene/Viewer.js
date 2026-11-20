@@ -259,6 +259,7 @@ export class Viewer {
 
   /** Lift needed (stage space) so that the current pose of the model stands on y = 0. */
   #measureLift() {
+    if (this.fixedLift !== undefined) return this.fixedLift;    // v2.0 unit tutorial: the main body stands still
     if (this.perf.analyticLift && this.liftProvider) return Math.max(0, -this.liftProvider());
     const y = this.modelRoot.position.y;
     this.modelRoot.position.y = 0;
@@ -332,6 +333,19 @@ export class Viewer {
   }
 
   cancelCameraTween() { this.#camTween = null; }
+
+  /** Move the camera to look at `target` from `position` (world space), smoothly unless animate=false. */
+  flyTo(target, position, animate = true, dur = 0.9) {
+    this.requestRender();
+    if (!animate) {
+      this.#camTween = null;
+      this.controls.target.copy(target);
+      this.camera.position.copy(position);
+      this.controls.update();
+      return;
+    }
+    this.#camTween = { t: 0, dur, fromT: this.controls.target.clone(), toT: target.clone(), fromP: this.camera.position.clone(), toP: position.clone() };
+  }
 
   /** Active camera for picking/projection (XR camera when presenting). */
   activeCamera() {

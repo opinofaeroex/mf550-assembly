@@ -4,10 +4,21 @@
 export const CONFIG = {
   /** Product name shown in the interface (the CAD/internal identifier stays MF-550-210-B). */
   productName: 'Mist-Fit 550',
-  version: '1.5.0',
+  version: '2.0.0',
 
   assemblyUrl: 'assets/model/assembly.json',
   modelDir: 'assets/model/',
+
+  /**
+   * v2.0: two tutorials. 'unit' = installation of the complete unit (grouped CAD assembly,
+   * data-driven steps with tools: pipeline/unit/), 'parts' = the original 69-step parts
+   * assembly. Choice: URL ?tutorial= > saved choice > default.
+   */
+  tutorials: {
+    default: 'unit',
+    unit: { label: 'Unit installation', assemblyUrl: 'assets/unit/assembly.json', modelDir: 'assets/unit/' },
+    parts: { label: 'Parts assembly', assemblyUrl: 'assets/model/assembly.json', modelDir: 'assets/model/' },
+  },
 
   /**
    * Exploded-view distance multiplier.
@@ -56,7 +67,8 @@ export const CONFIG = {
     detection: { minHandDetectionConfidence: 0.6, minHandPresenceConfidence: 0.6, minTrackingConfidence: 0.5 },
     minHandScore: 0.7,            // handedness confidence required to accept a hand as left/right
     inputMirrored: false,         // raw camera frames are analysed; the preview is mirrored by CSS only
-    trigger: { stableFrames: 5, minHoldMs: 300, cooldownMs: 1000, neutralFrames: 4, maxGapFrames: 1 },
+    // v2.0: time-based, smoothed trigger (gesture/GestureTrigger.js): ≈0.25 s hold, short neutral re-arm
+    trigger: { tauMs: 110, fireLevel: 0.6, margin: 0.3, minHoldMs: 120, minFrames: 2, neutralLevel: 0.6, neutralMs: 250, cooldownMs: 600, minConfidence: 0.5 },
     classifier: {},               // overrides of DEFAULT_CLASSIFIER (gesture/GestureClassifier.js)
   },
 
