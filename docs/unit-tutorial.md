@@ -1,4 +1,4 @@
-# Unit installation tutorial — technical implementation report (v2.0)
+# Unit installation tutorial — technical implementation report (v2.0, refined in v2.1)
 
 The v2.0 tutorial shows how the **complete Mist-Fit 550 unit** is installed, starting from the assembled and
 painted main body. It covers 32 steps in 9 phases, with tool operations, silicone, tightening marks and decals.
@@ -6,6 +6,123 @@ It is an extension of the existing application. The original 69-step parts tutor
 switch (*Unit installation · Parts assembly*) or `?tutorial=parts` opens it.
 
 Engineering data, open items and validation results: **[unit-engineering-report.md](unit-engineering-report.md)**.
+
+## v2.1 — camera, mechanical accuracy and sequence refinements
+
+v2.1 refines the v2.0 tutorial in place (same pipeline, same runtime modules, same step data format plus
+two optional fields). What changed and how:
+
+**Automatic camera — per-operation shots (`build_unit.py` → `UnitCamera.js`).**
+
+* At build time every operation records camera *shots* `[t, target, direction, radius]` in the model frame:
+  * an opening **overview** of the step: the components at their starting points and where they go;
+  * a **wide** view of every rigid placement (whole path), then a **close-up** of its mounting interface;
+  * a **close-up** of every fastener as it is inserted;
+  * a **tool** view of every drill / rivet-gun / wrench / marker / caulking operation;
+  * a wider **result** view at the end.
+* **Direction.** Candidates cover the sphere (elevations −55° … 70°, every 30° of azimuth) plus the step's
+  preferred direction. Each is scored by:
+  * closeness to the step's preferred view;
+  * the insertion axis seen from the side (50°; 65° for tool views, so the tool and the joint are both seen);
+  * a clear line of sight. A thin cylinder from the working point to the camera is collision-checked against
+    the installed parts and, for tool views, against the tool body at its working pose. In x-ray steps only the
+    step's own parts count, because the rest is ghosted.
+  * a heavy penalty if the camera position is inside geometry (sphere test).
+* **Zoom.** The radius is the framing sphere, with a minimum per kind: 62 mm for fasteners, 120 mm for tool
+  operations and placements, the step's extent for overview and result. At run time
+  `viewer.fitDistance(radius)` turns it into a distance, so the zoom adapts to the viewport and step card.
+* **Run time.** `UnitCamera.update()` runs every frame (after the sequencer):
+  * it blends target, direction and distance between consecutive shots on the step clock;
+  * it smooths the result by orbiting about the target (direction slerp, log-distance), so it never cuts
+    straight through the unit;
+  * it pauses when the user orbits, zooms or pans, and never overrides them;
+  * Refocus (or the next step) resumes at the current shot; a loop restart returns to the first shot.
+  * The animation never depends on the camera.
+* **Underside steps.** Base clip nuts, impeller lift and bellmouth set `camera.underside`, which hides the floor
+  shadow. So does the components view, whose parts are staged below the base.
+
+**Collision-aware motion (`build_unit.py`).** The main body is checked as its real parts (exact meshes in
+FCL), not as a box, so access openings stay open.
+
+* **Clip nuts.** They slide on with the mating sheet *not* tolerated. A small ride offset along the clip axis
+  is searched (the spring legs over the sheet); only the final snap may touch the sheet (CAD clip/sheet
+  interference). v2.0 tolerated the sheet for the whole slide.
+* **Tools.**
+  * The roll about the working axis must keep the whole straight retract along the axis clear (sampled up to
+    130 mm), not only the working pose.
+  * Hops between fasteners rise to a clearance height, or are routed around the unit (outside its box, via
+    one or two vertical edges or over the top) when a straight hop would cross it.
+  * Every segment of every tool track is sampled and recorded. Rivets are worked around the unit in angular
+    order.
+* **Wrench.** The roll must keep the whole stroke clear (engaged, swung, lifted off, approach).
+  * One bracket bolt next to the front wall has only a 28° clear arc. It gets 25° strokes and is flagged.
+  * The strain-relief locknut has no clear swing inside the chamber (233 mm wrench: a single ~10° gap). It is
+    seated by hand and held, while the strain-relief hex is turned from outside. This is flagged.
+* **Vertical first.**
+  * Base clip nuts rise 40 mm straight up onto the bottom edge of the base flange.
+  * The door clip nuts rise onto their flange.
+  * The filter clamp bolt brackets come down from above, then in 40 mm.
+  * The impeller rises from below (next point).
+
+**Phase 3 order.** Position the motor mounting bracket → fasten it → lock washers → **impeller and drive motor**
+→ motor bolts → tighten → mark.
+
+* The bracket is now fitted first, with nothing in the way. Its overview shows it above its supports, then a
+  close-up of the interface.
+* The motor can then only come from below. The base is open (checked: the impeller assembly rises 640 mm
+  straight up without touching anything).
+  * Below the unit, the wheel slides up onto the motor shaft, then the inlet bellmouth rises under it. Both
+    relative motions are checked mesh-to-mesh.
+  * The assembly is then raised into the fitted bracket.
+* The motor bolts thread into the motor, so inserting, tightening and marking them must follow it. They are
+  the last three steps of the phase.
+
+**Pre-installed rivets.**
+
+* Closed-End Rivet (22), (23), (35), (24), (39), (37), (26), (27), (25), (36) join the back panel to the unit
+  body. They are installed with the main body.
+* They are visible at their CAD positions from step 1, listed as pre-installed hardware on step 1 and in the
+  BOM, and never animated.
+* *Rivet the back panel* now sets only the three back-panel/filter-base rivets. The rivet gun is still used in
+  5 steps.
+
+**Drill.**
+
+* The drill travels to each fastener, aligns the socket and engages. Its body and socket then stay still.
+* The fastener turns clockwise seen from the tool side, i.e. the right-hand tightening sense; v2.0 had the
+  sign reversed for some.
+* An orange curved arrow (`spinArrow` fx: 270° torus arc and cone, `MeshBasicMaterial` #ff7a1a, a few hundred
+  triangles) around the fastener axis is visible only between engagement and seating. It fades in and out and
+  turns slowly in the tightening sense.
+* Hex parts end on a multiple of 60° instead of a whole turn (identical look), so wrench strokes and part
+  rotation stay in step.
+
+**Rivet gun materials (`UnitRig.js`).** The supplied model keeps its geometry and gets materials per solid:
+
+* orange housing; the dark rubber grip is told apart from the housing by a per-vertex colour, because they are
+  one solid;
+* dark guard, battery and trigger;
+* satin steel nose and screws.
+
+No textures are needed or loaded (the model has no UVs), and roughness is ≥ 0.38 everywhere (not glossy).
+
+**Exploded views ×2.**
+
+* **Parts tutorial.** `explodeScale` goes from 3 to 6 (`config.js`). The 17 longest of 208 vectors (> 0.8 m
+  at ×6) are soft-capped (`explodeSoftCap`, growth × 0.25 beyond 0.8 m, same direction), so the kit stays in
+  the useful view; the other 191 are exactly 2× v2.0. The precomputed camera plans were regenerated.
+* **Unit components view.** Staging offsets are doubled (`UnitRig.KIT_SCALE`), capped at 0.75 m
+  (`KIT_MAX`, never shorter than v2.0). 111 of the 183 staged components are exactly 2×. The other 72 already
+  start more than 0.375 m away on long approach paths (for example the impeller assembly from below, the HEPA
+  filter and the stage filter modules) and are capped.
+
+**Operator UI.**
+
+* Yellow is gone: `--warn` is neutral grey, and the step note, *check* badges and conflict status are neutral.
+* Open engineering items (`flags`) are no longer shown on the operator card. They stay in the step data and in
+  the engineering report.
+* Safety instructions are part of the step text (e.g. "with the unit de-energised").
+* Decals fade with the ghosted body in x-ray steps.
 
 ## 1. Sources
 
@@ -108,15 +225,17 @@ Tools are checked at their working pose. The roll about the working axis is chos
 the unit. Where no roll clears, the fastener is tightened with the supplied adjustable wrench instead
 (hex heads only); otherwise the case is flagged.
 
-Results: 200 checks, 198 clear. The 2 that are not clear are two screws whose insertion path runs through the
-support-track flange in the CAD; they are flagged.
+Results (v2.1, stricter rules above): 198 checks, 196 clear; every tool path (16) and every clip-nut slide
+(14) is clear. The 2 that are not clear are two self-tapping screws whose insertion path runs through the
+support-track flange in the CAD (no access hole modelled); they are flagged.
 
 Paths found this way (not assumed):
 
 * The **bellmouth mounting plate** enters through the front filter opening, rises slightly set back from the
   front wall, then slides forward into its slot.
 * The **stage filters** slide in from the front.
-* The **impeller / motor** and the **HEPA filter** are lowered from above.
+* The **HEPA filter** is lowered from above; the **impeller / motor** rises from below into the fitted
+  bracket (v2.1).
 * The **motor bracket** is lowered with its clip nuts on the supports.
 * The **bellmouth flange nuts** go on before their bolts, because they sit under the impeller shroud.
 
@@ -125,9 +244,10 @@ Paths found this way (not assumed):
 * **Larger 3D view.** The side panel is 340 px wide (was 400 px). It can be **collapsed to a 36 px strip** with
   its toggle or the `[` key; the choice is remembered. On phones it remains the bottom sheet.
 * **Steps by default.** The unit tutorial opens the panel on **Steps**, grouped by phase, with each step's
-  hardware, tools and a *check* badge for open engineering items. BOM and Parts list stay one click away.
+  hardware and tools (v2.1: no *check* badge). BOM and Parts list stay one click away.
 * **Step card.** Shows the phase, the instruction, and hardware lines in the
-  `Name – size × length – Quantity: n` format with their status. It also lists the tools and the flags.
+  `Name – size × length – Quantity: n` format with their status. It also lists the tools (v2.1: open
+  engineering items are no longer shown on the card).
 * **Gestures** (`gesture/GestureTrigger.js`). Time-based and smoothed:
   * evidence is an exponential average (τ = 110 ms), weighted by confidence (handedness score × thumb
     verticality);
@@ -158,6 +278,24 @@ section [14], which checks:
 * the camera pauses on user input and resumes on the next step;
 * there are no page errors.
 
+v2.1 adds:
+
+* the base clip nuts start 40 mm straight below their seats, with an underside camera;
+* the 10 pre-installed rivets are installed at step 1, never animated and get no rivet-gun operation, while the
+  gun is still used in 5 steps;
+* the Phase 3 order;
+* no drill rotation channel, the drill body fixed during tightening, and the orange arrow visible only during
+  tightening;
+* every tool path and clip slide is collision-free;
+* every step has its own shot plan, no camera is inside geometry, and the zoom range is checked;
+* at run time the camera follows the shots, is never overridden while paused, returns on Refocus and on a loop
+  restart;
+* the rivet-gun materials;
+* the unit components view at ×2;
+* no yellow warning colour, note or badge.
+
+Section [2] checks the parts-tutorial ×6 vectors and the soft cap.
+
 The trigger test checks:
 
 * single frames and 0.13 s blips never fire;
@@ -167,7 +305,8 @@ The trigger test checks:
 
 ## 7. Known limitations
 
-* Items without supplied engineering data are shown with a visible *requires engineering confirmation* note:
+* Items without supplied engineering data are recorded as *requires engineering confirmation* (v2.1: in the
+  hardware status lines and the engineering report, no longer as a warning note on the card):
   * torque values;
   * thread designations and grades;
   * guard fasteners;

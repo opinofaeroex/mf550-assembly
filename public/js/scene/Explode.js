@@ -8,7 +8,9 @@ import * as THREE from 'three';
  * f = 0 is the exact CAD position, so the assembled state is always the
  * original geometry; vectors come from the pipeline's disassembly analysis.
  * `scale` (CONFIG.explodeScale) lengthens every vector by the same factor —
- * hardware, parts and sub-assemblies — without changing any direction.
+ * hardware, parts and sub-assemblies — without changing any direction. v2.1: an optional
+ * soft cap (CONFIG.explodeSoftCap) shortens only the few very long vectors beyond `from`
+ * metres (growth × `rate` past it), direction unchanged.
  * Nested sub-assemblies inherit their parent's offset through the scene graph.
  *
  * v1.5: apply() only touches components whose factor changed and reports whether
@@ -17,8 +19,9 @@ import * as THREE from 'three';
  * what a bounding-box pass over the whole model returns, because components only translate.
  */
 export class ExplodeController {
-  constructor(model, objects, scale = 1) {
+  constructor(model, objects, scale = 1, softCap = null) {
     this.scale = scale;
+    this.softCap = softCap;
     this.entries = [];
     for (const n of model.nodes.values()) {
       const v = n.explode;
@@ -30,7 +33,7 @@ export class ExplodeController {
         obj,
         base: obj.position.clone(),                          // exact CAD position
         baseVec,
-        vec: baseVec.clone().multiplyScalar(scale),          // displayed displacement
+        vec: ExplodeController.displayed(baseVec, scale, softCap),   // displayed displacement
         step: n.step,
         depth: n.depth,
       });
@@ -40,6 +43,14 @@ export class ExplodeController {
     this.index = new Map(this.entries.map((e, i) => [e.id, i]));
     this.onChange = null;
     this.version = 0;
+  }
+
+  /** Displayed displacement of a pipeline vector (scale, then the optional soft cap). */
+  static displayed(baseVec, scale, softCap) {
+    const v = baseVec.clone().multiplyScalar(scale);
+    const L = v.length();
+    if (softCap && L > softCap.from) v.multiplyScalar((softCap.from + (L - softCap.from) * softCap.rate) / L);
+    return v;
   }
 
   /** Write the factors to the scene. Returns true if any component moved. */

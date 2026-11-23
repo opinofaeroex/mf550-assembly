@@ -1,6 +1,6 @@
 # Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.0** (complete unit installation tutorial with tools — see [§ 0](#0-whats-new-in-version-20)) · by **AEROEX Technologies**
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.1** (per-operation camera, collision-free motions, Phase 3 reorder — see [§ 0](#0-whats-new-in-version-21); unit installation tutorial: [§ 0.00](#000-whats-new-in-version-20)) · by **AEROEX Technologies**
 
 Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
 CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
@@ -22,7 +22,53 @@ down, and an augmented-reality mode for phones and tablets.
 
 ---
 
-## 0. What's new in version 2.0
+## 0. What's new in version 2.1
+
+A refinement of the v2.0 unit installation tutorial. It is built on the same architecture; nothing was removed.
+Details: [docs/unit-tutorial.md § v2.1](docs/unit-tutorial.md#v21--camera-mechanical-accuracy-and-sequence-refinements).
+
+* **Camera that follows the operation.** Every step has its own camera plan, computed from the CAD and stored
+  in the step data. Each operation's shots go:
+  1. an overview of the components and where they go;
+  2. the approach;
+  3. a close-up of every fastener with its tool;
+  4. a wider result view.
+
+  Each direction is checked so that nothing hides the working point (installed parts and the tool body) and
+  the camera never sits inside geometry. The zoom follows the operation: about 6 cm framing for small
+  fasteners, 12 cm for tools and brackets, the whole module for filters. Moving the view yourself pauses it;
+  **Refocus** (`C`) resumes it.
+* **Collision-free motions.** Every clip-nut slide, every component path and every tool path is collision-checked
+  against the main body's real parts, not a bounding box, so openings stay open.
+  * **Clip nuts.** The eight base clip nuts now rise straight up from below, seen from underneath.
+  * **Tools.** Drill and rivet gun choose a roll that keeps the whole retract clear, and hop between
+    fasteners around the unit, not through it.
+  * **Wrench.** Its full stroke is checked.
+  * **Residual items.** Two CAD issues remain: two screws whose hole is not modelled. They are listed in the
+    [engineering report](docs/unit-engineering-report.md).
+* **Phase 3 reordered.** The motor mounting bracket comes first (positioned, fastened, lock washers).
+  * The impeller and drive motor then rise from below into it.
+  * Motor bolts, tightening and marks follow, because the bolts thread into the motor.
+* **Pre-installed rivets.** The ten back-panel rivets — Closed-End Rivet (22), (23), (35), (24), (39), (37), (26),
+  (27), (25), (36) — come with the main body: shown from step 1, kept in the BOM, never animated. The rivet gun
+  is still used for the other 34 rivets.
+* **Drill.** The drill no longer rotates. It travels to each bolt and engages. An **orange curved arrow**
+  around the fastener axis shows the clockwise tightening, only while the bolt turns.
+* **Rivet gun.** Orange housing, dark rubber grip and guard, satin steel nose; original geometry, no textures to
+  download.
+* **Exploded views ×2.**
+  * **Parts tutorial.** `explodeScale` goes from 3 to 6; the 17 longest of 208 vectors are soft-capped so the
+    kit stays in view.
+  * **Unit components view.** Offsets are doubled, capped at 0.75 m.
+* **No yellow warnings.** Open engineering items are no longer shown as warning notes or badges on the operator
+  card; they stay in the [engineering report](docs/unit-engineering-report.md). Safety instructions remain in
+  the step text, and status colours are neutral.
+
+| Base clip nuts from below | Drill + rotation arrow | Rivet gun materials | Exploded view ×2 |
+|---|---|---|---|
+| ![Nuts](docs/screenshots/09-v21-base-nuts.png) | ![Arrow](docs/screenshots/10-v21-drill-arrow.png) | ![Rivet](docs/screenshots/11-v21-rivet-gun.png) | ![Exploded](docs/screenshots/12-v21-exploded.png) |
+
+## 0.00 What's new in version 2.0
 
 A second tutorial, **Unit installation**, shows how the complete Mist-Fit 550 is installed. It starts from the
 assembled and painted main body and runs 32 steps in 9 phases. It is built from the grouped CAD assembly
@@ -299,7 +345,7 @@ All camera features need HTTPS (the GitHub Pages site is HTTPS).
 |---|---|
 | **Manual step navigation** | The app never advances on its own. **NEXT STEP** / **PREVIOUS STEP** (transport bar, AR overlay, `→` / `←`) move along the track *Overview → Parts kit → Step 1 … Step 69*. PREVIOUS is disabled on the overview, NEXT on the final step. You can navigate while an animation or a narration is running: the running animation is replaced (never queued) and the narration is cancelled. The former Play/autoplay mode and `?autoplay` were removed. |
 | **Voice narration** | Every position has a spoken explanation (`public/js/audio/narrationScript.js`): operation, components and quantities, install direction, BOM item / part number / quantity, the step's purpose in the assembly structure (which sub-assembly it builds and in which step that sub-assembly is installed) and the documented geometry notes. It starts automatically when you enter a step; changing step stops it immediately. **Play / Pause / Resume** (one button, `Space`), **Replay** (`P`, replays narration *and* the step animation), **Mute / Unmute** (`M`, remembered), voice and speed selector (⚙). The end of the narration never changes the step. *(Since v1.2 the voice says only the short step title and instruction.)* |
-| **3× exploded view** | Every displacement vector — hardware, parts and sub-assemblies — is multiplied by `explodeScale = 3` (`public/js/config.js`). Directions, removal order and assembly relationships are unchanged; the assembled state is still the exact CAD position. The camera frames the larger exploded view beside the step card. |
+| **3× exploded view** *(6× since v2.1)* | Every displacement vector — hardware, parts and sub-assemblies — is multiplied by `explodeScale = 3` (`public/js/config.js`; v2.1: 6, with a soft cap on the longest vectors). Directions, removal order and assembly relationships are unchanged; the assembled state is still the exact CAD position. The camera frames the larger exploded view beside the step card. |
 | **iOS AR Quick Look** | Choose **this step** (loops the current step's motion, consistent with manual navigation) or the **full sequence**; both use the 3× vectors and are generated on the device. |
 
 ### Voice technology — what it is and what it is not
@@ -399,7 +445,7 @@ mf550-webar/
 │   ├── css/app.css
 │   ├── js/
 │   │   ├── main.js                 app bootstrap & wiring (single data flow)
-│   │   ├── config.js               explodeScale (3), narration settings, asset paths        (v1.1)
+│   │   ├── config.js               explodeScale (6 since v2.1), narration settings, asset paths (v1.1)
 │   │   ├── state/AppState.js       observable UI state store                                 (v1.1)
 │   │   ├── audio/Narrator.js       narration: natural voice first, browser voice as fallback  (v1.4)
 │   │   ├── audio/RecordedVoice.js  plays the pre-recorded MP3s: preload, cache, stale guard   (v1.4)
@@ -577,7 +623,8 @@ every assembly level of the hierarchy:
    parts leaving in the same direction keep their order. In the assembled state every component is at
    its **exact CAD transform** (`npm test` checks a maximum offset of 0).
 6. **Display scale (v1.1).** `assembly.json` keeps these vectors exactly as computed (1×). The viewer
-   multiplies all of them by `CONFIG.explodeScale = 3` (`public/js/config.js`) — hardware, parts and
+   multiplies all of them by `CONFIG.explodeScale` (`public/js/config.js`; 3 in v1.1–v2.0, **6 since v2.1**,
+   with `explodeSoftCap` shortening only the ~8 % of vectors longer than 0.8 m) — hardware, parts and
    sub-assemblies consistently — so directions and stacking order are preserved (all offsets scale
    together) and `f = 0` is still the CAD position. Change the one constant to tune the separation; the
    pipeline parameters in `pipeline/config.json` stay the collision-checked base. Hardware pull-out paths
@@ -669,11 +716,12 @@ in-page spy on the audio element logs every play / pause / end with its recordin
 has no speech voices, so the Web Speech API (fallback voice) is replaced by a deterministic in-page mock that
 logs every speak / start / end / cancel (the app code is unchanged). Headless Chromium renders in software, which
 the app would detect as *Low performance*; sections 1–12 therefore pin the *High quality* profile (full model,
-v1.4 visuals) and section 13 tests the profiles. 120 checks:
+v1.4 visuals) and section 13 tests the profiles. Section 14 tests the unit tutorial (v2.0, extended in v2.1).
+145 checks in v2.1:
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
-* **3× exploded view** — all 208 displacement vectors (hardware, parts, sub-assemblies) are exactly 3× the
-  pipeline vectors with identical directions; measured scene offsets 3.000×; every component back at its
+* **Exploded view ×6 (v2.1)** — all 208 displacement vectors keep their direction; 191 are exactly 6× the
+  pipeline vectors (2× v2.0), the 17 longest follow the soft cap; measured scene offsets equal the displayed vectors; every component back at its
   exact CAD position after the final step; per-step USDZ export for Quick Look.
 * **Synchronisation** — positions, highlight, BOM row, step card and spoken script (same component, quantity,
   target, direction, repeat note) for all 69 steps.
@@ -784,6 +832,17 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 
 ## Changelog
 
+* **2.1** — Unit tutorial refinements: build-time per-operation camera shots (overview → approach → close-up of
+  every fastener / tool → result; line of sight and camera position collision-checked) followed at run time by
+  `UnitCamera.update()` with smooth orbiting blends, manual control never overridden, Refocus / loop restart back
+  to the plan; stricter collision rules (clip slides without the mating sheet, tool retract sweeps, every tool-path
+  segment, hops routed around the unit, full wrench stroke); base clip nuts from below; impeller sub-assembly
+  raised from below (relative motions checked); Phase 3 bracket first; 10 pre-installed back-panel rivets; drill
+  body fixed + orange rotation arrow (`spinArrow` fx), clockwise tightening sense; rivet-gun materials; exploded
+  view ×2 (parts `explodeScale` 6 + soft cap, unit kit ×2 capped); neutral warning colour, flags and *check* badges
+  off the operator UI; decals fade in x-ray steps; camera plans regenerated; tests extended (sections 2 and 14).
+* **2.0** — Unit installation tutorial (32 steps, 9 phases) from the grouped assembly with the supplied tools,
+  decals, hardware specifications and an engineering report; collapsible side panel; faster gesture trigger.
 * **1.5** — Raspberry Pi performance: High / Balanced / Low profiles with automatic detection (WebGL renderer),
   Display quality setting, `?profile=` (incl. `legacy` = v1.4 behaviour); simplified Balanced (0.2 mm target) and Low
   (0.45 mm target) models with verified identical node tree (`tools/optimize-model.mjs`); on-demand rendering, 30 fps

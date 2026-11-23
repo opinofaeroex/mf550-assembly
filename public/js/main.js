@@ -104,7 +104,7 @@ class App {
       ? (id) => /Rivet|Nut\b|Nut \(|Screw|Bolt|Washer|Clip Nut|Strain Relief/i.test(model.node(id).name)
       : (id) => { const n = model.node(id); const s = model.steps[n.effectiveStep ?? n.step]; return !!s && s.kind === 'fasten'; };
     this.appearance = new Appearance(loaded, { onChange: () => viewer.requestRender(), freeze: (o) => viewer.freeze(o), isHardware });
-    this.explode = new ExplodeController(model, loaded.objects, this.unit ? 0 : CONFIG.explodeScale);
+    this.explode = new ExplodeController(model, loaded.objects, this.unit ? 0 : CONFIG.explodeScale, this.unit ? null : CONFIG.explodeSoftCap);
     this.explode.onChange = () => viewer.requestRender();
     if (this.unit) {
       // v2.0 unit tutorial: data-driven timeline (unit/), the main body stays on the floor
@@ -137,13 +137,15 @@ class App {
     });
     if (S.calloutsOnRender) viewer.onRender.push(() => this.#updateCallouts());   // callouts follow drawn frames
     // automatic close-up of each step's components (scene/CameraController.js; unit/UnitCamera.js in v2.0)
-    this.cameraCtl = this.unit ? new UnitCamera({ viewer, model, loaded, rig: this.rig }) : new CameraController({
+    this.cameraCtl = this.unit ? new UnitCamera({ viewer, model, loaded, rig: this.rig, clock: () => this.seq.t }) : new CameraController({
       viewer, model, loaded, explode: this.explode, cfg: { ...CONFIG.camera, frameBudgetMs: S.planningBudgetMs },
       isSolid: (id, pos) => this.#isSolid(id, pos),
       variant: () => (this.opts.ghost ? 'ghost' : 'solid'),
     });
+    // v2.1: the unit camera follows the per-operation shots of the step clock (after seq.update)
+    if (this.unit) viewer.onCamera.push((dt) => this.cameraCtl.update(dt));
     const plans = await this.cameraPlans;
-    if (!this.unit) this.cameraCtl.usePrecomputed(plans, CameraController.planKey(model, this.cameraCtl.cfg, viewer.camera.fov, CONFIG.explodeScale));
+    if (!this.unit) this.cameraCtl.usePrecomputed(plans, CameraController.planKey(model, this.cameraCtl.cfg, viewer.camera.fov, [CONFIG.explodeScale, CONFIG.explodeSoftCap]));
     viewer.controls.addEventListener('start', () => {   // user orbit / zoom / pan
       viewer.cancelCameraTween();
       this.cameraCtl.pauseByUser();
@@ -535,6 +537,13 @@ class App {
     const pos = seq.pos;
     const N = model.stepCount;
     this.cameraCtl.onPosition(pos);            // close-up of this step's components (smooth move)
+    if (this.unit) {
+      // v2.1: operations seen from below (base clip nuts, impeller lift, bellmouth) and the components
+      // view (parts staged below the base) hide the floor shadow, which would cover the view
+      const st = seq.isStep ? model.steps[pos] : null;
+      this.viewer.contactShadow.visible = !((st && st.camera && st.camera.underside) || pos === EXPLODED);
+      this.viewer.requestRender();
+    }
     const t = positionText(model, pos);
 
     $('step-badge').textContent = t.badge;
@@ -546,7 +555,7 @@ class App {
     comps.innerHTML = t.components || '';
     const note = $('step-note');
     note.hidden = !t.note;
-    if (t.note) note.innerHTML = `<svg><use href="#i-warn"/></svg><span>${esc(t.note)}</span>`;
+    if (t.note) note.innerHTML = `<span>${esc(t.note)}</span>`;     // v2.1: neutral note, no warning icon
 
     this.bom.setPosition(pos);
     this.#refreshAppearance();
@@ -628,6 +637,7 @@ class App {
     const active = seq.isStep ? this.activeParts[pos] : null;
     const xray = seq.isStep && model.steps[pos].camera && model.steps[pos].camera.xray;
     const sel = this.selection ? this.selection.partSet : null;
+    if (this.rig) this.rig.setDecalAlpha(xray && this.opts.ghost ? 0.18 : 1);
     for (const id of model.partIds) {
       const s = model.node(id).step;
       let st = STATE.NORMAL;

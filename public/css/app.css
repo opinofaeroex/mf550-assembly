@@ -16,7 +16,7 @@
   --accent-ink: #1a0c00;
   --select: #3aa0ff;          /* selection */
   --ok: #3ccf8e;
-  --warn: #f2c14e;
+  --warn: #a9b5c2;            /* v2.1: neutral (no yellow warning colour in the operator UI) */
   --radius: 10px;
   --radius-s: 7px;
   --shadow: 0 10px 30px rgba(0, 0, 0, .35);
@@ -101,7 +101,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .overlay-banner {
   position: absolute; left: 50%; top: 12px; transform: translateX(-50%); z-index: 4; width: min(560px, calc(100% - 24px));
   display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 12px; border-radius: 10px;
-  background: rgba(12, 16, 21, .9); border: 1px solid rgba(242, 193, 78, .5); color: var(--text); font-size: 12.5px; line-height: 1.35;
+  background: rgba(12, 16, 21, .9); border: 1px solid rgba(169, 181, 194, .5); color: var(--text); font-size: 12.5px; line-height: 1.35;
 }
 .overlay-banner .btn { flex: none; }
 
@@ -116,7 +116,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .ar-state { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--panel-2); font-size: 13px; }
 .ar-state b { margin-right: 4px; }
 .ar-state[data-ar="supported"] { border-color: rgba(61, 220, 132, .5); }
-.ar-state[data-ar="needs-permission"] { border-color: rgba(242, 193, 78, .55); }
+.ar-state[data-ar="needs-permission"] { border-color: rgba(169, 181, 194, .55); }
 
 /* ---------- step card ---------- */
 .step-card {
@@ -138,12 +138,10 @@ svg { width: 20px; height: 20px; flex: none; }
 .step-desc { margin: 0; color: var(--text-2); font-size: 13.2px; }
 .step-components { margin: 6px 0 0; font-size: 12px; color: var(--text-3); }
 .step-components .pn { font-family: var(--mono); color: var(--text-2); }
-.step-note {
-  display: flex; gap: 8px; margin-top: 10px; padding: 8px 10px;
-  border-radius: var(--radius-s); background: rgba(242, 193, 78, .1); border: 1px solid rgba(242, 193, 78, .3);
-  color: #f3dca0; font-size: 12.3px;
+.step-note {                 /* v2.1: neutral instruction note (no warning colour or icon) */
+  display: flex; gap: 8px; margin-top: 10px; padding: 0;
+  color: var(--text-2); font-size: 12.3px;
 }
-.step-note svg { width: 16px; height: 16px; color: var(--warn); margin-top: 1px; }
 
 /* ---------- gesture control (v1.2) ---------- */
 .gesture-panel {
@@ -168,7 +166,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .gp-meter { height: 4px; border-radius: 2px; background: var(--panel-3); overflow: hidden; }
 .gp-meter div { height: 100%; width: 0; background: var(--accent); transition: width .1s linear; }
 .gp-meter[data-state="locked"] div { background: #3ddc84; }
-.gp-msg { margin: 0; padding: 8px; border-radius: var(--radius-s); background: rgba(242, 193, 78, .1); border: 1px solid rgba(242, 193, 78, .3); color: var(--text); }
+.gp-msg { margin: 0; padding: 8px; border-radius: var(--radius-s); background: rgba(169, 181, 194, .1); border: 1px solid rgba(169, 181, 194, .3); color: var(--text); }
 .gp-opt { display: flex; gap: 6px; align-items: flex-start; color: var(--text-2); cursor: pointer; }
 .gesture-chip {
   position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); z-index: 5;
@@ -198,7 +196,7 @@ svg { width: 20px; height: 20px; flex: none; }
 .nbtn:hover:not(:disabled) { background: var(--panel-3); }
 .nbtn:disabled { opacity: .4; cursor: not-allowed; }
 .nbtn-main { border-color: rgba(255, 122, 26, .55); color: var(--accent-2); }
-.nbtn[aria-pressed="true"] { color: var(--warn); border-color: rgba(242, 193, 78, .5); }
+.nbtn[aria-pressed="true"] { color: var(--warn); border-color: rgba(169, 181, 194, .5); }
 .nbtn-icon { width: 32px; padding: 0; justify-content: center; }
 .nar-status { font-size: 12px; line-height: 1.3; color: var(--text-3); min-width: 0; flex: 1 1 130px; }
 .narration[data-status="speaking"] .nar-status { color: var(--accent-2); }
@@ -230,13 +228,13 @@ svg { width: 20px; height: 20px; flex: none; }
 }
 .tool:hover { background: var(--panel-3); color: var(--text); }
 .tool.is-on { color: var(--accent); background: rgba(255, 122, 26, .12); border-color: rgba(255, 122, 26, .35); }
-.tool.is-paused { color: var(--warn); border-color: rgba(242, 193, 78, .45); background: rgba(242, 193, 78, .1); }
+.tool.is-paused { color: var(--warn); border-color: rgba(169, 181, 194, .45); background: rgba(169, 181, 194, .1); }
 
 /* automatic camera paused by the user (v1.3) */
 .cam-chip {
   position: absolute; right: 70px; top: 16px; z-index: 3; max-width: calc(100% - 100px);
   display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 10px; border-radius: 99px;
-  background: rgba(16, 21, 27, .9); border: 1px solid rgba(242, 193, 78, .45); color: var(--text-2); font-size: 12px;
+  background: rgba(16, 21, 27, .9); border: 1px solid rgba(169, 181, 194, .45); color: var(--text-2); font-size: 12px;
 }
 .cam-chip svg { width: 16px; height: 16px; color: var(--warn); flex: none; }
 .cam-chip span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -364,7 +362,7 @@ td.c-pn { min-width: 0; }
 .badge { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 4px; font: 600 10px/1.5 var(--sans); text-transform: uppercase; letter-spacing: .05em; vertical-align: 1px; }
 .badge-asm { background: rgba(58, 160, 255, .15); color: #8cc6ff; }
 .badge-unit { background: rgba(160, 120, 255, .16); color: #c7b2ff; }
-.badge-flag { background: rgba(242, 193, 78, .14); color: #f3d68a; }
+.badge-flag { background: rgba(169, 181, 194, .14); color: var(--text-2); }
 tr.is-unit-child td { opacity: .62; }
 tr.is-current td { background: rgba(255, 122, 26, .14) !important; }
 tr.is-current td:first-child { box-shadow: inset 3px 0 0 var(--accent); color: var(--accent-2); }
@@ -564,7 +562,7 @@ html[data-perf="balanced"] .dialog::backdrop, html[data-perf="low"] .dialog::bac
 .hw-spec { font-weight: 650; color: var(--text); }
 .hw-meta { font-size: 11.5px; color: var(--text-2); }
 .hw-status { font-size: 11px; color: var(--text-3); }
-.hw-status.is-conflict { color: #ffb020; }
+.hw-status.is-conflict { color: var(--text-2); }
 .hw-tools { margin-top: 6px; font-size: 12px; color: var(--text-2); }
 html[data-tutorial="unit"] .step-card { max-width: min(430px, calc(100% - 90px)); }
 html[data-tutorial="unit"] #step-components { max-height: 32vh; overflow: auto; }

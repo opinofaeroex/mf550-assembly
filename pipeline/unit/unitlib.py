@@ -109,16 +109,32 @@ class World:
             if n in self.present:
                 self.cm.remove_object(n); self.present.discard(n)
 
+    _bvh = {}
+
+    def _geom(self, mesh):
+        """fcl geometry of a query mesh, built once per mesh object (trimesh rebuilds it on every query)."""
+        k = id(mesh)
+        g = self._bvh.get(k)
+        if g is None or g[0] is not mesh:
+            g = (mesh, self.cm._get_fcl_obj(mesh)); self._bvh[k] = g
+        return g[1]
+
     def hits(self, mesh, M, allow=(), tol=0.6):
         """Present parts the mesh (transformed by M) penetrates deeper than tol mm (ignoring `allow`)."""
-        hit, data = self.cm.in_collision_single(mesh, transform=M, return_data=True)
-        if not hit: return {}
+        import fcl
+        from trimesh.collision import _fcl_collision_data
+        M = np.asarray(M, float)
+        geom = self._geom(mesh)
+        o = fcl.CollisionObject(geom, fcl.Transform(M[:3, :3], M[:3, 3]))
+        cdata, callback = _fcl_collision_data(True, True)
+        self.cm._manager.collide(o, cdata, callback)
+        if not cdata.result.is_collision: return {}
         out = {}
-        for c in data:
-            names = c.names - {"__external"} if hasattr(c, "names") else set()
-            for n in names:
-                if n in allow: continue
-                out[n] = max(out.get(n, 0.0), float(c.depth))
+        for c in cdata.result.contacts:
+            cg = c.o2 if c.o1 == geom else c.o1
+            n = self.cm._names.get(id(cg))
+            if n is None or n in allow: continue
+            out[n] = max(out.get(n, 0.0), float(c.penetration_depth))
         return {n: d for n, d in out.items() if d > tol}
 
 

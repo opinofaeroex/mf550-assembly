@@ -13,7 +13,7 @@
  *
  * [1] Viewer & data: loads without errors; GLB ↔ assembly.json; geometry of every part
  *     within tolerance of the OpenCascade B-rep boxes.
- * [2] Exploded view ×3: every displayed vector = 3 × the pipeline vector, same direction;
+ * [2] Exploded view ×6 (v2.1; soft cap on the longest): every displayed vector = 6 × the pipeline vector, same direction;
  *     components return to their exact CAD positions.
  * [3] Synchronisation for all steps: positions, highlight, BOM row, step card, spoken script
  *     (same operation, component, quantity, target and direction as the card).
@@ -209,35 +209,40 @@ async function testViewer(browser) {
   });
   check(fidelity.worstMm < 0.75, `${fidelity.parts} parts at CAD position; max bbox deviation ${fidelity.worstMm.toFixed(3)} mm (${fidelity.worstId})`);
 
-  console.log('\n[2] exploded view ×3');
-  const ex = await page.evaluate(() => {
+  console.log('\n[2] exploded view ×6 (v2.1: twice the v2.0 distance; soft cap on the longest vectors)');
+  const ex = await page.evaluate(async () => {
     const { explode, model } = window.app;
-    let worstLen = 0, worstDir = 0, hw = 0, parts = 0, asms = 0;
+    const { CONFIG } = await import('./js/config.js');
+    const cap = CONFIG.explodeSoftCap;
+    let worstLen = 0, worstDir = 0, hw = 0, parts = 0, asms = 0, exact2x = 0, capped = 0;
     for (const e of explode.entries) {
       const v = model.node(e.id).explode;
       const len0 = Math.hypot(v[0], v[1], v[2]);
       const len = e.vec.length();
-      worstLen = Math.max(worstLen, Math.abs(len - 3 * len0));
+      const L6 = 6 * len0;
+      const want = cap && L6 > cap.from ? cap.from + (L6 - cap.from) * cap.rate : L6;
+      worstLen = Math.max(worstLen, Math.abs(len - want));
+      if (Math.abs(len - L6) < 1e-9) exact2x++; else capped++;
       const cos = (e.vec.x * v[0] + e.vec.y * v[1] + e.vec.z * v[2]) / (len * len0);
       worstDir = Math.max(worstDir, 1 - cos);
       const n = model.node(e.id);
       if (n.kind === 'assembly') asms++; else if (model.steps[n.step] && model.steps[n.step].kind === 'fasten') hw++; else parts++;
     }
-    return { scale: explode.scale, worstLen, worstDir, n: explode.entries.length, hw, parts, asms };
+    return { scale: explode.scale, worstLen, worstDir, n: explode.entries.length, hw, parts, asms, exact2x, capped, cap };
   });
-  check(ex.scale === 3 && ex.worstLen < 1e-9 && ex.worstDir < 1e-9,
-    `${ex.n} displacement vectors (${ex.hw} hardware, ${ex.parts} parts, ${ex.asms} sub-assemblies) are exactly 3× the pipeline vectors, same direction`);
+  check(ex.scale === 6 && ex.worstLen < 1e-9 && ex.worstDir < 1e-9 && ex.exact2x / ex.n > 0.9,
+    `${ex.n} displacement vectors (${ex.hw} hardware, ${ex.parts} parts, ${ex.asms} sub-assemblies): ${ex.exact2x} exactly 6× the pipeline vectors (2× v2.0), ${ex.capped} longest ones soft-capped beyond ${ex.cap.from} m; every direction unchanged`);
   const back = await page.evaluate(() => {
     const { seq, explode } = window.app;
     seq.goTo(-1, { animate: false });
-    let maxEx = 0;
-    for (const e of explode.entries) maxEx = Math.max(maxEx, e.obj.position.distanceTo(e.base) / e.baseVec.length());
+    let worst = 0;
+    for (const e of explode.entries) worst = Math.max(worst, Math.abs(e.obj.position.distanceTo(e.base) - e.vec.length()));
     seq.goTo(seq.last, { animate: false });
     let maxOff = 0;
     for (const e of explode.entries) maxOff = Math.max(maxOff, e.obj.position.distanceTo(e.base));
-    return { maxEx, maxOff };
+    return { worst, maxOff };
   });
-  check(Math.abs(back.maxEx - 3) < 1e-6, `parts-kit offsets measured in the scene are 3.000× the original (${back.maxEx.toFixed(6)})`);
+  check(back.worst < 1e-9, `parts-kit offsets measured in the scene equal the displayed (2×) vectors (max deviation ${back.worst.toExponential(1)} m)`);
   check(back.maxOff === 0, `after the final step every component is back at its exact CAD position (max offset ${back.maxOff})`);
   const usdz = await page.evaluate(async () => {
     const ql = window.app.quickLook;
@@ -1430,7 +1435,7 @@ async function testPerformance(browser) {
 
 
 async function testUnit(browser) {
-  console.log('\n[14] unit installation tutorial (v2.0)');
+  console.log('\n[14] unit installation tutorial (v2.0, refined in v2.1)');
   const { page, errors } = await openApp(browser, speechMock(), { width: 1400, height: 860 }, { tutorial: 'unit' });
   await waitFor(page, () => document.getElementById('loader').style.display === 'none', null, 60000);
   const d = await page.evaluate(() => {
@@ -1454,7 +1459,8 @@ async function testUnit(browser) {
       const k = tr.keys[tr.keys.length - 1];
       worstT = Math.max(worstT, Math.hypot(k[1], k[2], k[3]));
       worstQ = Math.max(worstQ, 1 - Math.abs(k[7]));
-      const turns = k[8] / (2 * Math.PI); worstA = Math.max(worstA, Math.abs(turns - Math.round(turns)));
+      // whole turns; hex parts (v2.1): multiples of 60° (identical look), so wrench strokes and part stay in step
+      const sixths = k[8] / (Math.PI / 3); worstA = Math.max(worstA, Math.abs(sixths - Math.round(sixths)));
     });
     // independent filter modules: own step each, the whole module and nothing else installed there
     const grp = (name) => parts.filter((n) => app.model.node(n.parent).name === name).map((n) => n.id);
@@ -1480,7 +1486,7 @@ async function testUnit(browser) {
   check(d.N >= 23 && d.tab === 'steps' && d.line === 'Unit installation' && errors.length === 0,
     `unit tutorial loads: ${d.N} steps, side panel opens on Steps, tutorial switch "${d.line}"`);
   check(d.once && d.exactlyOnce, 'every one of the 220 CAD components is installed in exactly one step');
-  check(d.worstT < 1e-6 && d.worstQ < 1e-6 && d.worstA < 1e-6 && d.handoff < 1e-6,
+  check(d.worstT < 1e-6 && d.worstQ < 1e-6 && d.worstA < 1e-5 && d.handoff < 1e-6,
     `every part ends exactly at its CAD position (max residual ${d.worstT.toExponential(1)} m); hand-started fasteners continue in the next step from where they were left`);
   check(d.mod.every((x) => x.oneStep && x.alone), `filter modules independent: ${d.mod.map((x) => `${x.g.replace('_MechanicalFilter', '')} (${x.n} parts) → "${x.title}"`).join('; ')}`);
   check(d.qtyOk && d.specOk, `hardware quantities equal the CAD (${Object.entries(d.cad).map(([k, v]) => `${k} ${v}`).join(', ')}); every hardware line has a size or a confirmation note and a status`);
@@ -1495,7 +1501,8 @@ async function testUnit(browser) {
     seq.goTo(k); seq.speed = 0;
     const tr = m.steps[k].tracks.tools[0];
     rig.apply(k, tr.keys[0][0] - 0.2); const before = rig.tools.drill.group.visible;
-    const spin = tr.sub.socket[0][0] + 0.05;               // socket starts turning
+    const arrow0 = m.steps[k].tracks.fx.find((f) => f.type === 'spinArrow');
+    const spin = arrow0.t[0] + 0.05;                       // first bolt starts turning (v2.1: the arrow shows it)
     rig.apply(k, spin); const during = rig.tools.drill.group.visible;
     app.viewer.scene.updateMatrixWorld();
     const sock = rig.tools.drill.group.getWorldPosition(new (rig.tools.drill.group.position.constructor)());
@@ -1544,9 +1551,138 @@ async function testUnit(browser) {
   check(ui.applied, 'front panel decals (AEROEX logo, MIST-FIT, MF-550) applied from the supplied photograph and kept after their step');
   check(ui.w1 > ui.w0 + 200, `side panel collapses: 3D view ${ui.w0} → ${ui.w1} px wide`);
   check(ui.paused === 'paused' && ui.resumed === 'auto', 'automatic camera pauses on user orbit and resumes on the next step');
+
+  // ---------------------------------------------------------------- v2.1 refinements
+  const v21 = await page.evaluate(async () => {
+    const m = app.model; const T = (t) => m.steps.findIndex((s) => s.title === t);
+    const out = {};
+    // base clip nuts: every one starts straight BELOW its seat and rises (no lateral approach)
+    const kb = T('Install the base clip nuts');
+    out.nuts = m.steps[kb].tracks.parts.map((tr) => { const k = tr.keys[0]; return { dy: k[2], lat: Math.hypot(k[1], k[3]) }; });
+    out.nutsUnderside = !!m.steps[kb].camera.underside;
+    // the ten pre-installed closed-end rivets: installed with the main body (step 1), no motion, no rivet-gun use
+    const pre = [22, 23, 35, 24, 39, 37, 26, 27, 25, 36].map((n) => `Closed-End Rivet (${n})`);
+    const byName = new Map(m.partIds.map((id) => [m.node(id).name, id]));
+    out.preFound = pre.filter((n) => byName.has(n)).length;
+    out.preStep = [...new Set(pre.map((n) => m.node(byName.get(n)).step))];
+    const preIds = new Set(pre.map((n) => byName.get(n)));
+    out.preMoved = m.steps.some((s) => s.tracks.parts.some((tr) => preIds.has(tr.node) && tr.keys.some((k) => Math.hypot(k[1], k[2], k[3]) > 1e-9 || k[8])));
+    const preHeads = pre.map((n) => byName.get(n));
+    out.mandrelsOnPre = m.steps.reduce((c, s) => c + s.tracks.fx.filter((f) => f.type === 'mandrels').reduce((cc, f) => cc + f.items.filter((it) => preHeads.some((id) => { const n = m.node(id); const c0 = [(n.bboxMin[0] + n.bboxMax[0]) / 2, (n.bboxMin[1] + n.bboxMax[1]) / 2, (n.bboxMin[2] + n.bboxMax[2]) / 2]; return Math.hypot(it.head[0] - c0[0], it.head[1] - c0[1], it.head[2] - c0[2]) < 0.006; })).length, 0), 0);
+    out.rivetSteps = m.steps.filter((s) => s.tracks.tools.some((t) => t.tool === 'rivetgun')).length;
+    // Phase 3 order
+    out.p3 = m.steps.filter((s) => s.phase === 3).map((s) => s.title);
+    // drill: no socket / adapter / chuck rotation channels, body fixed while the arrow shows; one arrow per drilled fastener
+    let rotCh = 0, bodyTurn = 0, arrows = 0;
+    for (const s of m.steps) for (const tr of s.tracks.tools.filter((t) => t.tool === 'drill')) {
+      rotCh += ['socket', 'adapter', 'chuck'].filter((c) => tr.sub && tr.sub[c]).length;
+      for (const f of s.tracks.fx.filter((x) => x.type === 'spinArrow')) {
+        const ks = tr.keys.filter((k) => k[0] >= f.t[0] - 1e-6 && k[0] <= f.t[1] + 1e-6);
+        for (let i = 1; i < ks.length; i++) bodyTurn = Math.max(bodyTurn, 1 - Math.abs(ks[i][4] * ks[0][4] + ks[i][5] * ks[0][5] + ks[i][6] * ks[0][6] + ks[i][7] * ks[0][7]));
+      }
+    }
+    for (const s of m.steps) { arrows += s.tracks.fx.filter((x) => x.type === 'spinArrow').length; }
+    out.rotCh = rotCh; out.bodyTurn = bodyTurn; out.arrows = arrows;
+    // arrow visible only while tightening
+    const kt = T('Tighten the motor mounting bolts'); app.seq.goTo(kt); app.seq.speed = 0;
+    const fa = m.steps[kt].tracks.fx.find((f) => f.type === 'spinArrow');
+    const arrowObj = () => app.rig.fx.get(kt).find((o) => o.userData.fx === fa);
+    app.rig.apply(kt, fa.t[0] - 0.2); const aBefore = arrowObj().visible;
+    app.rig.apply(kt, (fa.t[0] + fa.t[1]) / 2); const aDuring = arrowObj().visible; const col = arrowObj().userData.mat.color.getHexString();
+    app.rig.apply(kt, fa.t[1] + 0.2); const aAfter = arrowObj().visible;
+    out.arrowVis = [aBefore, aDuring, aAfter]; out.arrowColour = col;
+    // collision checks: every tool path clear; component paths clear except the flagged CAD issues
+    const checks = m.steps.flatMap((s) => s.checks);
+    out.toolPaths = checks.filter((c) => / path \(/.test(c.what)); out.toolPathsClear = out.toolPaths.filter((c) => c.clear).length;
+    out.clipChecks = checks.filter((c) => /^clip /.test(c.what)); out.clipClear = out.clipChecks.filter((c) => c.clear).length;
+    out.unclear = checks.filter((c) => !c.clear).map((c) => c.what);
+    // camera shots: every step has its own (target/direction/zoom), several per step for operations
+    const sig = m.steps.map((s) => JSON.stringify((s.camera.shots || []).map((x) => x.slice(1, 8).map((v) => +v.toFixed(3)))));
+    out.shotSteps = m.steps.filter((s) => (s.camera.shots || []).length >= 2).length;
+    out.uniqueShotSets = new Set(sig).size;
+    const radii = m.steps.flatMap((s) => (s.camera.shots || []).map((x) => x[7]));
+    out.rMin = Math.min(...radii); out.rMax = Math.max(...radii);
+    out.inside = m.steps.flatMap((s) => s.camera.shotInside || []).filter(Boolean).length;
+    out.occluded = m.steps.flatMap((s) => s.camera.shotBlocked || []).filter(Boolean).length;
+    out.shots = radii.length; out.N = m.stepCount;
+    return out;
+  });
+  check(v21.nuts.length === 8 && v21.nuts.every((n) => n.dy < -0.02 && n.lat < 0.004) && v21.nutsUnderside,
+    `base clip nuts: all 8 start ${(-Math.max(...v21.nuts.map((n) => n.dy)) * 1000).toFixed(0)}–${(-Math.min(...v21.nuts.map((n) => n.dy)) * 1000).toFixed(0)} mm straight below their seats and rise (lateral ≤ ${(Math.max(...v21.nuts.map((n) => n.lat)) * 1000).toFixed(1)} mm); camera from underneath`);
+  check(v21.preFound === 10 && v21.preStep.length === 1 && v21.preStep[0] === 0 && !v21.preMoved && v21.mandrelsOnPre === 0 && v21.rivetSteps >= 5,
+    `10 pre-installed closed-end rivets shown at their CAD positions from step 1, never animated, no rivet-gun operation on them; rivet gun still used in ${v21.rivetSteps} steps`);
+  const p3want = ['Position the motor mounting bracket', 'Fasten the motor mounting bracket', 'Install the external tooth lock washers', 'Install the impeller and drive motor', 'Insert the motor mounting bolts', 'Tighten the motor mounting bolts', 'Mark the motor mounting bolts'];
+  check(JSON.stringify(v21.p3) === JSON.stringify(p3want), `Phase 3 order: ${v21.p3.join(' → ')}`);
+  check(v21.rotCh === 0 && v21.bodyTurn < 1e-5 && v21.arrows >= 20 && !v21.arrowVis[0] && v21.arrowVis[1] && !v21.arrowVis[2] && v21.arrowColour === 'ff7a1a',
+    `drill body and socket never rotate; ${v21.arrows} orange (#${v21.arrowColour}) rotation arrows, each shown only while its fastener is tightened`);
+  check(v21.toolPathsClear === v21.toolPaths.length && v21.clipClear === v21.clipChecks.length,
+    `collision-free: ${v21.toolPathsClear}/${v21.toolPaths.length} tool paths and ${v21.clipClear}/${v21.clipChecks.length} clip-nut slides (sheet not tolerated)${v21.unclear.length ? '; still flagged (CAD): ' + v21.unclear.join(', ') : ''}`);
+  check(v21.shotSteps === v21.N && v21.uniqueShotSets === v21.N && v21.rMin >= 0.06 && v21.inside === 0 && v21.occluded / v21.shots < 0.02,
+    `camera: all ${v21.N} steps have their own shot plan (${v21.shots} shots, ${v21.uniqueShotSets} distinct plans), zoom ${(v21.rMin * 1000).toFixed(0)}–${(v21.rMax * 1000).toFixed(0)} mm framing radius, no camera inside geometry, ${v21.occluded} shot(s) with a partial occluder`);
+
+  // runtime camera: follows the shots in auto mode, user orbit is never overridden, refocus resumes, loop restarts at shot 0
+  const cam = await page.evaluate(async () => {
+    const c = app.cameraCtl, v = app.viewer, m = app.model;
+    const k = m.steps.findIndex((s) => s.title === 'Install the base clip nuts');
+    app.seq.goTo(k); app.seq.speed = 0; app.seq.t = 0; c.focus(k, { instant: true });
+    const dirOf = () => v.camera.position.clone().sub(v.controls.target).normalize();
+    const p0c = v.camera.position.clone(), t0c = v.controls.target.clone();
+    const shots = m.steps[k].camera.shots; const tMid = shots[Math.floor(shots.length / 2)][0] + 0.3;
+    app.seq.t = tMid; for (let i = 0; i < 90; i++) c.update(1 / 30);
+    const want = c.shotState(k, tMid); const d1 = dirOf();
+    const follow = d1.angleTo(want.dir) * 180 / Math.PI + v.controls.target.distanceTo(want.target) * 1000;   // deg + mm
+    const moved = v.camera.position.distanceTo(p0c) * 1000;                      // mm: overview -> close-up
+    const zoomIn = v.camera.position.distanceTo(v.controls.target) / p0c.distanceTo(t0c);
+    const below = v.camera.position.y < v.controls.target.y;
+    // user orbit: paused, camera stays where the user put it
+    c.pauseByUser(); const p0 = v.camera.position.clone();
+    app.seq.t = shots[shots.length - 1][0]; for (let i = 0; i < 30; i++) c.update(1 / 30);
+    const kept = v.camera.position.distanceTo(p0);
+    c.refocus(); for (let i = 0; i < 120; i++) c.update(1 / 30);
+    const back = dirOf().angleTo(c.shotState(k, app.seq.t).dir) * 180 / Math.PI;
+    app.seq.t = 0; for (let i = 0; i < 120; i++) c.update(1 / 30);
+    const first = dirOf().angleTo(c.shotState(k, 0).dir) * 180 / Math.PI;
+    const shadow = v.contactShadow.visible;
+    return { follow, moved, zoomIn, below, mode: c.mode, kept, back, first, shadow };
+  });
+  check(cam.follow < 3 && cam.moved > 100 && cam.zoomIn < 0.8 && cam.below && !cam.shadow,
+    `camera follows the operation: from the overview to a close-up of the nut being fitted (camera moved ${cam.moved.toFixed(0)} mm, distance ×${cam.zoomIn.toFixed(2)}, within ${cam.follow.toFixed(1)} of the planned shot), seen from below with the floor shadow hidden`);
+  check(cam.kept < 1e-9 && cam.back < 3 && cam.first < 3,
+    `manual camera never overridden (moved ${cam.kept} m while paused); Refocus returns to the planned shot (${cam.back.toFixed(1)}°); a loop restart returns to the first shot (${cam.first.toFixed(1)}°)`);
+
+  // visual: rivet-gun materials, unit kit view ×2, no yellow warning on the operator card
+  const vis = await page.evaluate(async () => {
+    const t = app.rig.tools.rivetgun; const mats = []; t.group.traverse((o) => { if (o.isMesh) mats.push(o.material); });
+    const orange = mats.some((mt) => mt.vertexColors) && mats.some((mt) => mt.color.getHexString() === 'e8731a');
+    const metal = mats.filter((mt) => mt.metalness >= 0.8).length;
+    const notGlossy = mats.every((mt) => mt.roughness >= 0.35);
+    const m = app.model;
+    app.seq.goTo(-1, { animate: false });
+    let ratio = [], n = 0;
+    for (const s of m.steps) for (const tr of s.tracks.parts) {
+      if (m.steps.indexOf(s) !== m.node(tr.node).step) continue;
+      const k = tr.keys[0]; const L = Math.hypot(k[1], k[2], k[3]); if (L < 0.01 || L > 0.3 || k[7] < 0.99999) continue;
+      const p = app.rig.parts.get(tr.node); const o = p.obj;
+      const base = new o.position.constructor().setFromMatrixPosition(p.L0);
+      ratio.push(o.position.distanceTo(base) / L); n++;
+    }
+    const kitOk = ratio.length > 50 && ratio.every((r) => Math.abs(r - 2) < 0.02);
+    const k = m.steps.findIndex((s) => s.flags && s.flags.length);
+    app.seq.goTo(k);
+    const note = document.getElementById('step-note');
+    const css = getComputedStyle(document.documentElement).getPropertyValue('--warn').trim();
+    const yellow = [...document.querySelectorAll('body *')].filter((e) => { const c = getComputedStyle(e); return [c.color, c.backgroundColor, c.borderTopColor].some((x) => /rgba?\(242, 193, 78|rgba?\(243, 2(14|20)/.test(x)); }).length;
+    const badges = document.querySelectorAll('.badge-flag').length;
+    return { orange, metal, notGlossy, kitOk, kitN: ratio.length, noteHidden: note.hidden, css, yellow, badges };
+  });
+  check(vis.orange && vis.metal >= 3 && vis.notGlossy, `rivet gun: orange housing accents, ${vis.metal} satin-steel functional parts, dark grip/guard/battery, nothing glossy (roughness ≥ 0.35), original geometry`);
+  check(vis.kitOk, `unit components view: ${vis.kitN} staged components exactly 2× further from their seats than in v2.0`);
+  check(vis.noteHidden && vis.badges === 0 && vis.yellow === 0 && vis.css === '#a9b5c2',
+    'no yellow warnings: open engineering items are not shown as warning notes or badges on the operator UI (kept in the engineering report); warning colour neutral');
   check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
 }
+
 
 (async () => {
   await startServer();

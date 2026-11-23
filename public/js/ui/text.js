@@ -192,7 +192,9 @@ export function unitPositionText(model, pos) {
   const components = (lines.length || tools.length)
     ? `${lines.length ? `<ul class="hw-list">${lines.join('')}</ul>` : ''}${tools.length ? `<div class="hw-tools"><b>Tools:</b> ${tools.join(' · ')}</div>` : ''}`
     : null;
-  const note = s.flags && s.flags.length ? s.flags.join(' • ') : null;
+  // v2.1: open engineering items (s.flags) are not shown as warnings on the operator card; they stay
+  // in the step data and in docs/unit-engineering-report.md. Safety instructions live in the step text.
+  const note = null;
   return {
     badge: `Step ${pos + 1} / ${N}`, kind: `Phase ${s.phase} · ${s.phaseTitle}`, title: esc(s.title), desc: s.text,
     components, note, speech: `Step ${pos + 1}. ${s.speech}`,

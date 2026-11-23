@@ -1,10 +1,13 @@
 """
-steps_unit.py — the authored installation sequence (v2.0)
+steps_unit.py — the authored installation sequence (v2.0, refined in v2.1)
 
 Order = the manufacturing workflow of the v2.0 brief (phases 1–9), with the additions the
 CAD requires (all hardware present in MF-550-210-B_GROUPED_ASSEMBLY is installed somewhere;
 nothing is invented). Deviations / open items are recorded as `flag(...)` on the step.
 Camera `dir` = direction from the target towards the camera (model frame, Y up, front = +X).
+v2.1: base clip nuts pushed up from below; the 10 back-panel rivets are pre-installed with the main
+body (shown from step 1, no install operation); Phase 3 = bracket first, impeller + motor raised from
+below into the fitted bracket, then the motor fastening that depends on it.
 """
 from __future__ import annotations
 
@@ -19,26 +22,27 @@ NO_BIT = ("Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is s
           "drive type of the pan-head screws is not modelled in the CAD")
 
 
-def clip_dir(U, name, prefer=None, travel=30.0):
-    """Slide-on direction of a clip nut: the first collision-free direction perpendicular to its bolt axis."""
+def clip_dir(U, name, prefer=None, travel=30.0, allow=()):
+    """Slide-on direction of a clip nut: the first direction perpendicular to its bolt axis along which it
+    slides on collision-free WITHOUT the mating sheet allowed (v2.1: riding a small offset along its axis,
+    as fastener(kind='clip') does), preferring vertical (from below first) then `prefer`."""
     p = U.A[name]; a = unit(p["axis"]); head = np.asarray(p["head"])
-    mates = set(p.get("contacts", []))
-    cands = [np.array(v, float) for v in ((1, 0, 0), (-1, 0, 0), (0, 0, 1), (0, 0, -1), (0, 1, 0), (0, -1, 0))]
+    cands = [np.array(v, float) for v in ((0, -1, 0), (0, 1, 0), (1, 0, 0), (-1, 0, 0), (0, 0, 1), (0, 0, -1))]
     cands = [c for c in cands if abs(c @ a) < 0.2]
     if prefer is not None:
-        cands.sort(key=lambda c: -float(c @ unit(prefer)))
+        cands.sort(key=lambda c: (-float(c @ unit(prefer)) if abs(c[1]) < 0.5 else -2.0 - float(c @ unit(prefer))))
     mesh = U.world.mesh[name]
     best = None
     for d in cands:
-        worst = 0.0
-        for s in np.linspace(0, 0.85, 12):
-            Mx = delta_matrix(d * travel * (1 - s), ID_Q, head, a, 0)
-            al = mates if s > 0.6 else set()
-            hit = U.world.hits(mesh, Mx, allow=al)
-            worst = max([worst, *hit.values()]) if hit else worst
-        if worst == 0.0: return d
-        if best is None or worst < best[0]: best = (worst, d)
-    return best[1]
+        for trav in (travel, 22.0, 16.0):
+            for o in (0.0, -0.5, -0.75, -1.0, -1.25, -1.5, -2.0, -2.5, 0.5, 1.0, 1.5, 2.5):
+                worst = 0.0
+                for s in np.linspace(0, 1, 41)[:-1]:
+                    hit = U.world.hits(mesh, delta_matrix(d * trav * (1 - s) + a * o, ID_Q, head, a, 0), allow=set(allow))
+                    worst = max([worst, *hit.values()]) if hit else worst
+                if worst == 0.0: return dict(slide=d, travel=trav)
+                if best is None or worst < best[0]: best = (worst, d, trav)
+    return dict(slide=best[1], travel=best[2])
 
 
 def choose_place(U, names, options, allow=()):
@@ -67,6 +71,29 @@ def choose_place(U, names, options, allow=()):
         if worst == 0: return path, tilt
         if best is None or worst < best[0]: best = (worst, path, tilt)
     return best[1], best[2]
+
+
+def sub_assembly_checks(U, wheel, motor, bm):
+    """Relative motions inside the impeller sub-assembly (wheel up onto the shaft, bellmouth up under the
+    wheel) checked mesh-to-mesh; only the final seated contact (depth 0) is allowed."""
+    import trimesh
+    from trimesh.collision import CollisionManager
+    out = []
+    for moving, fixed, label, travel in ((wheel, motor, "impeller wheel onto the motor shaft", 95.0),
+                                         (bm, wheel + motor, "inlet bellmouth under the impeller", 190.0)):
+        cm = CollisionManager()
+        for n in fixed: cm.add_object(n, U.world.mesh[n])
+        mm = trimesh.util.concatenate([U.world.mesh[n] for n in moving])
+        worst = {}
+        for dy in np.linspace(-travel, -0.5, 30):
+            T = np.eye(4); T[1, 3] = dy
+            hit, names, data = cm.in_collision_single(mm, transform=T, return_names=True, return_data=True)
+            if hit:
+                d = max(c.depth for c in data)
+                if d > 0.05:
+                    for n in names: worst[n] = max(worst.get(n, 0), round(float(d), 2))
+        out.append(dict(what=label, samples=30, clear=not worst, collisions=worst))
+    return out
 
 
 def define(U):
@@ -98,7 +125,12 @@ def define(U):
     fb_rivets = [r for r in by_contact(("Filter Base", "Unit Body")) if r not in back_rivets]
     leg_rivets = by_contact(("Track Mount Leg", "Unit Body")) + by_contact(("Track Mount Leg (1)", "Unit Body"))
     gauge_rivets = by_contact(("Gauge Box Enclosure", "Unit Body"))
-    used_rivets = set(door_rivets + back_rivets + fb_rivets + leg_rivets + gauge_rivets)
+    # v2.1: closed-end rivets that come pre-installed with the main body (back panel to unit body):
+    # visible at their CAD positions from step 1 and listed in the BOM, but no install operation
+    pre_rivets = [f"Closed-End Rivet ({k})" for k in (22, 23, 35, 24, 39, 37, 26, 27, 25, 36)]
+    assert all(r in rivets for r in pre_rivets), "pre-installed rivet missing from the CAD"
+    back_rivets = [r for r in back_rivets if r not in pre_rivets]
+    used_rivets = set(pre_rivets + door_rivets + back_rivets + fb_rivets + leg_rivets + gauge_rivets)
     assert used_rivets == set(rivets), f"rivets not assigned: {sorted(set(rivets) - used_rivets)}"
 
     P1, P2, P3, P4, P5, P6, P7, P8, P9 = (
@@ -108,20 +140,20 @@ def define(U):
 
     # ---------------------------------------------------------------- PHASE 1
     s = U.step(phase=1, phaseTitle=P1, title="Inspect the main body",
-               text="Start with the fully assembled, painted main body. Check that every face is closed, no structural part is missing and the paint is complete.",
-               speech="Start with the fully assembled and painted main body. Check that every face is closed, nothing is missing and the paint is complete.",
+               text="Start with the fully assembled, painted main body. Check that every face is closed, no structural part is missing and the paint is complete. The ten closed-end rivets joining the back panel to the unit body are already installed.",
+               speech="Start with the fully assembled and painted main body. Check that every face is closed, nothing is missing and the paint is complete. The ten rivets joining the back panel to the body are already installed.",
                camera=dict(dir=[1, 0.5, 0.85], wide=True))
-    s.show(body)
+    s.show(body + pre_rivets)
+    s.hw(pre_rivets, "back panel to unit body — pre-installed with the main body")
     s.wait(3.5)
 
     # ---------------------------------------------------------------- PHASE 2
     s = U.step(phase=2, phaseTitle=P2, title="Install the base clip nuts",
-               text="Press the eight clip nuts onto the base flanges at their mounting holes, threaded side facing out, until each one seats.",
-               speech="Press the eight clip nuts onto the base flanges, one at each mounting hole, until each one seats.",
-               camera=dict(dir=[1, -0.25, 0.9]))
+               text="From below, push each of the eight clip nuts straight up onto the bottom edge of the base flange at its mounting hole, threaded side facing out, until it snaps into the hole.",
+               speech="From below, push each of the eight clip nuts straight up onto the bottom edge of the base flange, one at each mounting hole, until it snaps in.",
+               camera=dict(dir=[0.55, -0.75, 0.55], underside=True))
     for k, n in enumerate(sorted(nuts_base, key=lambda n: math.atan2(U.A[n]["centre"][2], U.A[n]["centre"][0] + 189))):
-        c = np.asarray(U.A[n]["centre"]) - np.array([-189.3, U.A[n]["centre"][1], 0])
-        s.fastener(n, "clip", slide=clip_dir(U, n, prefer=c), dur=1.0 if k < 2 else 0.7)
+        s.fastener(n, "clip", slide=(0, -1, 0), travel=40.0, dur=1.1 if k < 2 else 0.8)
     s.hw(nuts_base, "base flanges, 8 positions")
 
     s = U.step(phase=2, phaseTitle=P2, title="Seal and fit the cable strain relief",
@@ -136,33 +168,30 @@ def define(U):
     s.flag("Silicone type and bead size are not specified in the supplied data — the dispenser model's WEICON HT300 cartridge is shown")
 
     s = U.step(phase=2, phaseTitle=P2, title="Tighten the strain relief nut",
-               text="From inside the unit, thread the strain relief nut onto the strain relief and tighten it against the back panel with the adjustable wrench.",
-               speech="From inside the unit, thread the locknut onto the strain relief and tighten it against the back panel with the adjustable wrench.",
-               camera=dict(dir=[0.55, 0.45, 0.9], xray=True))
+               text="From inside the unit, run the strain relief nut onto the strain relief thread by hand until it seats against the back panel. Hold the nut and tighten the strain relief from outside with the adjustable wrench.",
+               speech="From inside the unit, run the locknut onto the strain relief by hand until it seats. Hold it, and tighten the strain relief from outside with the adjustable wrench.",
+               camera=dict(dir=[-0.85, 0.45, 0.6], xray=True))
     n = "2_Strain Relief Nut"
     s.fastener(n, "nut", side=FRONT, gap=30, engage=3.0, hand_turns=2)
-    s.wrench(n, side=FRONT, strokes=2)
+    s.drive_with_hand(n, turns=2, dur=1.0)
+    s.wrench(g, side=(-1, 0, 0), strokes=2, bolt=True)
     s.hw([n], "inside the back panel, on the strain relief thread")
+    s.flag("The supplied adjustable wrench (233 mm) has no collision-free swing at the locknut inside the chamber "
+           "(roll checked every 10°: a single ~10° gap between the bellmouth support track, bracket supports and filter base) — "
+           "the locknut is seated by hand and held while the strain relief hex is turned from outside; confirm with engineering")
 
     # ---------------------------------------------------------------- PHASE 3
-    s = U.step(phase=3, phaseTitle=P3, title="Install the impeller and drive motor",
-               text="Slide the impeller onto the motor shaft, keeping the inlet facing down. Lower the motor and impeller assembly into the impeller chamber, centred over the bellmouth support.",
-               speech="Slide the impeller onto the motor shaft with the inlet facing down, then lower the motor and impeller into the chamber, centred over the bellmouth support.",
-               camera=dict(dir=[0.9, 0.85, 0.75], xray=True))
-    for n in wheel:
-        s._track(n); s._key(n, 0, (0, 470, 0)); s._key(n, s.t, (0, 470, 0)); s._key(n, s.t + 1.4, (0, 560, 0), ease=1)
-    s.t += 1.6
-    s.place(imp, path=[(0, 560, 0), (0, 180, 0)], dur=3.2, label="impeller + motor lowered into the chamber")
-    s.flag("Motor shaft fit and impeller retention are inside the CAD sub-assembly (no separate shaft hardware modelled)")
-
+    # v2.1 order: the bracket and its fastening first (position, orientation and the motor interface are
+    # visible with nothing in the way), then the impeller and drive motor raised from below into it,
+    # then the motor fastening, which can only follow the motor (the bolts thread into it).
     s = U.step(phase=3, phaseTitle=P3, title="Position the motor mounting bracket",
-               text="Press the four clip nuts onto the bracket supports, then guide the motor mounting bracket under the filter base lip and onto the motor, aligning its holes.",
-               speech="Press four clip nuts onto the bracket supports, then guide the motor mounting bracket under the filter base lip and onto the motor.",
+               text="Press the four clip nuts onto the two impeller bracket supports. Lower the motor mounting bracket through the filter base opening onto the supports, ends over the clip nuts, with its four centre holes — the motor interface — over the impeller chamber.",
+               speech="Press four clip nuts onto the bracket supports. Then lower the motor mounting bracket onto the supports, ends over the clip nuts, with the four centre holes over the impeller chamber.",
                camera=dict(dir=[0.85, 1.0, 0.6], xray=True))
     for n in brk_clips:
-        s.fastener(n, "clip", slide=clip_dir(U, n), dur=0.8)
+        s.fastener(n, "clip", dur=0.8, **clip_dir(U, n))
     path, tilt = choose_place(U, ["Motor Mounting Bracket"], [
-        ([(0, 260, 0), (0, 40, 0)], None), ([(0, 260, 0), (0, 30, 0), (0, 8, 40)], None),
+        ([(0, 260, 0)], None), ([(0, 260, 0), (0, 40, 0)], None), ([(0, 260, 0), (0, 30, 0), (0, 8, 40)], None),
         ([(0, 260, 0), (0, 30, 0)], ((1, 0, 0), 14)), ([(0, 260, 0), (0, 25, 0)], ((0, 1, 0), 20)),
         ([(0, 260, 0), (0, 30, 0)], ((0, 0, 1), 10)), ([(0, 260, 0), (0, 30, 0)], ((0, 1, 0), 35))],
         allow=set(brk_clips))
@@ -183,6 +212,25 @@ def define(U):
                camera=dict(dir=[0.7, 1.0, 0.45], xray=True, close=True))
     for n in washers: s.fastener(n, "washer", side=TOP, gap=25, dur=0.8)
     s.hw(washers, "motor mounting holes, under the bolt heads")
+
+    s = U.step(phase=3, phaseTitle=P3, title="Install the impeller and drive motor",
+               text="Below the unit, slide the impeller up onto the motor shaft with the inlet facing down and fit the inlet bellmouth under it. Raise the assembly straight up through the open base and the support tracks until the motor's top face meets the bracket, its four threaded holes aligned with the bracket holes.",
+               speech="Below the unit, slide the impeller up onto the motor shaft with the inlet facing down, and fit the inlet bellmouth under it. Then raise the assembly straight up through the open base until the motor meets the bracket, holes aligned.",
+               camera=dict(dir=[0.85, -0.55, 0.7], xray=True, underside=True))
+    LIFT = 640.0                                  # staging below the unit (mm); the base is open
+    bm = [n for n in imp if n == "Impeller Inlet Bellmouth"]
+    motor_only = [n for n in motor_side if n not in bm]
+    for n in motor_only:
+        s._track(n); s._key(n, 0, (0, -LIFT, 0))
+    for n in wheel:                               # wheel up onto the shaft (collision-checked relative motion)
+        s._track(n); s._key(n, 0, (0, -LIFT - 95, 0)); s._key(n, s.t, (0, -LIFT - 95, 0)); s._key(n, s.t + 1.3, (0, -LIFT, 0), ease=1)
+    for n in bm:                                  # then the inlet bellmouth under the impeller
+        s._track(n); s._key(n, 0, (0, -LIFT - 190, 0)); s._key(n, s.t + 1.4, (0, -LIFT - 190, 0)); s._key(n, s.t + 2.5, (0, -LIFT, 0), ease=1)
+    s._shot(s.t, np.array(U.A["Impeller Drive Motor"]["centre"]) + np.array([0, -LIFT - 60, 0]), radius=200, kind="wide", axis=(0, 1, 0))
+    s.t += 2.7
+    s.place(imp, path=[(0, -LIFT, 0)], dur=3.4, label="impeller + motor raised into the bracket")
+    s.checks.extend(sub_assembly_checks(U, wheel, motor_only, bm))
+    s.flag("Motor shaft fit and impeller retention are inside the CAD sub-assembly (no separate shaft hardware modelled)")
 
     s = U.step(phase=3, phaseTitle=P3, title="Insert the motor mounting bolts",
                text="Insert the four motor mounting hex bolts through the washers and bracket and start them by hand into the motor.",
@@ -218,7 +266,7 @@ def define(U):
     s = U.step(phase=4, phaseTitle=P4, title="Install the bellmouth mounting plate",
                text="Pass the bellmouth mounting plate in through the front filter opening, then raise it under the bellmouth support track, around the impeller inlet.",
                speech="Pass the bellmouth mounting plate in through the front filter opening, then raise it up under the bellmouth support track.",
-               camera=dict(dir=[0.9, -0.55, 0.7], xray=True))
+               camera=dict(dir=[0.9, -0.55, 0.7], xray=True, underside=True))
     opts = [([(460, dy, 0), (dx, dy, 0), (dx, 0, 0)], None) for dy in (-84, -80, -88) for dx in (-4, -7, -10, -14)]
     path, tilt = choose_place(U, ["Bellmouth Mounting Plate"], opts, allow={"Clip Nut (6)", "Clip Nut (7)"})
     s.place(["Bellmouth Mounting Plate"], path=path, tilt=tilt, dur=3.2, final_allow={"Bellmouth Support Track", "Clip Nut (6)", "Clip Nut (7)", "Impeller Inlet Bellmouth"})
@@ -226,7 +274,7 @@ def define(U):
     s = U.step(phase=4, phaseTitle=P4, title="Fasten the bellmouth mounting plate",
                text="Fasten the plate to the support track with the eight self-tapping pan head screws, driven from below.",
                speech="Fasten the plate to the support track with the eight self tapping screws, driven from below.",
-               camera=dict(dir=[0.9, -0.6, 0.6], xray=True))
+               camera=dict(dir=[0.9, -0.6, 0.6], xray=True, underside=True))
     for n in plate_screws:
         s.fastener(n, "screw", dur=0.8)
         s.drive_with_hand(n, turns=5, dur=0.9)
@@ -244,7 +292,7 @@ def define(U):
     s = U.step(phase=4, phaseTitle=P4, title="Install the bellmouth hardware",
                text="Set the six hex flange nuts on the plate over their holes (slide them in under the impeller shroud), then insert the six hex flange bolts from below through the bellmouth flange and plate into the nuts and tighten them.",
                speech="Set the six flange nuts on the plate over their holes, then insert the six bolts from below through the bellmouth flange into the nuts, and tighten them.",
-               camera=dict(dir=[0.9, -0.5, 0.6], xray=True))
+               camera=dict(dir=[0.9, -0.5, 0.6], xray=True, underside=True))
     for n in bm_nuts:
         c = np.asarray(U.A[n]["centre"]); r = unit([c[0] + 176.6, 0, c[2]])
         s.place([n], path=[r * 30 + np.array([0, 0.8, 0]), np.array([0, 0.8, 0])], dur=1.0, final_allow={"Bellmouth Mounting Plate"})
@@ -270,7 +318,8 @@ def define(U):
                text="Press the two clip nuts onto the upper door flange, fit the filter cover (door frame and access door) over the filter opening, and rivet the access door to the door frame with six closed-end rivets.",
                speech="Press the two clip nuts onto the upper flange, fit the filter cover over the opening, and rivet the access door to the door frame with six closed end rivets.",
                camera=dict(dir=[1, 0.3, 0.55]))
-    for n in door_clips: s.fastener(n, "clip", slide=clip_dir(U, n, prefer=FRONT), dur=0.9)
+    dup = {"Clip Nut (12)": "Clip Nut (6)", "Clip Nut (5)": "Clip Nut (7)"}     # duplicated in the CAD (flagged)
+    for n in door_clips: s.fastener(n, "clip", dur=0.9, allow={dup[n]}, **clip_dir(U, n, prefer=FRONT, allow={dup[n]}))
     s.place(["Door Frame", "Access Door"], path=[(260, 0, 0), (40, 0, 0)], dur=2.4, final_allow={"Unit Body", "Spring Nut Angle", "Clip Nut", "Clip Nut (1)", "Clip Nut (6)", "Clip Nut (7)", "Clip Nut (12)", "Clip Nut (5)"})
     s.rivet(door_rivets)
     s.hw(door_clips + door_rivets, "upper door flange / access door to door frame")
@@ -305,7 +354,8 @@ def define(U):
                camera=dict(dir=[0.6, 0.7, 1.0]))
     for b in fcb_brackets:
         zs = 1 if U.A[b]["centre"][2] > 0 else -1
-        s.place([b], path=[(0, 0, zs * 120)], dur=1.4, final_allow={"Unit Body"})
+        path, tilt = choose_place(U, [b], [([(0, 140, 0)], None), ([(0, 140, zs * 40), (0, 0, zs * 40)], None), ([(0, 0, zs * 120)], None)])
+        s.place([b], path=path, tilt=tilt, dur=1.4, final_allow={"Unit Body"})
     for n in fcb_screws: s.fastener(n, "screw", dur=0.7)
     s.drill(fcb_screws, af=6.35, depth=1.5, turns=4, hints=((0, -1, 0), (1, 0, 0)))
     s.toolTracks[-1]["bit"] = "placeholder-hex"
@@ -376,7 +426,7 @@ def define(U):
     s.flag("These two screws touch only the back panel in the CAD — their function (and any part they hold) requires engineering confirmation"); s.flag(NO_BIT)
 
     for title, group, where, cam in (
-            ("Rivet the back panel", back_rivets, "back panel to unit body and filter base", [-1, 0.4, 0.6]),
+            ("Rivet the back panel", back_rivets, "back panel to filter base", [-1, 0.4, 0.6]),
             ("Rivet the filter base", fb_rivets, "filter base to unit body (side walls)", [0.4, 0.5, 1.0]),
             ("Rivet the track mount legs", leg_rivets, "track mount legs to unit body", [0.5, 0.0, 1.0]),
             ("Rivet the gauge box enclosure", gauge_rivets, "gauge box enclosure to unit body", [0.9, 0.2, -0.8])):
