@@ -11,7 +11,9 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
  *          applied to the part's CAD pose (D = identity is the installed CAD position)
  *   tools  keys [t, px,py,pz, qx,qy,qz,qw]: pose of the tool's working frame (origin = working point,
  *          +Y into the tool); `sub` channels drive the tool's moving components
- *   fx     silicone bead, marker line, rivet mandrels, decals
+ *   fx     silicone bead, marker line, rivet mandrels, decals; v2.1: spinArrow = orange curved
+ *          arrow around a fastener axis shown only while it is being tightened (the drill body and
+ *          socket stay still — the CAD fastener geometry is never altered to fake a rotation)
  *
  * The rig only moves objects; visibility of not-yet-installed parts is the Appearance state
  * (main.js), so materials, x-ray and selection keep working as in the parts tutorial.
@@ -31,6 +33,70 @@ function seg(keys, t) {
   return [i, span > 0 ? (t - keys[i][0]) / span : 1];
 }
 
+/**
+ * v2.1 rivet-gun materials (the supplied STEP has no colours): orange housing accents, satin steel
+ * functional parts, dark contrasting grip / guard / battery. Original geometry untouched; the grip
+ * is told apart from the housing by a per-vertex colour (tool frame x < −60 mm), so no texture
+ * is needed (the model has no UVs) — nothing extra to download. Matte to satin, never glossy.
+ */
+function styleRivetGun(nodes) {
+  const pbr = (color, metalness, roughness, extra = {}) => new THREE.MeshStandardMaterial({ color, metalness, roughness, ...extra });
+  const ORANGE = 0xe8731a, RUBBER = 0x2a2c30;
+  const M = {
+    s1: null,                                              // housing + grip: vertex colours below
+    s2: pbr(0x3b3f45, 0.15, 0.62),                         // mandrel collector
+    s3: pbr(0xb9bec4, 0.85, 0.38),                         // nose piece (steel)
+    s4: pbr(0x8e949b, 0.8, 0.45), s5: pbr(0x8e949b, 0.8, 0.45),   // screws
+    s6: pbr(0x232529, 0.1, 0.7),                           // battery pack
+    s7: pbr(ORANGE, 0.05, 0.55),                           // battery label plate (accent)
+    s8: pbr(0x3b3f45, 0.2, 0.6), s9: pbr(0x3b3f45, 0.2, 0.6), s10: pbr(0x3b3f45, 0.2, 0.6),
+    s11: pbr(RUBBER, 0.0, 0.85),                           // guard loop (rubber)
+    s12: pbr(0x1d1f22, 0.1, 0.6),                          // button
+    s13: pbr(0x1d1f22, 0.1, 0.6),                          // trigger
+    s14: pbr(0x5b6066, 0.5, 0.5),                          // release lever
+  };
+  for (const [name, node] of Object.entries(nodes)) {
+    const k = (name.match(/__(s\d+)$/) || [])[1];
+    if (!k || !(k in M)) continue;
+    node.traverse((o) => {
+      if (!o.isMesh) return;
+      if (M[k]) { o.material = M[k]; return; }
+      const pos = o.geometry.attributes.position, n = pos.count;
+      const col = new Float32Array(n * 3), a = new THREE.Color(ORANGE), b = new THREE.Color(RUBBER);
+      // positions are quantised (gltfpack): take them to the tool frame with the mesh's own transform
+      let root = o; while (root.parent) root = root.parent;
+      root.updateMatrixWorld(true);
+      const Mw = o.matrixWorld, v = new THREE.Vector3();
+      for (let i = 0; i < n; i++) {
+        v.fromBufferAttribute(pos, i).applyMatrix4(Mw);
+        const c = v.x < -0.060 ? b : a;                    // metres, tool frame: grip behind the head housing
+        col[3 * i] = c.r; col[3 * i + 1] = c.g; col[3 * i + 2] = c.b;
+      }
+      o.geometry.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      o.material = pbr(0xffffff, 0.05, 0.6, { vertexColors: true });
+    });
+  }
+}
+
+/** Orange curved arrow (270° arc + head) about +Z of its group, radius r (m). sense: -1 = clockwise seen from +Z. */
+function makeSpinArrow(r, sense) {
+  const mat = new THREE.MeshBasicMaterial({ color: 0xff7a1a, transparent: true, opacity: 0, depthWrite: false });
+  const tube = Math.max(0.0009, r * 0.07);
+  const arc = Math.PI * 1.5;
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r, tube, 6, 40, arc), mat);
+  const head = new THREE.Mesh(new THREE.ConeGeometry(tube * 3, tube * 7, 12), mat);
+  // the head points along the direction of motion: at angle 0 towards −θ (clockwise) or at the arc end towards +θ
+  const th = sense < 0 ? 0 : arc;
+  head.position.set(r * Math.cos(th), r * Math.sin(th), 0);
+  const tang = new THREE.Vector3(-Math.sin(th), Math.cos(th), 0).multiplyScalar(sense < 0 ? -1 : 1);
+  head.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tang);
+  head.position.addScaledVector(tang, tube * 2);
+  for (const m of [ring, head]) { m.raycast = () => {}; m.renderOrder = 3; g.add(m); }
+  g.userData.mat = mat;
+  return g;
+}
+
 export class UnitRig {
   constructor({ viewer, model, loaded, base = 'assets/unit/' }) {
     this.viewer = viewer; this.model = model; this.loaded = loaded; this.base = base;
@@ -41,6 +107,7 @@ export class UnitRig {
     this.parts = new Map();                        // nid -> { obj, L0, A, Ainv }
     this.moved = new Set();
     this.fx = new Map();                           // step index -> [fx objects]
+    this.decalAlpha = 1;
     this.ready = this.#loadTools();
     this.#indexParts();
   }
@@ -73,6 +140,7 @@ export class UnitRig {
         }
         if (o.name) { nodes[o.name] = o; o.updateMatrix(); base[o.name] = o.matrix.clone(); o.matrixAutoUpdate = false; }
       });
+      if (id === 'rivetgun') styleRivetGun(nodes);      // before the group joins the scene: tool frame = world
       this.fxRoot.add(group);
       this.tools[id] = { group, nodes, base, info };
     }));
@@ -199,6 +267,14 @@ export class UnitRig {
           m.userData = { fx: { type: 'mandrel', ...it } };
           out.push(m);
         }
+      } else if (f.type === 'spinArrow') {
+        const g = makeSpinArrow(f.radius, f.sense ?? -1);
+        const ax = new THREE.Vector3().fromArray(f.axis).normalize();
+        g.position.fromArray(f.centre);
+        g.userData.baseQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), ax);
+        g.quaternion.copy(g.userData.baseQ);
+        g.userData.fx = f; g.userData.axis = ax;
+        out.push(g);
       } else if (f.type === 'decal') {
         const tex = new THREE.TextureLoader().load(this.base + 'decals/' + f.file, () => this.viewer.requestRender());
         tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
@@ -234,6 +310,17 @@ export class UnitRig {
           const pull = Math.max(0, Math.min(1, (t - f.pull[0]) / (f.pull[1] - f.pull[0])));
           o.position.fromArray(f.head).addScaledVector(new THREE.Vector3().fromArray(f.axis), 0.0025 * pull);
         }
+      } else if (f.type === 'spinArrow') {
+        const [t0, t1] = f.t;
+        const vis = t !== Infinity && t >= t0 && t <= t1;          // only while the fastener is tightened
+        o.visible = vis;
+        if (vis) {
+          const fade = Math.min(1, (t - t0) / 0.15, (t1 - t) / 0.15);
+          o.userData.mat.opacity = 0.95 * Math.max(0, fade);
+          // the arrow turns slowly in the tightening sense (motion cue; the drill itself stays still)
+          const turn = (f.sense ?? -1) * (t - t0) * Math.PI * 1.2;
+          o.quaternion.copy(o.userData.baseQ).multiply(_q.setFromAxisAngle(_v.set(0, 0, 1), turn));
+        }
       } else if (f.type === 'decal') {
         const k = f.keys;
         let off = 0, press = 1;
@@ -243,9 +330,20 @@ export class UnitRig {
         }
         o.visible = true;
         o.position.copy(o.userData.centre).addScaledVector(o.userData.normal, off);
-        o.material.opacity = 0.8 + 0.2 * press;
+        o.userData.alpha = 0.8 + 0.2 * press;
+        o.material.opacity = o.userData.alpha * this.decalAlpha;
       }
     }
+  }
+
+  /** v2.1: decals fade with the ghosted main body in x-ray steps (they would hide the parts inside). */
+  setDecalAlpha(a) {
+    if (a === this.decalAlpha) return;
+    this.decalAlpha = a;
+    for (const list of this.fx.values()) for (const o of list) {
+      if (o.userData.fx && o.userData.fx.type === 'decal') o.material.opacity = (o.userData.alpha ?? 1) * a;
+    }
+    this.viewer.requestRender();
   }
 
   #hideFx(index) { for (const o of this.fx.get(index) || []) o.visible = false; }
@@ -265,7 +363,11 @@ export class UnitRig {
     this.viewer.requestRender();
   }
 
-  /** Parts kit: every component at its starting point (first key of its installation track). */
+  /**
+   * Parts kit: every component at its starting point (first key of its installation track),
+   * v2.1: offsets doubled for a clearer exploded view (KIT_SCALE), capped at KIT_MAX metres so
+   * long approach paths (e.g. the impeller raised from below) do not dwarf the unit.
+   */
   #applyKit() {
     const D = new THREE.Matrix4();
     for (const s of this.model.steps) {
@@ -273,7 +375,11 @@ export class UnitRig {
         const n = this.model.node(tr.node);
         if (!n || this.model.steps.indexOf(s) !== n.step) continue;
         const p = this.parts.get(tr.node);
-        this.#setLocal(p, this.#delta(tr, 0, D)); this.moved.add(tr.node);
+        this.#delta(tr, 0, D);
+        const e = D.elements, len = Math.hypot(e[12], e[13], e[14]);
+        const k = len > 1e-6 ? Math.max(1, Math.min(UnitRig.KIT_SCALE, UnitRig.KIT_MAX / len)) : 1;
+        e[12] *= k; e[13] *= k; e[14] *= k;
+        this.#setLocal(p, D); this.moved.add(tr.node);
       }
     }
   }
@@ -300,3 +406,5 @@ export class UnitRig {
     return pts;
   }
 }
+UnitRig.KIT_SCALE = 2;      // v2.1: exploded (components) view displacement ×2
+UnitRig.KIT_MAX = 0.75;     // m

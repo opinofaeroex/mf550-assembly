@@ -4,7 +4,7 @@
 export const CONFIG = {
   /** Product name shown in the interface (the CAD/internal identifier stays MF-550-210-B). */
   productName: 'Mist-Fit 550',
-  version: '2.0.0',
+  version: '2.1.0',
 
   assemblyUrl: 'assets/model/assembly.json',
   modelDir: 'assets/model/',
@@ -26,9 +26,16 @@ export const CONFIG = {
    * collision analysis (pipeline/disassembly.py). The viewer multiplies every
    * vector — hardware, parts and sub-assemblies alike — by this factor, so the
    * directions and the assembly relationships are unchanged and f = 0 is still
-   * the exact CAD position. v1.0 used 1, v1.1 uses 3.
+   * the exact CAD position. v1.0 used 1, v1.1 used 3, v2.1 doubles it to 6.
    */
-  explodeScale: 3,
+  explodeScale: 6,
+  /**
+   * v2.1: at 2× the v2.0 distance the ~5 % longest vectors (up to 4.4 m) would push the
+   * kit far outside the useful view and shrink everything else. Displacements longer than
+   * `from` metres grow only at `rate` beyond it (same direction): the longest parts stay
+   * about where v2.0 put them, every other component is exactly 2× further out.
+   */
+  explodeSoftCap: { from: 0.8, rate: 0.25 },
 
   /**
    * Automatic camera (v1.3, scene/CameraController.js): close-up of each step's components.

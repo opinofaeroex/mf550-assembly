@@ -27,6 +27,8 @@ const PORT = 8097;
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
     await page.addInitScript(() => { try { localStorage.setItem('mf550.narration.muted', 'true'); } catch { /* none */ } });
+    // the plans belong to the parts tutorial (v2.0 added the unit tutorial, which has its own camera)
+    await page.addInitScript(() => { try { localStorage.setItem('mf550.tutorial', 'parts'); } catch { /* none */ } });
     await page.route('**/camera-plans.json', (r) => r.fulfill({ status: 404, body: '' }));   // force the runtime planner
     await page.goto(`http://127.0.0.1:${PORT}/?profile=high`);
     await page.waitForFunction(() => window.app && window.app.cameraCtl && window.app.modelTier === 'high', null, { timeout: 180000 });
@@ -39,7 +41,7 @@ const PORT = 8097;
       a.setOption('ghost', false);
       const solid = a.cameraCtl.exportPlans();
       a.setOption('ghost', true);
-      const key = a.cameraCtl.constructor.planKey(a.model, a.cameraCtl.cfg, a.viewer.camera.fov, CONFIG.explodeScale);
+      const key = a.cameraCtl.constructor.planKey(a.model, a.cameraCtl.cfg, a.viewer.camera.fov, [CONFIG.explodeScale, CONFIG.explodeSoftCap]);
       return { key, ms: Math.round(performance.now() - t0), variants: { ghost, solid } };
     });
     const file = {
