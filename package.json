@@ -17,9 +17,10 @@
     "narration:verify": "python3 tools/narration/verify.py",
     "model:tiers": "node tools/optimize-model.mjs",
     "camera:plans": "node tools/precompute-camera.cjs",
+    "unit:review": "node tools/unit-review.cjs",
     "unit:analyse": "python3 pipeline/unit/analyse_unit.py MF-550-210-B_GROUPED_ASSEMBLY.step",
     "unit:tools": "python3 pipeline/unit/build_tools.py <dir-with-tool-STEPs> public/assets/unit/tools",
-    "unit:build": "python3 pipeline/unit/build_unit.py <converter assembly.json of the grouped STEP>"
+    "unit:build": "python3 pipeline/unit/build_unit.py"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.5.1",

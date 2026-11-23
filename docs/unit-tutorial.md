@@ -6,6 +6,7 @@ It is an extension of the existing application. The original 69-step parts tutor
 switch (*Unit installation · Parts assembly*) or `?tutorial=parts` opens it.
 
 Engineering data, open items and validation results: **[unit-engineering-report.md](unit-engineering-report.md)**.
+Rules every future change must follow: **[ANIMATION_AND_INTERACTION_STANDARDS.md](ANIMATION_AND_INTERACTION_STANDARDS.md)**.
 
 ## v2.1 — camera, mechanical accuracy and sequence refinements
 
@@ -151,7 +152,11 @@ So every hardware size is measured from the geometry and labelled with its verif
 | `steps_unit.py` | **The authored sequence**: phases, steps, operator text, spoken text, the components and hardware of each step, the tools and the flags. |
 | `build_unit.py` | Resolves every action into time-keyed tracks, checks every motion and tool pose for collisions, and writes `public/assets/unit/assembly.json` and `docs/unit-engineering-report.md`. |
 
-To rebuild after a CAD change:
+To rebuild the step data after changing `steps_unit.py`, `build_unit.py` or `standards.py`, run
+`npm run unit:build`. It needs only the repository: the collision meshes are tracked in `pipeline/unit/cache/`,
+and the published `assembly.json` supplies nodes and BOM.
+
+To rebuild after a CAD change (needs the STEP files):
 
 ```bash
 python3 pipeline/convert_step.py MF-550-210-B_GROUPED_ASSEMBLY.step --out /tmp/unit

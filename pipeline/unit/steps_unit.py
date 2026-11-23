@@ -16,13 +16,14 @@ import math
 import numpy as np
 
 from unitlib import delta_matrix, ID_Q, unit
+import standards as S
 
 FRONT, BACK, TOP = (1, 0, 0), (-1, 0, 0), (0, 1, 0)
 NO_BIT = ("Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is shown in the drill — "
           "drive type of the pan-head screws is not modelled in the CAD")
 
 
-def clip_dir(U, name, prefer=None, travel=30.0, allow=()):
+def clip_dir(U, name, prefer=None, travel=S.CLIP.travel, allow=()):
     """Slide-on direction of a clip nut: the first direction perpendicular to its bolt axis along which it
     slides on collision-free WITHOUT the mating sheet allowed (v2.1: riding a small offset along its axis,
     as fastener(kind='clip') does), preferring vertical (from below first) then `prefer`."""
@@ -35,9 +36,9 @@ def clip_dir(U, name, prefer=None, travel=30.0, allow=()):
     best = None
     for d in cands:
         for trav in (travel, 22.0, 16.0):
-            for o in (0.0, -0.5, -0.75, -1.0, -1.25, -1.5, -2.0, -2.5, 0.5, 1.0, 1.5, 2.5):
+            for o in S.CLIP.ride_offsets:
                 worst = 0.0
-                for s in np.linspace(0, 1, 41)[:-1]:
+                for s in np.linspace(0, 1, S.CLIP.slide_samples)[:-1]:
                     hit = U.world.hits(mesh, delta_matrix(d * trav * (1 - s) + a * o, ID_Q, head, a, 0), allow=set(allow))
                     worst = max([worst, *hit.values()]) if hit else worst
                 if worst == 0.0: return dict(slide=d, travel=trav)
@@ -64,7 +65,7 @@ def choose_place(U, names, options, allow=()):
             d = s * total; k = 0
             while k < len(seg) - 1 and d > seg[k]: d -= seg[k]; k += 1
             o = pts[k] + (pts[k + 1] - pts[k]) * (0 if seg[k] == 0 else min(1, d / seg[k]))
-            q = slerp(qs, ID_Q, min(1, s * 1.15)) if tilt else ID_Q
+            q = slerp(qs, ID_Q, min(1, s * S.PLACE.tilt_removal_rate)) if tilt else ID_Q
             T = o + P - quat_to_mat(q) @ P
             hit = U.world.hits(mesh, delta_matrix(T, q, P, (0, 1, 0), 0), allow=set(allow))
             if hit: worst += sum(hit.values())

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CAMERA_FOLLOW } from './standards.js';
 
 /**
  * UnitCamera — automatic camera of the unit-installation tutorial (v2.0, per-operation shots in v2.1).
@@ -33,7 +34,7 @@ export class UnitCamera extends EventTarget {
     this.precomputed = null;
     this.plans = new Map();
     this.shotCache = new Map();
-    this.padding = 1.12;
+    this.padding = CAMERA_FOLLOW.padding;
     this.follow = false;                // true while the shots drive the camera
     this.cur = null;                    // smoothed { target, dir, dist }
     this._q = new THREE.Quaternion();
@@ -101,7 +102,7 @@ export class UnitCamera extends EventTarget {
     let u = 0;
     if (b !== a) {
       // move towards the next shot during the last part of the interval (at most 0.9 s)
-      const lead = Math.min(0.9, (b.t - a.t) * 0.7);
+      const lead = Math.min(CAMERA_FOLLOW.maxLead, (b.t - a.t) * CAMERA_FOLLOW.leadShare);
       u = smooth(Math.max(0, Math.min(1, (t - (b.t - lead)) / Math.max(1e-6, lead))));
     }
     const target = a.target.clone().lerp(b.target, u);
@@ -125,7 +126,7 @@ export class UnitCamera extends EventTarget {
       this.cur = { target, dir: off.clone().normalize(), dist: off.length() || want.dist };
     }
     const c = this.cur;
-    const k = 1 - Math.exp(-Math.min(dt, 0.1) * 3.2);
+    const k = 1 - Math.exp(-Math.min(dt, CAMERA_FOLLOW.maxFrameDt) * CAMERA_FOLLOW.smoothing);
     c.target.lerp(want.target, k);
     // rotate the view direction towards the wanted one (orbit about the target)
     const q = this._q.setFromUnitVectors(c.dir, want.dir);

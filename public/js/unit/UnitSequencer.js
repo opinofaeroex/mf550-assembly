@@ -13,6 +13,7 @@
  * poses — nothing is duplicated, and the end pose of every motion is the CAD position.
  */
 import { ASSEMBLED, EXPLODED } from '../scene/Sequencer.js';
+import { LOOP } from './standards.js';
 
 export class UnitSequencer extends EventTarget {
   constructor(model, rig, opts = {}) {
@@ -23,7 +24,7 @@ export class UnitSequencer extends EventTarget {
     this.pos = ASSEMBLED;
     this.speed = 1;
     this.t = 0;
-    this.hold = opts.hold ?? 1.6;
+    this.hold = opts.hold ?? LOOP.hold;
     this.loop = opts.loop !== false;
     this.animating = false;
     this.looping = false;
