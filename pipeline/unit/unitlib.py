@@ -19,6 +19,10 @@ from pathlib import Path
 import numpy as np
 import trimesh
 
+from standards import COLLISION
+
+PART_TOL = COLLISION.part_tol                # mm penetration tolerated for parts (standards § 10)
+
 # ------------------------------------------------------------------ small math
 
 def unit(v):
@@ -119,7 +123,7 @@ class World:
             g = (mesh, self.cm._get_fcl_obj(mesh)); self._bvh[k] = g
         return g[1]
 
-    def hits(self, mesh, M, allow=(), tol=0.6):
+    def hits(self, mesh, M, allow=(), tol=PART_TOL):
         """Present parts the mesh (transformed by M) penetrates deeper than tol mm (ignoring `allow`)."""
         import fcl
         from trimesh.collision import _fcl_collision_data

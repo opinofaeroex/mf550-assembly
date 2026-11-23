@@ -221,7 +221,7 @@ def main():
             m = m.copy(); m.apply_transform(M); framed.append(m.copy()); m.apply_scale(0.001)
             scene.add_geometry(m, node_name=name, geom_name=name)
         whole = trimesh.util.concatenate(framed)          # tool frame, mm: collision checks in build_unit.py
-        cache = Path(__file__).resolve().parent / ".cache"; cache.mkdir(exist_ok=True)
+        cache = Path(__file__).resolve().parent / "cache"; cache.mkdir(exist_ok=True)   # tracked (standards § 8)
         np.savez_compressed(cache / f"tool_{tool}.npz", V=whole.vertices.astype(np.float32), F=whole.faces.astype(np.int32))
         raw = out / f"{tool}.raw.glb"; scene.export(raw)
         dst = out / f"{tool}.glb"

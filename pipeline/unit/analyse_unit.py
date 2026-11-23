@@ -223,7 +223,7 @@ def main():
             if d.IsDone() and d.Value() < CONTACT_TOL: contacts.append(o)
         p["contacts"] = sorted(contacts)
     # coarse meshes for the path check (pipeline/unit/plan_paths.py)
-    mesh_dir = HERE / ".cache"; mesh_dir.mkdir(exist_ok=True)
+    mesh_dir = HERE / "cache"; mesh_dir.mkdir(exist_ok=True)   # tracked: rebuilds need no STEP (standards § 8)
     arrays = {}
     for n, g, shp in items:
         V, F = tessellate(shp)

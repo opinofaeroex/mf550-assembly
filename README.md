@@ -22,6 +22,10 @@ down, and an augmented-reality mode for phones and tablets.
 
 ---
 
+> **Development standard.** Before changing steps, animations, tools, the camera or the interface, read
+> [docs/ANIMATION_AND_INTERACTION_STANDARDS.md](docs/ANIMATION_AND_INTERACTION_STANDARDS.md). v2.1 is the quality
+> baseline; [CLAUDE.md](CLAUDE.md) makes the standard mandatory for Claude Code sessions.
+
 ## 0. What's new in version 2.1
 
 A refinement of the v2.0 unit installation tutorial. It is built on the same architecture; nothing was removed.
@@ -507,6 +511,7 @@ mf550-webar/
 │   ├── build-usdz.cjs              pre-builds the animated USDZ (headless browser)
 │   ├── optimize-model.mjs          Balanced / Low model tiers (meshoptimizer, verified identity)   (v1.5)
 │   ├── precompute-camera.cjs       camera-plans.json from the runtime planner (headless browser)  (v1.5)
+│   ├── unit-review.cjs             unit tutorial review: frames, contact sheet, scene fingerprints
 │   ├── perf/                       measurement harnesses (docs/performance-audit.md)              (v1.5)
 │   └── narration/                                                                              (v1.4)
 │       ├── export-script.mjs       spoken script of every position (uses the app's modules)

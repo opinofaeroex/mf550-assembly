@@ -44,6 +44,7 @@ import { PerfMonitor } from './perf/PerfMonitor.js';
 import { UnitRig } from './unit/UnitRig.js';
 import { UnitSequencer } from './unit/UnitSequencer.js';
 import { UnitCamera } from './unit/UnitCamera.js';
+import { XRAY } from './unit/standards.js';
 
 /** v2.0: which tutorial to show — URL ?tutorial=unit|parts > saved choice > CONFIG default. */
 function chooseTutorial() {
@@ -637,7 +638,7 @@ class App {
     const active = seq.isStep ? this.activeParts[pos] : null;
     const xray = seq.isStep && model.steps[pos].camera && model.steps[pos].camera.xray;
     const sel = this.selection ? this.selection.partSet : null;
-    if (this.rig) this.rig.setDecalAlpha(xray && this.opts.ghost ? 0.18 : 1);
+    if (this.rig) this.rig.setDecalAlpha(xray && this.opts.ghost ? XRAY.decalAlpha : 1);
     for (const id of model.partIds) {
       const s = model.node(id).step;
       let st = STATE.NORMAL;

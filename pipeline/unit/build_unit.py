@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 """
-build_unit.py — the Mist-Fit 550 unit-installation tutorial (v2.0)
+build_unit.py — the Mist-Fit 550 unit-installation tutorial (v2.0, refined in v2.1)
 ==================================================================
 
 Inputs
   pipeline/unit/unit-analysis.json      CAD facts (analyse_unit.py): axes, heads, sizes, contacts
-  pipeline/unit/.cache/meshes.npz       part meshes (mm) for collision checks
-  pipeline/unit/.cache/tool_*.npz       tool meshes in their working frame (build_tools.py)
-  <converter assembly.json>             convert_step.py output for MF-550-210-B_GROUPED_ASSEMBLY
+  pipeline/unit/cache/meshes.npz        part meshes (mm) for collision checks (analyse_unit.py)
+  pipeline/unit/cache/tool_*.npz        tool meshes in their working frame (build_tools.py)
+  [assembly.json]                       node / BOM source: the convert_step.py output for
+                                        MF-550-210-B_GROUPED_ASSEMBLY — or, by default, the published
+                                        public/assets/unit/assembly.json itself (its steps are rebuilt;
+                                        the result is byte-identical), so a rebuild needs only the repo
   public/assets/unit/tools/tools.json   tool pivots / moving parts
   public/assets/unit/decals/decals.json decal positions (rectify_decals.py)
 
@@ -35,10 +38,11 @@ import trimesh
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from unitlib import (ID_Q, World, delta_matrix, frame_quat, perp_basis, quat_axis_angle, quat_mul,  # noqa: E402
                      quat_to_mat, tool_mesh, unit)
+import standards as S  # noqa: E402  shared animation / camera / collision parameters (standards § 10)
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent.parent
-CACHE = HERE / ".cache"
+CACHE = HERE / "cache"                       # tracked in git: rebuilds need no STEP files
 M = 0.001                                    # mm -> m
 PITCH = {"1/4": 1.27, "3/8": 1.5875, "M6": 1.0, "#8": 0.79, "npt": 1.814}   # visual turn counts only
 SOCKET_SUPPLIED_AF = 14.2875                 # 9/16 in
@@ -147,7 +151,7 @@ class Unit:
 
 
 class Step:
-    HOLD0 = 1.5                                   # v2.1: opening overview before the first motion
+    HOLD0 = S.STEP.opening_hold                   # v2.1: opening overview before the first motion
 
     def __init__(self, unit, index, phase, phaseTitle, title, text, speech=None, camera=None):
         self.u, self.i = unit, index
@@ -215,7 +219,7 @@ class Step:
         pts = [np.asarray(p, float) for p in path] + [np.zeros(3)]
         seg = [np.linalg.norm(pts[k + 1] - pts[k]) for k in range(len(pts) - 1)]
         total = sum(seg) or 1.0
-        dur = dur or float(np.clip(0.9 + total / 260, 1.2, 3.2))
+        dur = dur or float(np.clip(S.PLACE.dur_base + total / S.PLACE.mm_per_s, S.PLACE.dur_min, S.PLACE.dur_max))
         qs = quat_axis_angle(tilt[0], math.radians(tilt[1])) if tilt else ID_Q
 
         def pose(s):                                  # s in [0,1] along the path length
@@ -223,7 +227,7 @@ class Step:
             while k < len(seg) - 1 and d > seg[k]: d -= seg[k]; k += 1
             f = 0 if seg[k] == 0 else min(1, d / seg[k])
             o = pts[k] + (pts[k + 1] - pts[k]) * f
-            q = slerp(qs, ID_Q, min(1, s * 1.15)) if tilt else ID_Q
+            q = slerp(qs, ID_Q, min(1, s * S.PLACE.tilt_removal_rate)) if tilt else ID_Q
             T = o + P - quat_to_mat(q) @ P
             return T, q
 
@@ -234,7 +238,7 @@ class Step:
         mid = (lo + hi) / 2 + pts[0] / 2
         self._shot(self.t, mid, radius=float(np.linalg.norm(pts[0]) / 2 + size / 2), kind="wide",
                    axis=unit(motion) if np.linalg.norm(motion) > 1 else None, ignore=names)
-        self._shot(self.t + dur * 0.62, (lo + hi) / 2, radius=max(45.0, size / 2 * 1.15), kind="detail",
+        self._shot(self.t + dur * S.PLACE.detail_shot_at, (lo + hi) / 2, radius=max(S.PLACE.detail_min_radius, size / 2 * S.PLACE.detail_pad), kind="detail",
                    axis=unit(motion) if np.linalg.norm(motion) > 1 else None, ignore=names)
         for n in names:
             if self.parts[n]["keys"]:                 # already moving (e.g. impeller onto the shaft first)
@@ -246,22 +250,22 @@ class Step:
             acc += L
             s = acc / total
             # intermediate keys every ~40 mm so tilt + bends interpolate smoothly
-            nsub = max(1, int(L / 40))
+            nsub = max(1, int(L / S.PLACE.key_spacing))
             for j in range(1, nsub + 1):
                 ss = (acc - L + L * j / nsub) / total
                 T, q = pose(ss)
                 for n in names: self._key(n, self.t + dur * ss, T, q, ease=0 if (k < len(seg) - 1 or j < nsub or not ease_last) else 1)
         mats = []
-        for s in np.linspace(0, 1, 36)[:-1]:
+        for s in np.linspace(0, 1, S.PLACE.samples)[:-1]:
             T, q = pose(s); mats.append(delta_matrix(T, q, P, (0, 1, 0), 0))
         self._check(label or f"place {', '.join(base_name(n) for n in names[:3])}{'…' if len(names) > 3 else ''}",
-                    self._group_mesh(names), mats, allow=allow, final_allow=final_allow, n_final=6)
+                    self._group_mesh(names), mats, allow=allow, final_allow=final_allow, n_final=S.PLACE.final_allow_samples)
         self.t += dur
         self._install(names)
         return self
 
     # ---------------------------------------------------------------- fasteners
-    def fastener(self, name, kind, side=None, gap=18.0, engage=None, hand_turns=1.5, dur=1.0, slide=None,
+    def fastener(self, name, kind, side=None, gap=S.FASTENER.gap, engage=None, hand_turns=S.FASTENER.hand_turns, dur=1.0, slide=None,
                  travel=None, allow=(), seat=True):
         """Bring one fastener to its hole along its axis (or a clip along `slide`).
         side: unit vector of the side it comes from (default: its head side)."""
@@ -280,43 +284,43 @@ class Step:
             # v2.1: the clip slides along `slide` riding a small offset along its own axis (spring legs open
             # over the sheet), then snaps home along the axis. The slide is checked WITHOUT the mating sheet
             # allowed (no pass-through); only the final snap may touch it (CAD clip/sheet interference).
-            sd = unit(slide); trav = travel or 30.0
+            sd = unit(slide); trav = travel or S.CLIP.travel
             ride = None
-            for o in (0.0, -0.5, -0.75, -1.0, -1.25, -1.5, -2.0, -2.5, 0.5, 1.0, 1.5, 2.5):
+            for o in S.CLIP.ride_offsets:
                 if all(not self.u.world.hits(mesh, delta_matrix(sd * trav * (1 - s) + a * o, ID_Q, head, a, 0), allow=set(allow))
-                       for s in np.linspace(0, 1, 41)[:-1]):
+                       for s in np.linspace(0, 1, S.CLIP.slide_samples)[:-1]):
                     ride = a * o; break
             ride = ride if ride is not None else np.zeros(3)
-            self._shot(self.t - 0.15, head, radius=40, axis=sd, kind="detail")
+            self._shot(self.t - S.FASTENER.shot_lead, head, radius=S.CLIP.shot_radius, axis=sd, kind="detail")
             start = sd * trav + ride
             self._key(name, 0, start); self._key(name, self.t, start)
-            self._key(name, self.t + dur * 0.78, ride if np.linalg.norm(ride) > 0 else sd * 1.2, ease=1)
+            self._key(name, self.t + dur * S.CLIP.snap_at, ride if np.linalg.norm(ride) > 0 else sd * S.CLIP.overshoot, ease=1)
             self._key(name, self.t + dur, (0, 0, 0), ease=1)          # snap home
-            slide_offs = [sd * trav * (1 - s) + ride for s in np.linspace(0, 1, 41)[:-1]]
-            snap_offs = [ride * (1 - s) for s in np.linspace(0, 1, 6)] if np.linalg.norm(ride) > 0 else []
+            slide_offs = [sd * trav * (1 - s) + ride for s in np.linspace(0, 1, S.CLIP.slide_samples)[:-1]]
+            snap_offs = [ride * (1 - s) for s in np.linspace(0, 1, S.CLIP.snap_samples)] if np.linalg.norm(ride) > 0 else []
             mats = [delta_matrix(o, ID_Q, head, a, 0) for o in slide_offs + snap_offs]
             allow_at = [set()] * len(slide_offs) + [mates] * len(snap_offs)
             tr["ride"] = [round(float(x), 3) for x in ride]
             self._check(f"clip {name}", mesh, mats, allow=set(allow), allow_at=allow_at)
             self.t += dur; self._install([name]); return self
         if kind != "rivet":
-            self._shot(self.t - 0.15, head, radius=max(28.0, L * 2.2), axis=side, kind="detail")
+            self._shot(self.t - S.FASTENER.shot_lead, head, radius=max(S.FASTENER.detail_min_radius, L * S.FASTENER.detail_per_length), axis=side, kind="detail")
         clear = travel or (L + gap)
-        e = engage if engage is not None else (min(6.0, 0.45 * L) if kind in ("bolt", "screw", "nut") else 0.0)
+        e = engage if engage is not None else (min(S.FASTENER.engage_max, S.FASTENER.engage_share * L) if kind in ("bolt", "screw", "nut") else 0.0)
         start = side * clear
         self._key(name, 0, start); self._key(name, self.t, start)
-        t1 = self.t + dur * (0.55 if e else 1.0)
+        t1 = self.t + dur * (S.FASTENER.insert_share if e else 1.0)
         self._key(name, t1, side * e, ease=1)
-        offs = [start + (side * e - start) * s for s in np.linspace(0, 1, 20)]
+        offs = [start + (side * e - start) * s for s in np.linspace(0, 1, S.FASTENER.samples)]
         mats = [delta_matrix(o, ID_Q, head, a, 0) for o in offs]
-        allow_at = [mates if np.linalg.norm(o) < L + 2 else set() for o in offs]
+        allow_at = [mates if np.linalg.norm(o) < L + S.FASTENER.mate_margin else set() for o in offs]
         if e and seat:                                                 # hand start: a few turns, a little travel
             ang = tr["sgn"] * 2 * math.pi * hand_turns
-            self._key(name, t1 + dur * 0.45, side * e * 0.7, ang=ang, ease=0)
+            self._key(name, t1 + dur * S.FASTENER.hand_share, side * e * S.FASTENER.hand_travel, ang=ang, ease=0)
             tr["handAngle"] = ang
-            tr["engaged"] = list(side * e * 0.7)
+            tr["engaged"] = list(side * e * S.FASTENER.hand_travel)
         self._check(f"{kind} {name}", mesh, mats, allow=allow, allow_at=allow_at)
-        self.t = t1 + (dur * 0.45 if e and seat else 0)
+        self.t = t1 + (dur * S.FASTENER.hand_share if e and seat else 0)
         self._install([name])
         return self
 
@@ -337,7 +341,7 @@ class Step:
             m.vertices = v; self.u.tmesh[key] = m
         return self.u.tmesh[key]
 
-    SWEEP = (0.0, 8.0, 20.0, 40.0, 70.0, 100.0, 130.0)
+    SWEEP = S.TOOL.retract_sweep
 
     def _tool_pose_free(self, tool, origin, y_axis, allow, hints, extra=None, mesh=None, sweep=SWEEP):
         """Roll about the working axis so the tool clears the installed parts at the working point AND
@@ -347,8 +351,8 @@ class Step:
         y_axis = unit(y_axis)
         tried = []
         for h in hints:
-            for k in range(12):
-                rot = quat_axis_angle(y_axis, k * math.pi / 6)
+            for k in range(S.TOOL.roll_steps):
+                rot = quat_axis_angle(y_axis, k * math.pi / (S.TOOL.roll_steps / 2))
                 xh = quat_to_mat(rot) @ unit(h)
                 if np.linalg.norm(xh - y_axis * (xh @ y_axis)) < 1e-3: continue
                 q = frame_quat(y_axis, xh)
@@ -369,7 +373,7 @@ class Step:
     def _sub(self, tr, part, t, val, ease=1):
         tr.setdefault("sub", {}).setdefault(part, []).append([round(t, 3), round(float(val), 4), ease])
 
-    def drill(self, names, af=None, hints=((0, -1, 0), (1, 0, 0), (0, 0, 1)), turns=4.0, label=None, depth=None, fallback=True):
+    def drill(self, names, af=None, hints=((0, -1, 0), (1, 0, 0), (0, 0, 1)), turns=S.DRILL.turns, label=None, depth=None, fallback=True):
         """Drill + socket sized to the measured hex: align, engage, turn the fastener home, retract.
         Fasteners the drill body cannot reach (no collision-free roll) are tightened with the
         supplied adjustable wrench instead (hex heads / nuts only) — recorded in the step flags."""
@@ -384,7 +388,7 @@ class Step:
                 k = self.parts[name]["keys"][-1]
                 side = unit(k[1:4]) if np.linalg.norm(k[1:4]) > 0.05 else a
                 outer = np.asarray(p["head"]) if not kind_nut else (np.asarray(p["tip"]) if np.dot(unit(np.asarray(p["tip"]) - np.asarray(p["head"])), side) > 0 else np.asarray(p["head"]))
-                dep = depth if depth is not None else max(2.0, hh * 0.6)
+                dep = depth if depth is not None else max(S.DRILL.depth_min, hh * S.DRILL.depth_share)
                 q, hit = self._tool_pose_free("drill", outer - side * dep, side, {name} | set(p.get("contacts", [])), hints, mesh=self._drill_mesh(haf))
                 (blocked if hit and p.get("across_flats") and af is None else ok).append(name)
             if ok: self.drill(ok, af=af, hints=hints, turns=turns, label=label, depth=depth, fallback=False)
@@ -407,7 +411,7 @@ class Step:
             haf = af or (p["across_flats"][0] if p.get("across_flats") else SOCKET_SUPPLIED_AF)
             tr["socketAF"] = haf
             hh = head_height(p) if not kind_nut else p["length"]
-            dep = depth if depth is not None else max(2.0, hh * 0.6)
+            dep = depth if depth is not None else max(S.DRILL.depth_min, hh * S.DRILL.depth_share)
             # socket opening sits `dep` below the outer end of the head (bolts) / of the nut (far end)
             outer = head
             if kind_nut:
@@ -424,40 +428,40 @@ class Step:
         for name, side, eng, q, off, ang0, outer, sgn, allow in poses:
             t0 = self.t
             if first:
-                H = self._clear_height(tool, mesh, eng + off, q, side, allow_all, start=130)
+                H = self._clear_height(tool, mesh, eng + off, q, side, allow_all, start=S.DRILL.first_clear)
                 self._tool_key(tr, t0, eng + off + side * H, q)
-                t0 += 0.25
+                t0 += S.DRILL.first_lead
             else:
                 # hop: back out to a clearance height, move across at that height, then go in
                 pn, ps, pe, pq, poff = prev
-                H = max(self._clear_height(tool, mesh, pe, pq, ps, allow_all, start=70),
-                        self._clear_height(tool, mesh, eng + off, q, side, allow_all, start=70))
+                H = max(self._clear_height(tool, mesh, pe, pq, ps, allow_all, start=S.DRILL.hop_clear),
+                        self._clear_height(tool, mesh, eng + off, q, side, allow_all, start=S.DRILL.hop_clear))
                 Hh = self._hop_height(tool, mesh, pe, pq, ps, eng + off, q, side, allow_all, H)
                 if Hh is not None:
                     self._tool_key(tr, t0, pe + ps * Hh, pq)
-                    self._tool_key(tr, t0 + 0.45, eng + off + side * Hh, q)
-                    t0 += 0.45
+                    self._tool_key(tr, t0 + S.DRILL.hop_dur, eng + off + side * Hh, q)
+                    t0 += S.DRILL.hop_dur
                 else:
                     self._tool_key(tr, t0, pe + ps * H, pq)
-                    t0 += self._hop(tr, mesh, t0, 0.45, pe + ps * H, pq, eng + off + side * H, q, allow_all)
-            self._tool_key(tr, t0 + 0.35, eng + off + side * 6, q)
-            self._tool_key(tr, t0 + 0.6, eng + off, q)                                 # socket over the head
-            spin_t0, spin_t1 = t0 + 0.65, t0 + 0.65 + 0.3 * turns
+                    t0 += self._hop(tr, mesh, t0, S.DRILL.hop_dur, pe + ps * H, pq, eng + off + side * H, q, allow_all)
+            self._tool_key(tr, t0 + S.DRILL.near_at, eng + off + side * S.DRILL.near_gap, q)
+            self._tool_key(tr, t0 + S.DRILL.engage_at, eng + off, q)                   # socket over the head
+            spin_t0, spin_t1 = t0 + S.DRILL.spin_at, t0 + S.DRILL.spin_at + S.DRILL.s_per_turn * turns
             self._tool_key(tr, spin_t0, eng + off, q)
             self._tool_key(tr, spin_t1, eng, q)                                        # follows the fastener home, body fixed
             self._key(name, spin_t0, off, ang=ang0, ease=0)
             self._key(name, spin_t1, (0, 0, 0), ang=ang0 + sgn * 2 * math.pi * turns, ease=0)
-            r_sock = 10.9 * (tr["socketAF"] / SOCKET_SUPPLIED_AF) + 7.0
-            self.fx.append(dict(type="spinArrow", centre=list(map(float, outer + side * 14.0)), axis=list(map(float, side)),
-                                sense=-1.0, radius=float(r_sock), t=[round(spin_t0, 3), round(spin_t1, 3)], turns=turns))
-            self._shot(spin_t0 - 0.9, outer, radius=55, axis=side, kind="tool", tool=(mesh, eng, q))
-            self.t = spin_t1 + 0.15
+            r_sock = S.DRILL.socket_r_supplied * (tr["socketAF"] / SOCKET_SUPPLIED_AF) + S.SPIN_ARROW.margin
+            self.fx.append(dict(type="spinArrow", centre=list(map(float, outer + side * S.SPIN_ARROW.axial_offset)), axis=list(map(float, side)),
+                                sense=S.SPIN_ARROW.sense, radius=float(r_sock), t=[round(spin_t0, 3), round(spin_t1, 3)], turns=turns))
+            self._shot(spin_t0 - S.DRILL.shot_lead, outer, radius=S.DRILL.shot_radius, axis=side, kind="tool", tool=(mesh, eng, q))
+            self.t = spin_t1 + S.DRILL.after
             prev = (name, side, eng, q, np.zeros(3))
             first = False
         pn, ps, pe, pq, _ = prev
-        H = self._clear_height(tool, mesh, pe, pq, ps, allow_all, start=110)
-        self._tool_key(tr, self.t + 0.45, pe + ps * H, pq)
-        self.t += 0.45
+        H = self._clear_height(tool, mesh, pe, pq, ps, allow_all, start=S.DRILL.final_clear)
+        self._tool_key(tr, self.t + S.DRILL.retract_dur, pe + ps * H, pq)
+        self.t += S.DRILL.retract_dur
         self._check_tool_path(tr, mesh, allow_all)
         tr["socketScale"] = round(tr.get("socketAF", SOCKET_SUPPLIED_AF) / SOCKET_SUPPLIED_AF, 4)
         self.toolTracks.append(tr)
@@ -467,18 +471,18 @@ class Step:
     # ---------------------------------------------------------------- tool path helpers
     def _pose_hits(self, mesh, pos, q, allow):
         Mx = np.eye(4); Mx[:3, :3] = quat_to_mat(q); Mx[:3, 3] = pos
-        return self.u.world.hits(mesh, Mx, allow=allow, tol=1.5)
+        return self.u.world.hits(mesh, Mx, allow=allow, tol=S.COLLISION.tool_tol)
 
-    def _clear_height(self, tool, mesh, eng, q, side, allow, start=70, heights=(0, 50, 120, 220, 350)):
+    def _clear_height(self, tool, mesh, eng, q, side, allow, start=70, heights=S.TOOL.clear_height_steps):
         """Smallest retract height along the working axis at which the tool is clear (min `start`)."""
         for extra in heights:
             H = start + extra
             if not self._pose_hits(mesh, eng + side * H, q, allow): return H
         return start + heights[-1]
 
-    def _hop_height(self, tool, mesh, p0, q0, s0, p1, q1, s1, allow, H, n=10):
+    def _hop_height(self, tool, mesh, p0, q0, s0, p1, q1, s1, allow, H, n=S.TOOL.hop_samples):
         """Raise the clearance height until the straight hop between two fasteners is collision-free."""
-        for extra in (0, 80, 180, 320):
+        for extra in S.TOOL.hop_raise:
             h = H + extra; ok = True
             for u in np.linspace(0, 1, n):
                 pos = (p0 + s0 * h) * (1 - u) + (p1 + s1 * h) * u
@@ -486,7 +490,7 @@ class Step:
             if ok: return h
         return None
 
-    def _seg_clear(self, mesh, pa, qa, pb, qb, allow, step=30.0):
+    def _seg_clear(self, mesh, pa, qa, pb, qb, allow, step=S.TOOL.route_seg_step):
         n = max(3, int(np.linalg.norm(np.asarray(pb) - pa) / step) + 2)
         for u in np.linspace(0, 1, n):
             if self._pose_hits(mesh, np.asarray(pa) * (1 - u) + np.asarray(pb) * u, slerp(qa, qb, u), allow): return False
@@ -500,7 +504,7 @@ class Step:
             bb = np.array([self.u.A[n]["bbox"] for n in self.u.A]); self.u._box = (bb[:, :3].min(0), bb[:, 3:].max(0))
         lo, hi = self.u._box
         best = None
-        for m in (140.0, 220.0, 320.0):
+        for m in S.TOOL.route_margins:
             L, Hh = lo - m, hi + m
             ym = (pa[1] + pb[1]) / 2
             edges = [np.array([x, ym, z]) for x in (L[0], Hh[0]) for z in (L[2], Hh[2])]
@@ -523,12 +527,12 @@ class Step:
         pts = [np.asarray(pa, float)] + [w[0] for w in wps] + [np.asarray(pb, float)]
         qs_ = [qa] + [w[1] for w in wps] + [qb]
         Ls = np.cumsum([0] + [np.linalg.norm(pts[i + 1] - pts[i]) for i in range(len(pts) - 1)])
-        total = dur * (1.0 + 0.35 * len(wps))
+        total = dur * (1.0 + S.TOOL.route_slowdown * len(wps))
         for P, Q, l in zip(pts, qs_, Ls):
             self._tool_key(tr, t0 + total * (l / Ls[-1] if Ls[-1] > 0 else 1), P, Q)
         return total
 
-    def _check_tool_path(self, tr, mesh, allow, n=8):
+    def _check_tool_path(self, tr, mesh, allow, n=S.COLLISION.tool_path_samples):
         """Sample every segment of a tool track against the installed parts (recorded in `checks`)."""
         worst = {}; samples = 0
         k = tr["keys"]
@@ -542,35 +546,35 @@ class Step:
                                 collisions={a: round(b, 2) for a, b in sorted(worst.items(), key=lambda kv: -kv[1])[:4]}))
 
     # ---------------------------------------------------------------- camera shots
-    def _view_dir(self, target, radius, preferred, axis=None, occlude=True, axis_deg=50.0, ignore=frozenset()):
+    def _view_dir(self, target, radius, preferred, axis=None, occlude=True, axis_deg=S.CAMERA.axis_deg, ignore=frozenset()):
         """Camera direction for a shot: close to the step's preferred view, showing the insertion axis
         from the side (~50°), with a clear line of sight and the camera outside the geometry."""
         pref = unit(preferred)
         cands = [pref]
-        for el in (-55, -30, -10, 10, 30, 50, 70):
-            for az in range(0, 360, 30):
+        for el in S.CAMERA.elevations:
+            for az in range(0, 360, S.CAMERA.azimuth_step):
                 e, z = math.radians(el), math.radians(az)
                 cands.append(np.array([math.cos(e) * math.cos(z), math.sin(e), math.cos(e) * math.sin(z)]))
-        dist = radius * 3.6 + 30                  # ~ viewer.fitDistance(radius, 1.1) at FOV 35
+        dist = radius * S.CAMERA.dist_per_radius + S.CAMERA.dist_offset   # ~ viewer.fitDistance(radius, 1.1) at FOV 35
         xray = bool(self.camera.get("xray"))
         best = None
         for d in cands:
-            score = math.degrees(math.acos(max(-1, min(1, float(d @ pref))))) / 30.0
+            score = math.degrees(math.acos(max(-1, min(1, float(d @ pref))))) / S.CAMERA.pref_scale_deg
             if axis is not None:
                 ang = math.degrees(math.acos(min(1, abs(float(d @ unit(axis))))))
-                score += abs(ang - axis_deg) / 25.0
+                score += abs(ang - axis_deg) / S.CAMERA.axis_scale_deg
             hits = {n: v for n, v in self._sight_hits(target, d, dist).items() if n not in ignore} if occlude else {}
             if getattr(self, "_tool_occluder", None) is not None and self._tool_sight(target, d, dist):
                 hits = dict(hits, **{"(tool body)": 1.0})
             if xray:                              # the rest of the unit is ghosted: only this step's parts occlude
                 hits = {n: v for n, v in hits.items() if n in self.parts}
             inside = self._inside(np.asarray(target) + d * dist)
-            score += 4.0 * len(hits) + (50.0 if inside else 0.0)
+            score += S.CAMERA.occluder_penalty * len(hits) + (S.CAMERA.inside_penalty if inside else 0.0)
             if best is None or score < best[0]: best = (score, d, hits, inside)
         if best[3]: best[2]["(camera inside geometry)"] = 1.0
         return best[1], best[2]
 
-    def _tool_sight(self, target, d, dist, r=4.0):
+    def _tool_sight(self, target, d, dist, r=S.CAMERA.sight_radius):
         mesh, pos, q = self._tool_occluder
         cache = self.u.__dict__.setdefault("_toolcm", {})
         cm = cache.get(id(mesh))
@@ -578,7 +582,7 @@ class Step:
             c = trimesh.collision.CollisionManager(); c.add_object("tool", mesh); cm = (mesh, c); cache[id(mesh)] = cm
         Mt = np.eye(4); Mt[:3, :3] = quat_to_mat(q); Mt[:3, 3] = pos
         cm[1].set_transform("tool", Mt)
-        start = max(18.0, min(60.0, dist * 0.25)); L = dist - start
+        start = max(S.CAMERA.sight_start_min, min(S.CAMERA.sight_start_max, dist * S.CAMERA.sight_start_share)); L = dist - start
         Lq = float(max(10, round(L / 10) * 10))
         cyl = self.u.__dict__.setdefault("_cyl", {}).get((Lq, r))
         if cyl is None:
@@ -589,7 +593,7 @@ class Step:
         Mx = np.eye(4); Mx[:3, :3] = R; Mx[:3, 3] = np.asarray(target) + v * (start + Lq / 2)
         return cm[1].in_collision_single(cyl, transform=Mx)
 
-    def _inside(self, pos, r=12.0):
+    def _inside(self, pos, r=S.CAMERA.inside_radius):
         """Camera position inside / touching solid geometry (small sphere test)."""
         sph = self.u.__dict__.get("_sph")
         if sph is None: sph = self.u._sph = trimesh.creation.icosphere(subdivisions=1, radius=r)
@@ -598,9 +602,9 @@ class Step:
         # fully enclosed (sphere inside a closed box without touching): ray parity along +X
         return False
 
-    def _sight_hits(self, target, d, dist, r=4.0):
+    def _sight_hits(self, target, d, dist, r=S.CAMERA.sight_radius):
         """Parts crossing the line of sight (thin cylinder from near the target to the camera)."""
-        start = max(18.0, min(60.0, dist * 0.25))
+        start = max(S.CAMERA.sight_start_min, min(S.CAMERA.sight_start_max, dist * S.CAMERA.sight_start_share))
         L = dist - start
         if L <= 1: return {}
         # fcl transforms are rigid: one cylinder mesh per (quantised) length instead of a scaled one
@@ -618,17 +622,17 @@ class Step:
 
     # minimum framing radius (mm) per shot kind: close enough to read the operation, wide enough to
     # keep the surrounding structure in view (v2.1 review: tighter close-ups lost the context)
-    MIN_R = {"detail": 62.0, "tool": 120.0, "wide": 120.0, "overview": 95.0, "result": 95.0}
+    MIN_R = S.CAMERA.min_radius
 
     def _shot(self, t, target, radius, axis=None, kind="detail", preferred=None, tool=None, ignore=()):
         """tool = (mesh, position, quaternion) of the tool at work: its body must not hide the working point."""
-        radius = max(float(radius), self.MIN_R.get(kind, 60.0))
+        radius = max(float(radius), self.MIN_R.get(kind, S.CAMERA.min_radius_other))
         self._tool_occluder = tool
         pref = preferred if preferred is not None else self.camera.get("dir", [1, 0.5, 0.8])
         # overview / result frame the whole step from outside: the target is inside the framed parts
         # tool shots: from further to the side of the working axis, so the tool and the joint are both seen
         d, hits = self._view_dir(np.asarray(target, float), radius, pref, axis, occlude=kind not in ("overview", "result"),
-                                 axis_deg=65.0 if kind == "tool" else 50.0, ignore=set(ignore))
+                                 axis_deg=S.CAMERA.tool_axis_deg if kind == "tool" else S.CAMERA.axis_deg, ignore=set(ignore))
         self.shots.append(dict(t=round(max(0.0, t), 3), target=[float(x) for x in target], dir=[float(x) for x in d],
                                radius=float(radius), kind=kind, blocked=sorted(hits)))
 
@@ -649,50 +653,50 @@ class Step:
         prev = None
         for k, name in enumerate(names):
             p = self.u.A[name]; a = unit(p["axis"]); head = np.asarray(p["head"])
-            pace = 1.0 if k < 2 else 0.6
-            t_shot = self.t - 0.3
-            self.fastener(name, "rivet", gap=14, dur=0.55 * pace + 0.15)
+            pace = S.RIVET.pace_first if k < 2 else S.RIVET.pace_rest
+            t_shot = self.t - S.RIVET.shot_lead
+            self.fastener(name, "rivet", gap=S.RIVET.insert_gap, dur=S.RIVET.insert_dur * pace + S.RIVET.insert_extra)
             allow = {name} | set(p.get("contacts", []))
             q, hit = self._tool_pose_free(tool, head, a, allow, hints)
-            self._shot(t_shot, head, radius=60 if k < 2 else 75, axis=a, kind="tool", tool=(mesh, head, q))
+            self._shot(t_shot, head, radius=S.RIVET.shot_radius_first if k < 2 else S.RIVET.shot_radius_rest, axis=a, kind="tool", tool=(mesh, head, q))
             self.checks.append(dict(what=f"rivet gun on {name}", samples=1, clear=not hit, collisions={k2: round(v, 2) for k2, v in hit.items()}))
             t0 = self.t
             if first:
-                H = self._clear_height(tool, mesh, head, q, a, allow_all, start=140)
-                self._tool_key(tr, t0 - 0.1, head + a * H, q)
+                H = self._clear_height(tool, mesh, head, q, a, allow_all, start=S.RIVET.first_clear)
+                self._tool_key(tr, t0 - S.RIVET.hop_lead, head + a * H, q)
             else:
                 ph, pa_, pq = prev
-                H = max(self._clear_height(tool, mesh, ph, pq, pa_, allow_all, start=45), self._clear_height(tool, mesh, head, q, a, allow_all, start=45))
+                H = max(self._clear_height(tool, mesh, ph, pq, pa_, allow_all, start=S.RIVET.hop_clear), self._clear_height(tool, mesh, head, q, a, allow_all, start=S.RIVET.hop_clear))
                 Hh = self._hop_height(tool, mesh, ph, pq, pa_, head, q, a, allow_all, H)
                 if Hh is not None:
-                    self._tool_key(tr, t0 - 0.1, ph + pa_ * Hh, pq)
-                    self._tool_key(tr, t0 + 0.2 * pace, head + a * Hh, q)
+                    self._tool_key(tr, t0 - S.RIVET.hop_lead, ph + pa_ * Hh, pq)
+                    self._tool_key(tr, t0 + S.RIVET.approach_at * pace, head + a * Hh, q)
                 else:                                                     # around the unit (other face)
-                    self._tool_key(tr, t0 - 0.1, ph + pa_ * H, pq)
-                    extra = self._hop(tr, mesh, t0 - 0.1, 0.3 * pace + 0.6, ph + pa_ * H, pq, head + a * H, q, allow_all)
-                    shift = extra - (0.3 * pace)
+                    self._tool_key(tr, t0 - S.RIVET.hop_lead, ph + pa_ * H, pq)
+                    extra = self._hop(tr, mesh, t0 - S.RIVET.hop_lead, S.RIVET.hop_window * pace + S.RIVET.hop_dur_extra, ph + pa_ * H, pq, head + a * H, q, allow_all)
+                    shift = extra - (S.RIVET.hop_window * pace)
                     t0 += shift; self.t += shift
-            self._tool_key(tr, t0 + 0.4 * pace, head + a * 0.5, q)
-            self._tool_key(tr, t0 + 0.55 * pace, head, q)                             # nose on the flange
-            pull0, pull1 = t0 + 0.6 * pace, t0 + 0.6 * pace + 0.45
-            self._sub(tr, "trigger", pull0, 0); self._sub(tr, "trigger", pull1, 1); self._sub(tr, "trigger", pull1 + 0.25, 0)
-            self._sub(tr, "nose", pull0, 0); self._sub(tr, "nose", pull1, 1); self._sub(tr, "nose", pull1 + 0.25, 0)
-            self._tool_key(tr, pull1 + 0.05, head, q)
-            mand["items"].append(dict(head=list(head), axis=list(a), show=round(self.t - (0.55 * pace + 0.15), 3),
+            self._tool_key(tr, t0 + S.RIVET.near_at * pace, head + a * S.RIVET.near_gap, q)
+            self._tool_key(tr, t0 + S.RIVET.nose_at * pace, head, q)                  # nose on the flange
+            pull0, pull1 = t0 + S.RIVET.pull_at * pace, t0 + S.RIVET.pull_at * pace + S.RIVET.pull_dur
+            self._sub(tr, "trigger", pull0, 0); self._sub(tr, "trigger", pull1, 1); self._sub(tr, "trigger", pull1 + S.RIVET.release, 0)
+            self._sub(tr, "nose", pull0, 0); self._sub(tr, "nose", pull1, 1); self._sub(tr, "nose", pull1 + S.RIVET.release, 0)
+            self._tool_key(tr, pull1 + S.RIVET.settle, head, q)
+            mand["items"].append(dict(head=list(head), axis=list(a), show=round(self.t - (S.RIVET.insert_dur * pace + S.RIVET.insert_extra), 3),
                                       pull=[round(pull0, 3), round(pull1, 3)]))
-            self.t = pull1 + 0.05
+            self.t = pull1 + S.RIVET.settle
             prev = (head, a, q)
             first = False
         ph, pa_, pq = prev
-        H = self._clear_height(tool, mesh, ph, pq, pa_, allow_all, start=120)
-        self._tool_key(tr, self.t + 0.45, ph + pa_ * H, pq)
-        self.t += 0.45
+        H = self._clear_height(tool, mesh, ph, pq, pa_, allow_all, start=S.RIVET.final_clear)
+        self._tool_key(tr, self.t + S.RIVET.retract_dur, ph + pa_ * H, pq)
+        self.t += S.RIVET.retract_dur
         self._check_tool_path(tr, mesh, allow_all)
         self.toolTracks.append(tr); self.fx.append(mand)
         self._use_tool("rivetgun", "Cordless blind-rivet gun")
         return self
 
-    def wrench(self, name, side, hints=((0, -1, 0), (0, 0, 1), (0, 1, 0)), strokes=2, swing_deg=60, label=None, bolt=False):
+    def wrench(self, name, side, hints=((0, -1, 0), (0, 0, 1), (0, 1, 0)), strokes=2, swing_deg=S.WRENCH.swing, label=None, bolt=False):
         """Adjustable wrench: open the jaw to the measured hex width, engage, turn in strokes."""
         self._carried(name)
         p = self.u.A[name]; side = unit(side)
@@ -701,8 +705,8 @@ class Step:
         else:
             C = (np.asarray(p["head"]) + np.asarray(p["tip"])) / 2; thick = p["length"]
         w = p["across_flats"][0]
-        C = C + side * max(0.0, (17.0 - thick) / 2 + 0.5)              # wrench 17 mm thick: keep its back face off the panel
-        tool = "wrench"; tr = dict(tool=tool, keys=[], jawMm=round(w + 0.3, 2))
+        C = C + side * max(0.0, (S.WRENCH.thickness - thick) / 2 + S.WRENCH.back_clear)   # keep its back face off the panel
+        tool = "wrench"; tr = dict(tool=tool, keys=[], jawMm=round(w + S.WRENCH.jaw_play, 2))
         allow = {name} | set(p.get("contacts", []))
         hits = None; best = None
         wm = self.u.tmesh[tool]
@@ -710,10 +714,10 @@ class Step:
         # approach along the axis); a shorter swing (more strokes) is used where the full one does not fit
         total_deg = swing_deg * strokes
         req = swing_deg
-        for sw in (swing_deg, 45, 30, 25):
+        for sw in (swing_deg, *S.WRENCH.fallback_swings):
             for h in hints:
-                for k in range(72):
-                    xh = quat_to_mat(quat_axis_angle(side, k * math.pi / 36)) @ unit(h)
+                for k in range(S.WRENCH.roll_steps):
+                    xh = quat_to_mat(quat_axis_angle(side, k * math.pi / (S.WRENCH.roll_steps / 2))) @ unit(h)
                     if np.linalg.norm(xh - side * (xh @ side)) < 1e-3: continue
                     q = frame_quat(side, xh)
                     qs_ = quat_mul(quat_axis_angle(side, -math.radians(sw)), q)
@@ -721,7 +725,7 @@ class Step:
                     hit = self._pose_hits(wm, o0, q, allow)
                     worst = sum(hit.values())
                     if not hit:
-                        for pos, qq in [(o1, qs_), (o1 + side * 6, qs_), (o0 + side * 6, q), (o0 + side * 45, q), (o0 + side * 90, q),
+                        for pos, qq in [(o1, qs_), (o1 + side * S.WRENCH.lift, qs_), (o0 + side * S.WRENCH.lift, q), (o0 + side * S.WRENCH.approach_check, q), (o0 + side * S.WRENCH.approach, q),
                                         (C + quat_to_mat(slerp(q, qs_, 0.5)) @ np.array([0, 0, w / 2]), slerp(q, qs_, 0.5))]:
                             hh = self._pose_hits(wm, pos, qq, allow)
                             if hh: worst = 0.01 + sum(hh.values()) * 0.1; break
@@ -738,29 +742,29 @@ class Step:
 
         def org(qq): return C + quat_to_mat(qq) @ np.array([0, 0, w / 2])
         t0 = self.t
-        self._shot(t0, C, radius=70, axis=side, kind="tool", tool=(self.u.tmesh[tool], org(q), q))
+        self._shot(t0, C, radius=S.WRENCH.shot_radius, axis=side, kind="tool", tool=(self.u.tmesh[tool], org(q), q))
         sgn = -1.0 if float(unit(self.parts[name]["axis"]) @ side) > 0 else 1.0
-        self._sub(tr, "jaw", t0, 0, 0); self._sub(tr, "jaw", t0 + 0.01, w + 0.3, 0)      # opened before it appears
-        self._tool_key(tr, t0, org(q) + side * 90, q)
-        self._tool_key(tr, t0 + 0.6, org(q), q)
+        self._sub(tr, "jaw", t0, 0, 0); self._sub(tr, "jaw", t0 + S.WRENCH.jaw_open_at, w + S.WRENCH.jaw_play, 0)   # opened before it appears
+        self._tool_key(tr, t0, org(q) + side * S.WRENCH.approach, q)
+        self._tool_key(tr, t0 + S.WRENCH.engage_dur, org(q), q)
         ftr = self.parts[name]; last = ftr["keys"][-1]; off = np.array(last[1:4]); ang = last[8]
-        t = t0 + 0.7
+        t = t0 + S.WRENCH.first_stroke_at
         for s in range(strokes):
             qs = quat_mul(quat_axis_angle(side, -math.radians(swing_deg)), q)      # clockwise seen from outside
             frac0, frac1 = s / strokes, (s + 1) / strokes
             self._tool_key(tr, t, org(q) + off * (1 - frac0), q)
             self._key(name, t, off * (1 - frac0), ang=ang, ease=0)
             ang += sgn * math.radians(swing_deg)
-            self._tool_key(tr, t + 0.7, org(qs) + off * (1 - frac1), qs)
-            self._key(name, t + 0.7, off * (1 - frac1), ang=ang, ease=1)
+            self._tool_key(tr, t + S.WRENCH.stroke_dur, org(qs) + off * (1 - frac1), qs)
+            self._key(name, t + S.WRENCH.stroke_dur, off * (1 - frac1), ang=ang, ease=1)
             if s < strokes - 1:                                                      # lift off, swing back, re-engage
-                self._tool_key(tr, t + 0.9, org(qs) + side * 6, qs)
-                self._tool_key(tr, t + 1.3, org(q) + side * 6, q)
-                t += 1.45
+                self._tool_key(tr, t + S.WRENCH.lift_at, org(qs) + side * S.WRENCH.lift, qs)
+                self._tool_key(tr, t + S.WRENCH.back_at, org(q) + side * S.WRENCH.lift, q)
+                t += S.WRENCH.stroke_cycle
             else:
-                t += 0.75
-        self._tool_key(tr, t + 0.5, org(qs) + side * 90, qs)
-        self.t = t + 0.5
+                t += S.WRENCH.last_stroke
+        self._tool_key(tr, t + S.WRENCH.retract_dur, org(qs) + side * S.WRENCH.approach, qs)
+        self.t = t + S.WRENCH.retract_dur
         self._check_tool_path(tr, self.u.tmesh[tool], allow)
         self.toolTracks.append(tr)
         self._use_tool("wrench", "Adjustable wrench (jaw set to the measured hex)")
@@ -769,35 +773,35 @@ class Step:
     def bead(self, centre, normal, radius, start_deg=90, sweep=360, dur=3.2, bead_d=4.0, label="silicone bead"):
         """Caulking dispenser: nozzle follows the joint, the knob drives the plunger, the bead grows."""
         n = unit(normal); u, v = perp_basis(n); C = np.asarray(centre, float)
-        k = 48
+        k = S.CAULKING.segments
         angs = [math.radians(start_deg + sweep * i / k) for i in range(k + 1)]
         pts = [C + radius * (math.cos(t) * u + math.sin(t) * v) + n * (bead_d * 0.35) for t in angs]
         tr = dict(tool="caulking", keys=[])
         t0 = self.t
         tang0 = unit(-math.sin(angs[0]) * u + math.cos(angs[0]) * v)
-        ax0 = unit(n * 1.0 - tang0 * 0.75)
+        ax0 = unit(n * 1.0 - tang0 * S.CAULKING.nozzle_tilt)
         q0 = frame_quat(ax0, n)
-        self._shot(t0, C, radius=radius + 45, axis=n, kind="tool", tool=(self.u.tmesh["caulking"], pts[0] + n * 1.0, q0))
-        self._tool_key(tr, t0, pts[0] + ax0 * 160, q0)
-        self._tool_key(tr, t0 + 0.6, pts[0] + n * 1.0, q0)
+        self._shot(t0, C, radius=radius + S.CAULKING.shot_margin, axis=n, kind="tool", tool=(self.u.tmesh["caulking"], pts[0] + n * 1.0, q0))
+        self._tool_key(tr, t0, pts[0] + ax0 * S.CAULKING.approach, q0)
+        self._tool_key(tr, t0 + S.CAULKING.approach_dur, pts[0] + n * 1.0, q0)
         worst = {}
         for i, (P, t) in enumerate(zip(pts, angs)):
             tang = unit(-math.sin(t) * u + math.cos(t) * v)
-            ax = unit(n * 1.0 - tang * 0.75)
+            ax = unit(n * 1.0 - tang * S.CAULKING.nozzle_tilt)
             q = frame_quat(ax, n)
-            ti = t0 + 0.7 + dur * i / k
+            ti = t0 + S.CAULKING.start_at + dur * i / k
             self._tool_key(tr, ti, P + n * 1.0, q)
-            if i % 8 == 0:
+            if i % S.CAULKING.check_every == 0:
                 Mx = np.eye(4); Mx[:3, :3] = quat_to_mat(q); Mx[:3, 3] = P + n * 1.0
-                for nn, d in self.u.world.hits(self.u.tmesh["caulking"], Mx, tol=1.2).items(): worst[nn] = max(worst.get(nn, 0), d)
-        self.checks.append(dict(what="caulking dispenser path", samples=k // 8 + 1, clear=not worst, collisions={a: round(b, 2) for a, b in worst.items()}))
-        self._sub(tr, "knob", t0 + 0.6, 0, 0); self._sub(tr, "knob", t0 + 0.7 + dur, 2 * math.pi * 3, 0)
-        self._sub(tr, "plate", t0 + 0.6, 0, 0); self._sub(tr, "plate", t0 + 0.7 + dur, 6.0, 0)
-        self._tool_key(tr, t0 + 1.1 + dur, pts[-1] + ax * 160, q)
+                for nn, d in self.u.world.hits(self.u.tmesh["caulking"], Mx, tol=S.COLLISION.caulking_tol).items(): worst[nn] = max(worst.get(nn, 0), d)
+        self.checks.append(dict(what="caulking dispenser path", samples=k // S.CAULKING.check_every + 1, clear=not worst, collisions={a: round(b, 2) for a, b in worst.items()}))
+        self._sub(tr, "knob", t0 + S.CAULKING.approach_dur, 0, 0); self._sub(tr, "knob", t0 + S.CAULKING.start_at + dur, 2 * math.pi * S.CAULKING.knob_turns, 0)
+        self._sub(tr, "plate", t0 + S.CAULKING.approach_dur, 0, 0); self._sub(tr, "plate", t0 + S.CAULKING.start_at + dur, S.CAULKING.plate_travel, 0)
+        self._tool_key(tr, t0 + S.CAULKING.retract_at + dur, pts[-1] + ax * S.CAULKING.approach, q)
         self.fx.append(dict(type="bead", points=[list(map(float, p)) for p in pts], diameter=bead_d,
-                            colour=self.u.tools["caulking"].get("beadColour", "#c8281e"), grow=[round(t0 + 0.7, 3), round(t0 + 0.7 + dur, 3)], label=label))
+                            colour=self.u.tools["caulking"].get("beadColour", "#c8281e"), grow=[round(t0 + S.CAULKING.start_at, 3), round(t0 + S.CAULKING.start_at + dur, 3)], label=label))
         self.toolTracks.append(tr)
-        self.t = t0 + 1.1 + dur
+        self.t = t0 + S.CAULKING.retract_at + dur
         self._use_tool("caulking", "Caulking dispenser, WEICON HT300 silicone (red, as supplied)")
         return self
 
@@ -815,15 +819,15 @@ class Step:
             ax = unit(a * 0.85 + u_ * 0.35)
             q = frame_quat(ax, u_)
             t0 = self.t
-            self._shot(t0 - 0.2, H, radius=40, axis=a, kind="tool", tool=(self.u.tmesh["marker"], pts[0], q))
-            if first: self._tool_key(tr, t0, pts[0] + ax * 120, q)
-            self._tool_key(tr, t0 + 0.5, pts[0], q)
-            ts = [t0 + 0.5 + 0.28 * i for i in range(len(pts))]
+            self._shot(t0 - S.MARK.shot_lead, H, radius=S.MARK.shot_radius, axis=a, kind="tool", tool=(self.u.tmesh["marker"], pts[0], q))
+            if first: self._tool_key(tr, t0, pts[0] + ax * S.MARK.approach, q)
+            self._tool_key(tr, t0 + S.MARK.settle, pts[0], q)
+            ts = [t0 + S.MARK.settle + S.MARK.seg_dur * i for i in range(len(pts))]
             for P, ti in zip(pts, ts): self._tool_key(tr, ti, P, q)
-            self._tool_key(tr, ts[-1] + 0.4, pts[-1] + ax * 40, q)
-            self.fx.append(dict(type="line", points=[list(map(float, x)) for x in pts], width=1.2, colour="#e2131a",
+            self._tool_key(tr, ts[-1] + S.MARK.end, pts[-1] + ax * S.MARK.retract, q)
+            self.fx.append(dict(type="line", points=[list(map(float, x)) for x in pts], width=S.MARK.width, colour=S.MARK.colour,
                                 draw=[round(ts[0], 3), round(ts[-1], 3)], label=f"tightening mark on {name}"))
-            self.t = ts[-1] + 0.4
+            self.t = ts[-1] + S.MARK.end
             first = False
         self._check_tool_path(tr, self.u.tmesh["marker"], set(names).union(*[set(self.u.A[n].get("contacts", [])) for n in names]))
         self.toolTracks.append(tr)
@@ -890,26 +894,26 @@ class Step:
             T0 = np.array(tr["keys"][0][1:4]); b0 = np.asarray(self.u.A[n]["bbox"])
             slo = np.minimum(slo, b0[:3] + T0); shi = np.maximum(shi, b0[3:] + T0)
         wide = self.camera.get("wide")
-        if wide or len(names) > 30:
+        if wide or len(names) > S.CAMERA.wide_parts:
             body = np.array([p["bbox"] for p in self.u.A.values()])
-            lo, hi = body[:, :3].min(0), body[:, 3:].max(0); R = float(np.linalg.norm(hi - lo)) / 2 * 0.9
-        starts = [s for s in self.shots if s["t"] < 0.5]
+            lo, hi = body[:, :3].min(0), body[:, 3:].max(0); R = float(np.linalg.norm(hi - lo)) / 2 * S.CAMERA.wide_body_share
+        starts = [s for s in self.shots if s["t"] < S.CAMERA.overview_starts_before]
         if not starts:
             Rs = float(np.linalg.norm(shi - slo)) / 2
-            self._shot(0.0, (slo + shi) / 2, radius=max(Rs * 1.1, R * 1.25, 70.0), kind="overview")
-        self._shot(self.t + 0.1, (lo + hi) / 2, radius=max(R * 1.15, 70.0), kind="result")
+            self._shot(0.0, (slo + shi) / 2, radius=max(Rs * S.CAMERA.overview_pad, R * S.CAMERA.overview_pad_final, S.CAMERA.overview_min), kind="overview")
+        self._shot(self.t + S.CAMERA.result_at, (lo + hi) / 2, radius=max(R * S.CAMERA.result_pad, S.CAMERA.result_min), kind="result")
         self.shots.sort(key=lambda s: s["t"])
         # drop shots closer than 0.35 s to the next one (the later one wins): fewer, calmer moves
         out = []
         for s in self.shots:
-            if out and s["t"] - out[-1]["t"] < 0.35: out[-1] = s
+            if out and s["t"] - out[-1]["t"] < S.CAMERA.merge: out[-1] = s
             else: out.append(s)
         self.shots = out
 
     def to_json(self):
         u = self.u
         self._frame_shots()
-        dur = round(self.t + 0.9, 3)
+        dur = round(self.t + S.STEP.end_hold, 3)
 
         def m3(v): return [round(float(x) * M, 6) for x in v]
         parts = []
@@ -1048,7 +1052,8 @@ def report(U, out_md):
 
 
 def main():
-    conv = Path(sys.argv[1])                              # converter assembly.json of the grouped STEP
+    # node / BOM source: converter assembly.json of the grouped STEP, or (default) the published file itself
+    conv = Path(sys.argv[1]) if len(sys.argv) > 1 else ROOT / "public/assets/unit/assembly.json"
     out = Path(sys.argv[2]) if len(sys.argv) > 2 else ROOT / "public/assets/unit/assembly.json"
     analysis = json.load(open(HERE / "unit-analysis.json"))
     asm = json.load(open(conv))
