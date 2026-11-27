@@ -230,6 +230,156 @@
     ]
    ],
    "jawClosedAtOrigin": true
+  },
+  "crimper": {
+   "file": "crimper.glb",
+   "source": "3325dc59-Crimper.step",
+   "note": "ratchet crimping pliers (supplied model); the wire end enters the die nest along the tool Z axis",
+   "movingParts": {
+    "jaw": {
+     "nodes": [
+      "Body002",
+      "Body003",
+      "Body004",
+      "Body005",
+      "Body006",
+      "M4x14-Screw001",
+      "Cylinder002",
+      "Cylinder003",
+      "Body001 (Mirror #2)",
+      "Body020",
+      "Body001"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      0.0,
+      -1.0
+     ],
+     "pivot": [
+      -0.00045,
+      0.039,
+      0.0
+     ]
+    },
+    "handle": {
+     "nodes": [
+      "Body021",
+      "Body028 (Mirror #3)",
+      "Body029",
+      "Body030",
+      "Cylinder005",
+      "Body031",
+      "Body032",
+      "Body033",
+      "Body034",
+      "Body035",
+      "Body036",
+      "Body028",
+      "Body041",
+      "Body042",
+      "Body043",
+      "Body048",
+      "Body050",
+      "Body051",
+      "=>[0:1:1:59]",
+      "=>[0:1:1:60]"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      0.0,
+      -1.0
+     ],
+     "pivot": [
+      -0.02805,
+      0.068,
+      0.0
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0365,
+     -0.0084,
+     -0.0105
+    ],
+    [
+     0.028,
+     0.2136,
+     0.0105
+    ]
+   ]
+  },
+  "ratchet": {
+   "file": "ratchet.glb",
+   "source": "059d2df1-Husky_Socket_Wrench.stp",
+   "note": "Husky 3/8 in drive ratchet (supplied) with the deep socket of the supplied drill model, resized radially to the nut",
+   "movingParts": {
+    "socket": {
+     "nodes": [
+      "Deep_Socket"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ],
+     "pivot": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0178,
+     0.0,
+     -0.0178
+    ],
+    [
+     0.1822,
+     0.0777,
+     0.0178
+    ]
+   ]
+  },
+  "tapdrill": {
+   "file": "tapdrill.glb",
+   "source": "739b225d-tapping.stp",
+   "note": "drill (supplied) with the supplied tap model in the chuck, resized radially to \u00d84.09 mm (thread to confirm)",
+   "movingParts": {
+    "tap": {
+     "nodes": [
+      "Tap"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ],
+     "pivot": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0285,
+     -0.0,
+     -0.1602
+    ],
+    [
+     0.0285,
+     0.2397,
+     0.0145
+    ]
+   ]
   }
  }
 }

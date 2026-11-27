@@ -4,7 +4,7 @@
 export const CONFIG = {
   /** Product name shown in the interface (the CAD/internal identifier stays MF-550-210-B). */
   productName: 'Mist-Fit 550',
-  version: '2.1.0',
+  version: '2.2.0',
 
   assemblyUrl: 'assets/model/assembly.json',
   modelDir: 'assets/model/',

@@ -19,7 +19,12 @@ Y up, as in the STEP):
 Nothing here is a specification: the STEP carries no part numbers or descriptions,
 so every size is a measurement of the modelled geometry (see the engineering report).
 
-Usage: python3 pipeline/unit/analyse_unit.py path/to/MF-550-210-B_GROUPED_ASSEMBLY.step
+Usage: python3 pipeline/unit/analyse_unit.py path/to/MF-550-210-B_GROUPED_ASSEMBLY.step [--keep]
+
+v2.2 --keep: parts that exist in the previous unit-analysis.json with the same name, group and bounding box
+(±0.01 mm) keep their previous facts and collision mesh. A CAD revision that only adds / replaces a few
+parts then changes nothing else (re-reading the same geometry gives last-digit differences in the measured
+widths, which would ripple into every step).
 """
 from __future__ import annotations
 
@@ -196,9 +201,24 @@ def tessellate(shape, defl=0.4):
     return np.array(V, float), np.array(F, int)
 
 
+def keep_previous(parts, arrays, prev, prev_arrays):
+    """Previous facts + mesh for parts whose name, group and bbox are unchanged (see --keep)."""
+    kept = 0
+    for n, p in parts.items():
+        q = prev.get(n)
+        if q is None or q.get("group") != p["group"] or max(abs(a - b) for a, b in zip(q["bbox"], p["bbox"])) > 0.01: continue
+        parts[n] = q; kept += 1
+        if f"V::{n}" in prev_arrays: arrays[f"V::{n}"], arrays[f"F::{n}"] = prev_arrays[f"V::{n}"], prev_arrays[f"F::{n}"]
+    print(f"--keep: {kept} unchanged parts keep their previous facts and meshes; new / changed: "
+          f"{sorted(n for n in parts if n not in prev)}")
+    return parts, arrays
+
+
 def main():
     step = sys.argv[1]
-    out = Path(sys.argv[2]) if len(sys.argv) > 2 else HERE / "unit-analysis.json"
+    pos = [a for a in sys.argv[1:] if not a.startswith("--")]
+    step = pos[0]
+    out = Path(pos[1]) if len(pos) > 1 else HERE / "unit-analysis.json"
     st, _doc = load(step)
     items = leaves(st)
     names = [n for n, _, _ in items]
@@ -228,6 +248,8 @@ def main():
     for n, g, shp in items:
         V, F = tessellate(shp)
         arrays[f"V::{n}"] = V.astype(np.float32); arrays[f"F::{n}"] = F.astype(np.int32)
+    if "--keep" in sys.argv:
+        parts, arrays = keep_previous(parts, arrays, json.load(open(out))["parts"], dict(np.load(mesh_dir / "meshes.npz")))
     np.savez_compressed(mesh_dir / "meshes.npz", **arrays)
     json.dump(dict(source=Path(step).name, units="mm", up="Y", front="+X (access door)",
                    parts=parts), open(out, "w"), indent=1)

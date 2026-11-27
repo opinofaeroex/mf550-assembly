@@ -1435,7 +1435,7 @@ async function testPerformance(browser) {
 
 
 async function testUnit(browser) {
-  console.log('\n[14] unit installation tutorial (v2.0, refined in v2.1)');
+  console.log('\n[14] unit installation tutorial (v2.0, refined in v2.1, main-unit process update v2.2)');
   const { page, errors } = await openApp(browser, speechMock(), { width: 1400, height: 860 }, { tutorial: 'unit' });
   await waitFor(page, () => document.getElementById('loader').style.display === 'none', null, 60000);
   const d = await page.evaluate(() => {
@@ -1480,18 +1480,18 @@ async function testUnit(browser) {
     const unclearFlagged = m.steps.every((s) => s.checks.every((c) => c.clear) || s.flags.length > 0);
     const toolSteps = {}; m.steps.forEach((s, i) => s.tracks.tools.forEach((t) => { (toolSteps[t.tool] = toolSteps[t.tool] || []).push(i + 1); }));
     const socketSizes = [...new Set(m.steps.flatMap((s) => s.tracks.tools.filter((t) => t.tool === 'drill' && !t.bit).map((t) => +t.socketAF.toFixed(2))))];
-    return { N: m.stepCount, tab: app.bom.tab, once, exactlyOnce, worstT, worstQ, worstA, handoff, mod, qtyOk, cad, inst, specOk, clear, checks: checks.length, unclearFlagged,
+    return { nParts: parts.length, N: m.stepCount, tab: app.bom.tab, once, exactlyOnce, worstT, worstQ, worstA, handoff, mod, qtyOk, cad, inst, specOk, clear, checks: checks.length, unclearFlagged,
       toolSteps, socketSizes, line: document.querySelector('#tutorial-switch [aria-checked="true"]').textContent };
   });
   check(d.N >= 23 && d.tab === 'steps' && d.line === 'Unit installation' && errors.length === 0,
     `unit tutorial loads: ${d.N} steps, side panel opens on Steps, tutorial switch "${d.line}"`);
-  check(d.once && d.exactlyOnce, 'every one of the 220 CAD components is installed in exactly one step');
+  check(d.once && d.exactlyOnce && d.nParts === 223, `every one of the ${d.nParts} CAD components (MF-550-210-B_GROUPED_ASSEMBLY_03 + connector insert) is installed in exactly one step`);
   check(d.worstT < 1e-6 && d.worstQ < 1e-6 && d.worstA < 1e-5 && d.handoff < 1e-6,
     `every part ends exactly at its CAD position (max residual ${d.worstT.toExponential(1)} m); hand-started fasteners continue in the next step from where they were left`);
   check(d.mod.every((x) => x.oneStep && x.alone), `filter modules independent: ${d.mod.map((x) => `${x.g.replace('_MechanicalFilter', '')} (${x.n} parts) → "${x.title}"`).join('; ')}`);
   check(d.qtyOk && d.specOk, `hardware quantities equal the CAD (${Object.entries(d.cad).map(([k, v]) => `${k} ${v}`).join(', ')}); every hardware line has a size or a confirmation note and a status`);
   check(d.clear / d.checks > 0.97 && d.unclearFlagged, `path / tool collision checks: ${d.clear} / ${d.checks} clear; the rest are flagged on their step`);
-  check(['drill', 'rivetgun', 'caulking', 'marker', 'wrench'].every((t) => d.toolSteps[t]) && d.socketSizes.length >= 3,
+  check(['drill', 'rivetgun', 'caulking', 'marker', 'wrench', 'crimper', 'ratchet', 'tapdrill'].every((t) => d.toolSteps[t]) && d.socketSizes.length >= 3,
     `supplied tools animated: ${Object.entries(d.toolSteps).map(([t, s]) => `${t} (steps ${[...new Set(s)].join(',')})`).join('; ')}; sockets ${d.socketSizes.join(' / ')} mm`);
 
   // runtime: tool appears only while used, socket engages the fastener, bead grows, nothing duplicates, never auto-advances
@@ -1521,7 +1521,7 @@ async function testUnit(browser) {
     rig.apply(kb, bead.grow[1] + 0.1); const full = mesh().geometry.drawRange.count;
     seq.goTo(kb + 1); const persists = mesh().visible && mesh().geometry.drawRange.count === full;
     // loop: same objects every repeat; the sequence never advances on its own
-    const kd = m.steps.findIndex((s) => s.title === 'Fasten the filter cover');
+    const kd = m.steps.findIndex((s) => s.title === 'Install and fasten the filter cover');
     seq.goTo(kd); seq.speed = 1;
     const count = () => { let n = 0; app.viewer.scene.traverse(() => n++); return n; };
     const n0 = count(); const dur = m.steps[kd].duration;
@@ -1530,7 +1530,7 @@ async function testUnit(browser) {
     return { before, during, nearestMm: nearest * 1000, after, mid, full, persists, loops: seq.loopCount, pos: seq.pos === kd, sameCount: count() === n0, socketAF: tr.socketAF };
   });
   check(!rt.before && rt.during && !rt.after && rt.nearestMm < 2, `drill visible only while used; the ${rt.socketAF} mm socket sits on the bolt head while turning (${rt.nearestMm.toFixed(2)} mm from it)`);
-  check(rt.mid > 0 && rt.mid < rt.full && rt.persists, `silicone bead grows along its path (${rt.mid} → ${rt.full} indices) and stays applied in the following steps`);
+  check(rt.mid > 0 && rt.mid < rt.full && rt.persists, `sealant bead grows along its path (${rt.mid} → ${rt.full} indices) and stays applied in the following steps`);
   check(rt.loops >= 3 && rt.pos && rt.sameCount, `step animation loops (${rt.loops}×) without duplicating objects and never advances on its own`);
 
   // decals after their step, camera behaviour, collapsible panel
@@ -1596,6 +1596,8 @@ async function testUnit(browser) {
     out.toolPaths = checks.filter((c) => / path \(/.test(c.what)); out.toolPathsClear = out.toolPaths.filter((c) => c.clear).length;
     out.clipChecks = checks.filter((c) => /^clip /.test(c.what)); out.clipClear = out.clipChecks.filter((c) => c.clear).length;
     out.unclear = checks.filter((c) => !c.clear).map((c) => c.what);
+    out.unclearTools = out.toolPaths.filter((c) => !c.clear).map((c) => c.what);       // v2.2: one flagged CAD case (wall holes off-axis)
+    out.tapFlagged = m.steps.some((s) => s.checks.some((c) => !c.clear && /tapdrill/.test(c.what)) && s.flags.some((f) => /clearance holes .* off the screw axes/.test(f))) || out.unclearTools.length === 0;
     // camera shots: every step has its own (target/direction/zoom), several per step for operations
     const sig = m.steps.map((s) => JSON.stringify((s.camera.shots || []).map((x) => x.slice(1, 8).map((v) => +v.toFixed(3)))));
     out.shotSteps = m.steps.filter((s) => (s.camera.shots || []).length >= 2).length;
@@ -1609,13 +1611,15 @@ async function testUnit(browser) {
   });
   check(v21.nuts.length === 8 && v21.nuts.every((n) => n.dy < -0.02 && n.lat < 0.004) && v21.nutsUnderside,
     `base clip nuts: all 8 start ${(-Math.max(...v21.nuts.map((n) => n.dy)) * 1000).toFixed(0)}–${(-Math.min(...v21.nuts.map((n) => n.dy)) * 1000).toFixed(0)} mm straight below their seats and rise (lateral ≤ ${(Math.max(...v21.nuts.map((n) => n.lat)) * 1000).toFixed(1)} mm); camera from underneath`);
-  check(v21.preFound === 10 && v21.preStep.length === 1 && v21.preStep[0] === 0 && !v21.preMoved && v21.mandrelsOnPre === 0 && v21.rivetSteps >= 5,
-    `10 pre-installed closed-end rivets shown at their CAD positions from step 1, never animated, no rivet-gun operation on them; rivet gun still used in ${v21.rivetSteps} steps`);
-  const p3want = ['Position the motor mounting bracket', 'Fasten the motor mounting bracket', 'Install the external tooth lock washers', 'Install the impeller and drive motor', 'Insert the motor mounting bolts', 'Tighten the motor mounting bolts', 'Mark the motor mounting bolts'];
+  check(v21.preFound === 10 && v21.preStep.length === 1 && v21.preStep[0] === 0 && !v21.preMoved && v21.mandrelsOnPre === 0 && v21.rivetSteps >= 1,
+    `10 pre-installed closed-end rivets shown at their CAD positions from step 1, never animated, no rivet-gun operation on them; rivet gun still used in ${v21.rivetSteps} step(s)`);
+  const p3want = ['Position the drive motor on the motor mounting bracket', 'Install the lock washers and motor mounting bolts', 'Install the impeller on the motor shaft',
+    'Tighten the motor mounting bolts', 'Mark the motor mounting bolts', 'Install the motor assembly in the unit', 'Fasten the motor mounting bracket',
+    'Route the motor leads through the L-connector', 'Crimp ferrules and splices on the motor leads', 'Wire the impeller connector insert'];
   check(JSON.stringify(v21.p3) === JSON.stringify(p3want), `Phase 3 order: ${v21.p3.join(' → ')}`);
   check(v21.rotCh === 0 && v21.bodyTurn < 1e-5 && v21.arrows >= 20 && !v21.arrowVis[0] && v21.arrowVis[1] && !v21.arrowVis[2] && v21.arrowColour === 'ff7a1a',
     `drill body and socket never rotate; ${v21.arrows} orange (#${v21.arrowColour}) rotation arrows, each shown only while its fastener is tightened`);
-  check(v21.toolPathsClear === v21.toolPaths.length && v21.clipClear === v21.clipChecks.length,
+  check(v21.toolPathsClear >= v21.toolPaths.length - 1 && v21.unclearTools.every((w) => /tapdrill/.test(w)) && v21.tapFlagged && v21.clipClear === v21.clipChecks.length,
     `collision-free: ${v21.toolPathsClear}/${v21.toolPaths.length} tool paths and ${v21.clipClear}/${v21.clipChecks.length} clip-nut slides (sheet not tolerated)${v21.unclear.length ? '; still flagged (CAD): ' + v21.unclear.join(', ') : ''}`);
   check(v21.shotSteps === v21.N && v21.uniqueShotSets === v21.N && v21.rMin >= 0.06 && v21.inside === 0 && v21.occluded / v21.shots < 0.02,
     `camera: all ${v21.N} steps have their own shot plan (${v21.shots} shots, ${v21.uniqueShotSets} distinct plans), zoom ${(v21.rMin * 1000).toFixed(0)}–${(v21.rMax * 1000).toFixed(0)} mm framing radius, no camera inside geometry, ${v21.occluded} shot(s) with a partial occluder`);
@@ -1661,6 +1665,7 @@ async function testUnit(browser) {
     let ratio = [], n = 0;
     for (const s of m.steps) for (const tr of s.tracks.parts) {
       if (m.steps.indexOf(s) !== m.node(tr.node).step) continue;
+      if (tr.kit || tr.hold || tr.keys[0][8]) continue;   // v2.2: explicit kit positions (bench, door) tested separately; turned start (gauge)
       const k = tr.keys[0]; const L = Math.hypot(k[1], k[2], k[3]); if (L < 0.01 || L > 0.3 || k[7] < 0.99999) continue;
       const p = app.rig.parts.get(tr.node); const o = p.obj;
       const base = new o.position.constructor().setFromMatrixPosition(p.L0);
@@ -1679,6 +1684,153 @@ async function testUnit(browser) {
   check(vis.kitOk, `unit components view: ${vis.kitN} staged components exactly 2× further from their seats than in v2.0`);
   check(vis.noteHidden && vis.badges === 0 && vis.yellow === 0 && vis.css === '#a9b5c2',
     'no yellow warnings: open engineering items are not shown as warning notes or badges on the operator UI (kept in the engineering report); warning colour neutral');
+
+  // ---------------------------------------------------------------- v2.2 main-unit process update
+  const v22 = await page.evaluate(async () => {
+    const m = app.model, rig = app.rig, seq = app.seq; const T = (t) => m.steps.findIndex((s) => s.title === t);
+    const byName = new Map(m.partIds.map((id) => [m.node(id).name, id])); const id = (n) => byName.get(n);
+    const out = {};
+    const THREE = await import('three');
+    // CAD: L-connector (NPTA12) replaces the cable strain relief; connector insert integrated
+    out.lconn = ['NPTA12_L_body_with_seal', 'NPTA12_sealing_nut', 'NPTA12_locknut', 'NPTA12_o_ring', 'CSHM 06 Connector Insert'].every((n) => byName.has(n));
+    out.oldGone = !byName.has('1_Cable Strain Relief') && !byName.has('2_Strain Relief Nut');
+    // removed operations: their parts come with the main body (step 1), never animated
+    out.titles = m.steps.map((s) => s.title);
+    const delivered = ['Pan Head Machine Screw (10)', 'Pan Head Machine Screw (11)'].map(id);
+    out.deliveredStep1 = delivered.every((i) => m.node(i).step === 0);
+    out.riv = m.partIds.filter((i) => /^Closed-End Rivet/.test(m.node(i).name));
+    out.rivetGunRivets = m.steps.reduce((c, s) => c + s.tracks.fx.filter((f) => f.type === 'mandrels').reduce((cc, f) => cc + f.items.length, 0), 0);
+    out.rivStep1 = out.riv.filter((i) => m.node(i).step === 0).length;
+    out.rivDoor = out.riv.filter((i) => m.node(i).step === m.node(id('Access Door')).step).length;
+    // HT200 bead (not silicone), locknut with the ratchet
+    const k3 = T('Seal and fit the L-connector'); const b3 = m.steps[k3].tracks.fx.find((f) => f.type === 'bead');
+    out.ht200 = b3 && b3.colour === '#8f9397' && /HT200/.test(m.steps[k3].text) && !/silicone/i.test(m.steps[k3].text + m.steps[k3].speech)
+      && m.steps[k3].tracks.tools.some((t) => t.tool === 'caulking' && t.sealant === '#8f9397');
+    const k4 = T('Tighten the L-connector locknut');
+    out.ratchet = m.steps[k4].tracks.tools.some((t) => t.tool === 'ratchet') && m.steps[k4].checks.every((c) => c.clear);
+    // Phase 3 bench: motor built on its bracket 0.7 m above, then lowered into the unit
+    const kb = T('Position the drive motor on the motor mounting bracket'), kl = T('Install the motor assembly in the unit');
+    const br = m.steps[kb].tracks.parts.find((tr) => tr.node === id('Motor Mounting Bracket'));
+    out.benchY = br.keys[br.keys.length - 1][2];
+    out.holds = [kb + 1, kb + 2, kb + 3, kb + 4].every((k) => m.steps[k].tracks.parts.some((tr) => tr.node === id('Motor Mounting Bracket') && tr.hold));
+    const low = m.steps[kl].tracks.parts.find((tr) => tr.node === id('Impeller Drive Motor'));
+    out.lowered = Math.abs(low.keys[0][2] - 0.7) < 1e-6 && Math.hypot(...low.keys[low.keys.length - 1].slice(1, 4)) < 1e-9;
+    const kf = T('Fasten the motor mounting bracket'); const dt = m.steps[kf].tracks.tools.filter((t) => t.tool === 'drill');
+    out.bracketDrill = dt.length === 1 && dt[0].extension > 0.1 && m.steps[kf].tracks.fx.filter((f) => f.type === 'spinArrow').length === 4 && !m.steps[kf].tracks.tools.some((t) => t.tool === 'wrench');
+    // motor leads
+    const lead = (k) => m.steps[k].tracks.fx.filter((f) => f.type === 'cable');
+    const kr = T('Route the motor leads through the L-connector'), kc = T('Crimp ferrules and splices on the motor leads'), kw = T('Wire the impeller connector insert'), ke = T('Connect the impeller connector');
+    out.leadSteps = [kr, kc, kw, ke].map((k) => lead(k).length);
+    out.leadColours = [...new Set(lead(kr).map((f) => f.id))].sort();
+    out.grow = lead(kr).every((f) => f.grow && f.grow[1] > f.grow[0]);
+    out.od = lead(kr)[0].diameter;
+    out.ferrules = lead(kw).filter((f) => f.ferrule && f.ferrule.kind !== 'splice').map((f) => f.id).sort();
+    out.splices = lead(kw).filter((f) => f.ferrule && f.ferrule.kind === 'splice').map((f) => f.id).sort();
+    out.spliceBig = lead(kw).filter((f) => f.ferrule && f.ferrule.kind === 'splice').every((f) => f.ferrule.od > 0.002 && Math.hypot(...f.ferrule.offset) > 0.0007);
+    out.crimped = lead(kc).filter((f) => f.ferrule).every((f) => f.ferrule.crimp > f.ferrule.show);
+    out.attached = lead(kw).filter((f) => f.attach && f.attach.node === id('CSHM 06 Connector Insert')).map((f) => f.id).sort();
+    // spliced pairs end side by side at one terminal (insulation ends one lead diameter apart)
+    const endOf = (k, i) => { const f = lead(k).find((x) => x.id === i); return new THREE.Vector3().fromArray(f.points[f.points.length - 1]); };
+    out.pairGap = [['Black', 'Grey'], ['Red', 'Blue'], ['Orange', 'Brown']].map(([a, b]) => endOf(kw, a).distanceTo(endOf(kw, b)));
+    out.crimper = m.steps[kc].tracks.tools.filter((t) => t.tool === 'crimper').map((t) => Object.keys(t.sub || {}).sort().join('+'));
+    out.crimps = m.steps[kc].checks.filter((c) => /^crimper on /.test(c.what)).length;
+    out.leadChecks = [kr, kc, kw].every((k) => m.steps[k].checks.filter((c) => /motor leads/.test(c.what) || /^crimper/.test(c.what)).every((c) => c.clear));
+    out.wiringFlag = m.steps[kw].flags.some((f) => /230\/3\/60/.test(f) && /Black\+Grey → 1/.test(f) && /Orange\+Brown → 3/.test(f)) && !m.steps[kw].flags.some((f) => /PENDING/.test(f));
+    out.wiringText = /terminal 1/.test(m.steps[kw].text) && /Terminal 4 stays empty/.test(m.steps[kw].text);
+    // connector engagement: the insert rises into its seat and the terminated lead ends follow it
+    const ce = m.steps[ke].tracks.parts.find((tr) => tr.node === id('CSHM 06 Connector Insert'));
+    out.engage = ce && ce.keys[0][2] < -0.04 && Math.hypot(...ce.keys[ce.keys.length - 1].slice(1, 4)) < 1e-9;
+    seq.goTo(ke); seq.speed = 0;
+    const cab = () => rig.fx.get(ke).find((o) => o.userData.fx.type === 'cable' && o.userData.fx.id === 'White 5');
+    rig.apply(ke, 0.01); const y0 = cab().userData.off.y; rig.apply(ke, m.steps[ke].duration); const y1 = cab().userData.off.y;
+    out.follow = [y0, y1];
+    // stickers on both stage filters, attached (exploded + assembled)
+    const st = m.steps.flatMap((s) => s.tracks.fx.filter((f) => f.type === 'decal' && /sticker/.test(f.id)));
+    out.stickers = st.map((f) => [f.id, m.node(f.attach).name, !!f.kit]);
+    seq.goTo(-1, { animate: false });
+    const kS = m.steps.findIndex((s) => s.tracks.fx.some((f) => f.id === 'sticker-mf55-f001'));
+    const stObj = rig.fx.get(kS).find((o) => o.userData.fx.id === 'sticker-mf55-f001');
+    app.viewer.scene.updateMatrixWorld();
+    const sp = new THREE.Vector3().setFromMatrixPosition(stObj.matrixWorld);
+    const fb = new THREE.Box3().setFromObject(app.loaded.objects.get(id('Filter Frame Half (1)')));
+    out.stickerKit = stObj.visible && fb.distanceToPoint(sp) < 0.003;
+    // access door: kit separation clear of the filter modules; clip nuts incl. Clip Nut / Clip Nut (1)
+    const door = new THREE.Box3().setFromObject(app.loaded.objects.get(id('Access Door')));
+    const filt = new THREE.Box3();
+    for (const g of ['StageFilter1_MechanicalFilter', 'StageFilter2_MechanicalFilter']) m.partIds.filter((i) => m.node(m.node(i).parent).name === g).forEach((i) => filt.expandByObject(app.loaded.objects.get(i)));
+    out.doorKit = !door.intersectsBox(filt) && door.min.x - filt.max.x > 0.02;
+    const gbc = app.loaded.objects.get(id('Gauge Box Cover')); const g0 = new THREE.Vector3().setFromMatrixPosition(rig.parts.get(id('Gauge Box Cover')).L0);
+    out.gaugeCoverKit = gbc.position.distanceTo(g0) > 0.1;
+    const kclip = T('Install the access door clip nuts');
+    out.clips = m.steps[kclip].nodes.map((i) => m.node(i).name).sort();
+    out.clipsAnimated = ['Clip Nut', 'Clip Nut (1)'].every((n) => m.steps[kclip].tracks.parts.some((tr) => tr.node === id(n) && tr.keys.length > 2));
+    // gasket + silicone attached to the door, following it when it is fitted
+    const kg = T('Apply the silicone door gasket'), kd = T('Install and fasten the filter cover');
+    const gf = m.steps[kg].tracks.fx, gb0 = gf.filter((f) => f.type === 'bead');
+    out.gasket = !gf.some((f) => f.type === 'gasket') && gb0.length === 1 && gb0[0].attach === id('Access Door') && gb0[0].colour === '#19191b'
+      && Math.abs(gb0[0].diameter - 0.0072) < 1e-6 && /black silicone/i.test(m.steps[kg].text)
+      && m.steps[kg].tracks.tools.filter((t) => t.tool === 'caulking').length === 1 && m.steps[kg].tracks.tools.some((t) => t.tool === 'caulking' && t.sealant === '#19191b');
+    seq.goTo(kd); seq.speed = 0; rig.apply(kd, 0.01); app.viewer.scene.updateMatrixWorld();
+    const gm = rig.fx.get(kg).find((o) => o.userData.fx.type === 'bead');
+    const gb = new THREE.Box3().setFromObject(gm), db = new THREE.Box3().setFromObject(app.loaded.objects.get(id('Access Door')));
+    rig.apply(kd, m.steps[kd].duration); app.viewer.scene.updateMatrixWorld();
+    const gb2 = new THREE.Box3().setFromObject(gm), db2 = new THREE.Box3().setFromObject(app.loaded.objects.get(id('Access Door')));
+    const moved = (a, b) => a.getCenter(new THREE.Vector3()).sub(b.getCenter(new THREE.Vector3()));
+    out.gasketFollows = gb.intersectsBox(db.clone().expandByScalar(0.001)) && gb2.intersectsBox(db2.clone().expandByScalar(0.001))
+      && moved(gb, gb2).distanceTo(moved(db, db2)) < 0.012 && moved(db, db2).length() > 0.3;
+    out.washerLabel = m.steps[kd].hardware.some((h) => h.name === 'Bonded Sealed Washer') && /bonded sealed washer/i.test(m.steps[kd].text);
+    // decal dimensions in inches from the top reference point; tapping; clamp bolt held while the nut is driven
+    const kdc = T('Apply the front panel decals');
+    const dims = m.steps[kdc].tracks.fx.filter((f) => f.type === 'dims');
+    out.dims = dims.length === 3 && dims.every((f) => f.labels.length === 2 && f.labels.every((l) => / in$/.test(l.text)) && f.refs.length === 1);
+    const kt = T('Position the filter clamp bolt brackets and tap the screw holes');
+    out.tap = m.steps[kt].tracks.tools.filter((t) => t.tool === 'tapdrill').length === 2 && m.steps[kt].tracks.fx.filter((f) => f.type === 'spinArrow').length === 8;
+    const kc2 = T('Fasten the filter clamp bolt brackets');
+    const wr = m.steps[kc2].tracks.tools.filter((t) => t.tool === 'wrench');
+    const nutArrows = m.steps[kc2].tracks.fx.filter((f) => f.type === 'spinArrow').slice(-2);
+    out.hold = wr.length === 2 && nutArrows.every((a, i) => { const k = wr[i].keys; const eng = k[1]; return k[0][0] <= a.t[0] && k[k.length - 1][0] >= a.t[1]
+      && k.filter((x) => x[0] >= a.t[0] && x[0] <= a.t[1]).every((x) => Math.hypot(x[1] - eng[1], x[2] - eng[2], x[3] - eng[3]) < 1e-6); });
+    // impeller rotation arrow + upward airflow, distinct
+    const kv = T('Electrical system verification'); const fv = m.steps[kv].tracks.fx;
+    const ar = fv.find((f) => f.type === 'spinArrow'), af = fv.find((f) => f.type === 'airflow');
+    const rAx = (p) => Math.hypot(p[0] - ar.centre[0], p[2] - ar.centre[2]);
+    out.airflow = !!(ar && af && af.colour !== '#ff7a1a' && ar.sense === 1 && af.paths.length >= 4
+      && af.paths.every((P) => P[0][1] < -0.25 && P[P.length - 1][1] > 0.3                                     // up through the unit
+        && P.some((p) => p[1] > -0.1 && p[1] < -0.065 && rAx(p) < 0.077)                                        // through the bellmouth throat
+        && P.filter((p) => p[1] > -0.016 && p[1] < 0.107).every((p) => rAx(p) > 0.085)                          // around the motor, not through it
+        && P.some((p) => Math.abs(p[1]) < 0.03 && rAx(p) > 0.126))                                              // out of the wheel radially
+      && m.steps[kv].checks.some((c) => /airflow paths/.test(c.what) && c.clear));
+    // Fibre Bed Filter terminology; gauge tightened with the wrench before its box cover
+    out.hepa = m.steps.some((s) => /hepa/i.test(s.title + s.text + s.speech));
+    out.fbf = m.steps.some((s) => s.title === 'Install the Fibre Bed Filter') && m.nodes && [...m.nodes.values()].some((n) => n.name === 'HepaFilter' && n.label === 'Fibre Bed Filter');
+    const kg2 = T('Install the pressure gauge and its box cover');
+    const wg = m.steps[kg2].tracks.tools.find((t) => t.tool === 'wrench');
+    const cov = m.steps[kg2].tracks.parts.find((tr) => tr.node === id('Gauge Box Cover'));
+    out.gauge = !!wg && m.node(id('Gauge Box Cover')).step === kg2 && cov.keys[1][0] >= wg.keys[wg.keys.length - 1][0] - 1e-6;
+    return out;
+  });
+  const want = ['Install the back panel screws', 'Rivet the back panel', 'Rivet the filter base', 'Rivet the track mount legs'];
+  check(v22.lconn && v22.oldGone, 'MF-550-210-B_GROUPED_ASSEMBLY_03: the L-connector (NPTA12 body, O-ring, sealing nut, locknut) replaces the cable strain relief; CSHM 06 connector insert integrated as its own part');
+  check(want.every((t) => !v22.titles.includes(t)) && v22.deliveredStep1 && v22.rivStep1 === v22.riv.length - 6 - v22.rivetGunRivets && v22.rivDoor === 6 && v22.rivetGunRivets === 4,
+    `removed operations (back panel screws, back / filter-base / leg rivets): ${v22.titles.length} steps; their ${v22.rivStep1} rivets + 2 screws shown from step 1; 6 door rivets come with the door; rivet gun only on the ${v22.rivetGunRivets} gauge-box rivets`);
+  check(v22.ht200 && v22.ratchet, 'step 3 applies HT200 (grey bead, cartridge contents grey, "silicone" not mentioned); step 4 tightens the locknut inside with the supplied ratchet + deep socket, collision-free');
+  check(Math.abs(v22.benchY - 0.7) < 1e-6 && v22.holds && v22.lowered && v22.bracketDrill,
+    'Phase 3: motor, washers, bolts, impeller, tightening and marks on the bench (0.7 m above, held across the steps), then the assembly is lowered into the unit; all four bracket bolts driven by the drill (extension) with orange arrows');
+  check(v22.leadSteps.every((n) => n === 9) && v22.leadColours.join() === 'Black,Blue,Brown,GND,Grey,Orange,Red,White 5,White 6' && v22.grow && Math.abs(v22.od - 0.0016) < 1e-6 && v22.leadChecks,
+    `nine 22 AWG motor leads (${v22.leadColours.join(', ')}) fed through the L-connector, collision-checked, in every lead step`);
+  check(v22.ferrules.join() === 'GND,White 5,White 6' && v22.splices.join() === 'Black,Orange,Red' && v22.spliceBig && v22.crimped && v22.crimps === 6
+    && v22.attached.join() === 'Black,Blue,Brown,GND,Grey,Orange,Red,White 5,White 6' && v22.pairGap.every((d) => Math.abs(d - 0.0017) < 0.0002)
+    && v22.crimper.length === 1 && v22.crimper[0] === 'handle+jaw' && v22.wiringFlag && v22.wiringText,
+    '230/3/60: crimper crimps ferrules on GND / White / White and one splice on each pair (Black+Grey, Red+Blue, Orange+Brown) — 6 crimps; all nine leads pushed into the insert (1, 2, 3, 5, 6, PE; 4 empty)');
+  check(v22.engage && v22.follow[0] < -0.04 && Math.abs(v22.follow[1]) < 1e-6,
+    `connector engagement: the insert rises ${(-v22.follow[0] * 1000).toFixed(0)} mm into its seat and the terminated leads follow it`);
+  check(v22.stickers.length === 2 && v22.stickers.every((x) => x[2]) && v22.stickerKit,
+    `filter labels on both stage filters (${v22.stickers.map((x) => `${x[0]} → ${x[1]}`).join(', ')}), attached in the exploded and assembled states`);
+  check(v22.doorKit && v22.gaugeCoverKit && v22.clips.join() === 'Clip Nut,Clip Nut (1),Clip Nut (12),Clip Nut (5)' && v22.clipsAnimated,
+    'components view: access door well clear of the filter modules, gauge box cover exploded; all four door clip nuts installed (Clip Nut / Clip Nut (1) animated)');
+  check(v22.gasket && v22.gasketFollows && v22.washerLabel, 'door gasket = one black silicone bead (Ø7.2 mm, CAD door gap) laid with the caulking gun on the access door, following it into place; Bonded Sealed Washer naming');
+  check(v22.dims && v22.tap && v22.hold, 'decal positions in inches from the top reference point; four bracket holes tapped (drill + tap, arrows both ways); clamp bolt head held by the wrench while the drill drives its nut');
+  check(v22.airflow && !v22.hepa && v22.fbf && v22.gauge, 'impeller rotation arrow (CCW from above) + separate airflow indicator along the air path: filters → bellmouth → eye → radially out of the wheel → up around the motor (collision-checked); "Fibre Bed Filter" everywhere (no HEPA); gauge tightened with the wrench before its box cover is fitted');
   check(errors.length === 0, `no page errors ${errors.length ? JSON.stringify(errors.slice(0, 3)) : ''}`);
   await page.close();
 }

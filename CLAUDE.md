@@ -40,7 +40,7 @@ sessions.
 - **Ending poses.** Every motion ends exactly at the CAD pose.
 - **Missing data.** Never invent data the CAD or the supplied documents do not contain (sizes, torques, holes,
   wiring, tool models): show the honest closest representation and flag it.
-- **Sequence.** It follows real dependencies. Every one of the 220 components is installed exactly once;
+- **Sequence.** It follows real dependencies. Every one of the 223 components (v2.2) is installed exactly once;
   pre-installed parts use `show()`.
 - **Operator UI.** No warning colours or clutter. Engineering flags go to the engineering report; genuine safety
   requirements go into the instruction text.
@@ -53,7 +53,7 @@ sessions.
 ```bash
 npm start                                                   # serve the app locally
 npm run unit:build                                          # rebuild unit step data from the repo (≈ 25 s)
-npm test                                                    # 145 end-to-end checks (ONLY=unit for section 14)
+npm test                                                    # 157 end-to-end checks (ONLY=unit for section 14)
 npm run unit:review -- --steps 5-11                         # frames + contact sheet of selected steps
 npm run unit:review -- --out /tmp/after --compare /tmp/base # prove a refactor changed nothing
 npm run camera:plans                                        # parts tutorial: after explode / model / camera changes

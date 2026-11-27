@@ -104,10 +104,25 @@ def spec_of(name, p):
     if b == "External Tooth Lock Washer":
         return dict(type="External tooth lock washer", size="ID Ø6.60 mm", length="OD Ø12.70 mm, 1.27 mm",
                     drive="—", status=meas, confirm="material / standard not in CAD")
-    if b == "Door Bolt Washer":
-        return dict(type="Stepped washer", size="ID Ø5.56 mm", length="OD Ø15.88 mm, 3.26 mm",
-                    drive="—", status="Measured from CAD — CONFLICT",
-                    confirm="bore Ø5.56 mm is smaller than the Ø6.35 mm bolt: probably a sealing washer modelled compressed — confirm part")
+    if b == "Door Bolt Washer":                       # v2.2: identified as a bonded sealed washer (engineering)
+        return dict(type="Bonded sealed washer", size="sealing lip ID Ø5.56 mm (for the Ø6.35 mm bolt)", length="OD Ø15.88 mm, 3.26 mm",
+                    drive="—", status="Measured from CAD",
+                    confirm="rubber / metal grade and the bolt size it seals are not in the CAD")
+    if b == "NPTA12_L_body_with_seal":
+        return dict(type="L-connector body (90° elbow) with seal", size="thread OD Ø21.2 mm (1/2 in NPT class)", length="48.9 × 53.2 × 34.6 mm",
+                    drive="pushed through the Ø21.4 mm cable entry hole", status=meas, confirm="thread designation and cable sealing range not in CAD")
+    if b == "NPTA12_locknut":
+        return dict(type="Locknut", size="to suit the L-connector thread", length="6.0 mm thick",
+                    drive=f"{fmt(af[0])} mm A/F (1-1/16 in socket, ratchet)", status=meas, confirm="tightening torque not specified")
+    if b == "NPTA12_o_ring":
+        return dict(type="O-ring", size="OD Ø28.1 mm", length="2.0 mm section", drive="—", status=meas, confirm="material not in CAD")
+    if b == "NPTA12_sealing_nut":
+        return dict(type="Sealing nut (cable gland)", size="cable bore Ø13.4 mm", length=f"{fmt(L)} mm", drive="hand-tight on the leads",
+                    status=meas, confirm="sealing insert range for nine single leads not specified")
+    if b == "CSHM 06 Connector Insert":
+        return dict(type="Connector insert, 6 poles + PE (supplied cshm_06.stp)", size="50 × 34 × 40 mm", length="push-release terminals (ferrules / splices)",
+                    drive="—", status="Supplied model (real geometry); wired for 230/3/60",
+                    confirm="position, contact numbering and PE terminal: assumptions accepted by engineering; mating housing / plug not supplied")
     if b == "1_Cable Strain Relief":
         return dict(type="Cable strain relief (gland)", size="thread OD Ø21.34 mm (1/2 in NPT)", length=f"{fmt(L)} mm overall",
                     drive="hex 23.9 mm A/F", status=meas, confirm="cable clamping range not in CAD")
@@ -131,8 +146,54 @@ class Unit:
         self.tmesh = {t: tool_mesh(CACHE, t) for t in self.tools}
         self.steps = []
         self.installed_by = {}                    # part name -> step index
+        self.bench = None                         # v2.2: active bench sub-assembly (bench_begin / bench_end)
+        self.bench_parts = {}                     # name -> bench offset (mm) while it is on the bench
+        self.held = set()                         # v2.2: parts kept at their staged pose across steps (holds)
+        self.labels = {}                          # v2.2: display labels for CAD names (node.label)
 
     def group(self, g): return [n for n, p in self.A.items() if p["group"] == g]
+
+    # ---------------------------------------------------------------- v2.2 bench sub-assembly
+    def bench_begin(self, names, offset=S.BENCH.offset):
+        """Build a sub-assembly on the bench: the named parts are worked on at CAD + offset. Their facts and
+        collision meshes are moved there, so every Step operation (place, fastener, drill, mark …) runs at the
+        bench unchanged and is checked against the parts already on the bench AND the unit; part keys are
+        written as deltas on the CAD pose (offset included). bench_end() puts them back for the move into
+        the unit."""
+        O = np.asarray(offset, float); self.bench = dict(O=O, A0={}, M0={})
+        for n in names:
+            p = self.A[n]; self.bench["A0"][n] = json.loads(json.dumps(p)); self.bench["M0"][n] = self.world.mesh[n]
+            p["bbox"] = [v + O[i % 3] for i, v in enumerate(p["bbox"])]
+            for k in ("centre", "head", "tip"):
+                if k in p: p[k] = list(np.asarray(p[k], float) + O)
+            m = self.world.mesh[n].copy(); m.vertices = m.vertices + O; self.world.mesh[n] = m
+            self.bench_parts[n] = O
+            self.held.add(n)
+
+    def bench_end(self):
+        """Back to the CAD frame: bench parts leave the collision world (they move as one group next)."""
+        names = list(self.bench["A0"])
+        self.world.remove(names)
+        for n in names:
+            self.A[n].clear(); self.A[n].update(self.bench["A0"][n]); self.world.mesh[n] = self.bench["M0"][n]
+            self.bench_parts.pop(n, None)
+        self.bench = None
+        return names
+
+    def finalize_holds(self):
+        """v2.2: a part staged away from its CAD pose (bench, door on the bench …) keeps that pose in every
+        step until it moves again: the runtime shows parts without a track at their CAD pose, so such steps
+        get a constant `hold` track (excluded from the step's active parts)."""
+        last = {}
+        for s in self.steps:
+            for n in sorted(self.held):
+                if n in s.parts:
+                    tr = s.parts[n]; last[n] = (tr["keys"][-1], tr["axis"], tr["pivot"]); continue
+                if n not in last or self.installed_by.get(n, 1e9) >= s.i: continue
+                k, axis, pivot = last[n]
+                if max(abs(v) for v in k[1:4]) < 1e-6 and abs(k[8]) < 1e-9 and abs(k[7] - 1) < 1e-9: continue
+                s.parts[n] = dict(node=self.ids[n], name=n, axis=axis, pivot=pivot, hold=True,
+                                  keys=[[0.0, *k[1:8], k[8], 1]])
 
     def step(self, **kw):
         if self.steps: self._carry(self.steps[-1])
@@ -167,27 +228,43 @@ class Step:
     # ---------------------------------------------------------------- tracks
     def _track(self, name, axis=None, pivot=None):
         if name not in self.parts:
+            O = self.u.bench_parts.get(name)
+            if pivot is not None and O is not None: pivot = np.asarray(pivot, float) - O    # pivots live in the CAD frame
             self.parts[name] = dict(node=self.u.ids[name], name=name, axis=list(unit(axis)) if axis is not None else [0, 1, 0],
                                     pivot=list(np.asarray(pivot, float)) if pivot is not None else [0, 0, 0], keys=[])
         return self.parts[name]
+
+    def _last(self, name):
+        """Last key of a part as a LOCAL offset (bench offset removed) — what the operations reason with."""
+        k = list(self.parts[name]["keys"][-1]); O = self.u.bench_parts.get(name)
+        if O is not None: k[1:4] = list(np.asarray(k[1:4]) - quat_to_mat(k[4:8]) @ O)
+        return k
 
     def _carried(self, name):
         """Track for a part installed in an earlier step that moves again here (e.g. tightened now)."""
         if name in self.parts: return self.parts[name]
         p = self.u.A[name]
         c = self.u.carry.get(name)
-        tr = self._track(name, axis=c[3] if c else p.get("axis"), pivot=c[4] if c else p.get("head"))
-        if c: self._key(name, 0, c[0], c[1], c[2])
-        else: self._key(name, 0)
+        if c:
+            tr = self._track(name, axis=c[3]); tr["pivot"] = list(c[4])                  # carried pivot: CAD frame already
+            self._key(name, 0, c[0], c[1], c[2], raw=True)
+        else:
+            tr = self._track(name, axis=p.get("axis"), pivot=p.get("head")); self._key(name, 0)
         return tr
 
-    def _key(self, name, t, T=(0, 0, 0), q=ID_Q, ang=0.0, ease=1):
+    def _key(self, name, t, T=(0, 0, 0), q=ID_Q, ang=0.0, ease=1, raw=False):
         tr = self.parts[name]
+        O = None if raw else self.u.bench_parts.get(name)
+        if O is not None: T = np.asarray(T, float) + quat_to_mat(q) @ O        # bench: delta on the CAD pose
         tr["keys"].append([round(t, 3), *[round(float(v), 3) for v in T], *[round(float(v), 6) for v in q], round(float(ang), 4), ease])
 
     def _install(self, names):
         """Parts become obstacles for later motions once their own motion is recorded."""
         self.u.world.add(names)
+        self._appear(names)
+
+    def _appear(self, names):
+        """Parts are part of the product from this step on (visible, listed) — v2.2: also when only staged."""
         for n in names:
             if n not in self.u.installed_by:
                 self.u.installed_by[n] = self.i
@@ -209,7 +286,7 @@ class Step:
         return trimesh.util.concatenate([self.u.world.mesh[n] for n in names])
 
     # ---------------------------------------------------------------- generic rigid placement
-    def place(self, names, path, tilt=None, dur=None, label=None, allow=(), final_allow=(), ease_last=True, pivot=None):
+    def place(self, names, path, tilt=None, dur=None, label=None, allow=(), final_allow=(), ease_last=True, pivot=None, tilt_rate=None):
         """Rigid group from path[0] (offset from CAD, mm) through path[...] to the CAD position.
         tilt=(axis, deg): extra rotation about the group centre at the start, removed along the path."""
         names = list(names)
@@ -227,7 +304,7 @@ class Step:
             while k < len(seg) - 1 and d > seg[k]: d -= seg[k]; k += 1
             f = 0 if seg[k] == 0 else min(1, d / seg[k])
             o = pts[k] + (pts[k + 1] - pts[k]) * f
-            q = slerp(qs, ID_Q, min(1, s * S.PLACE.tilt_removal_rate)) if tilt else ID_Q
+            q = slerp(qs, ID_Q, min(1, s * (tilt_rate or S.PLACE.tilt_removal_rate))) if tilt else ID_Q
             T = o + P - quat_to_mat(q) @ P
             return T, q
 
@@ -331,14 +408,22 @@ class Step:
         self.t += dur
 
     # ---------------------------------------------------------------- tools
-    def _drill_mesh(self, af):
-        """Drill collision mesh with the socket (tool y 0..50.5 mm) scaled radially as on screen."""
-        key = ("drill", round(af, 2))
+    def _drill_mesh(self, af, ext=0.0):
+        """Drill collision mesh with the socket (tool y 0..50.5 mm) scaled radially as on screen.
+        v2.2: ext = socket extension bar (mm): the drill body sits ext further back, a Ø12 mm bar between."""
+        key = ("drill", round(af, 2)) if not ext else ("drill", round(af, 2), round(ext, 1))
         if key not in self.u.tmesh:
             m = self.u.tmesh["drill"].copy(); v = m.vertices.copy()
             sel = v[:, 1] < 50.6; k = af / SOCKET_SUPPLIED_AF
             v[sel, 0] *= k; v[sel, 2] *= k
-            m.vertices = v; self.u.tmesh[key] = m
+            if ext: v[~sel, 1] += ext
+            m.vertices = v
+            if ext:
+                bar = trimesh.creation.cylinder(radius=S.DRILL.ext_r, height=ext + 6, sections=12)
+                bar.apply_transform(trimesh.transformations.rotation_matrix(math.pi / 2, (1, 0, 0)))
+                bar.apply_translation((0, 50.5 + (ext + 6) / 2 - 3, 0))
+                m = trimesh.util.concatenate([m, bar])
+            self.u.tmesh[key] = m
         return self.u.tmesh[key]
 
     SWEEP = S.TOOL.retract_sweep
@@ -373,11 +458,12 @@ class Step:
     def _sub(self, tr, part, t, val, ease=1):
         tr.setdefault("sub", {}).setdefault(part, []).append([round(t, 3), round(float(val), 4), ease])
 
-    def drill(self, names, af=None, hints=((0, -1, 0), (1, 0, 0), (0, 0, 1)), turns=S.DRILL.turns, label=None, depth=None, fallback=True):
+    def drill(self, names, af=None, hints=((0, -1, 0), (1, 0, 0), (0, 0, 1)), turns=S.DRILL.turns, label=None, depth=None, fallback=True,
+              extension=0.0):
         """Drill + socket sized to the measured hex: align, engage, turn the fastener home, retract.
         Fasteners the drill body cannot reach (no collision-free roll) are tightened with the
         supplied adjustable wrench instead (hex heads / nuts only) — recorded in the step flags."""
-        if fallback:
+        if fallback and not extension:
             ok, blocked = [], []
             for name in names:
                 self._carried(name)
@@ -385,7 +471,7 @@ class Step:
                 haf = af or (p["across_flats"][0] if p.get("across_flats") else SOCKET_SUPPLIED_AF)
                 kind_nut = "Nut" in name
                 hh = head_height(p) if not kind_nut else p["length"]
-                k = self.parts[name]["keys"][-1]
+                k = self._last(name)
                 side = unit(k[1:4]) if np.linalg.norm(k[1:4]) > 0.05 else a
                 outer = np.asarray(p["head"]) if not kind_nut else (np.asarray(p["tip"]) if np.dot(unit(np.asarray(p["tip"]) - np.asarray(p["head"])), side) > 0 else np.asarray(p["head"]))
                 dep = depth if depth is not None else max(S.DRILL.depth_min, hh * S.DRILL.depth_share)
@@ -393,20 +479,21 @@ class Step:
                 (blocked if hit and p.get("across_flats") and af is None else ok).append(name)
             if ok: self.drill(ok, af=af, hints=hints, turns=turns, label=label, depth=depth, fallback=False)
             for name in blocked:
-                k = self.parts[name]["keys"][-1]; side = unit(k[1:4]) if np.linalg.norm(k[1:4]) > 0.05 else unit(self.u.A[name]["axis"])
+                k = self._last(name); side = unit(k[1:4]) if np.linalg.norm(k[1:4]) > 0.05 else unit(self.u.A[name]["axis"])
                 self.wrench(name, side=side, strokes=2, bolt="Nut" not in name)
             if blocked:
                 self.flag(f"Drill body cannot reach {', '.join(blocked)} (wall clearance in the CAD): tightened with the adjustable wrench (supplied) instead")
             return self
         tool = "drill"; info = self.u.tools[tool]
         tr = dict(tool=tool, keys=[], label=label)
+        if extension: tr["extension"] = float(extension)
         for name in names:
             self._carried(name)
         poses = []                                      # (name, side, engaged point, quaternion, offset, angle0)
         for name in names:
             p = self.u.A[name]; a = unit(p["axis"]); head = np.asarray(p["head"])
             kind_nut = "Nut" in name
-            last = self.parts[name]["keys"][-1]
+            last = self._last(name)
             side = unit(last[1:4]) if np.linalg.norm(last[1:4]) > 0.05 else a
             haf = af or (p["across_flats"][0] if p.get("across_flats") else SOCKET_SUPPLIED_AF)
             tr["socketAF"] = haf
@@ -418,11 +505,11 @@ class Step:
                 outer = np.asarray(p["tip"]) if np.dot(unit(np.asarray(p["tip"]) - head), side) > 0 else head
             eng = outer - side * dep
             allow = {name} | set(p.get("contacts", []))
-            q, hit = self._tool_pose_free(tool, eng, side, allow, hints, mesh=self._drill_mesh(haf))
+            q, hit = self._tool_pose_free(tool, eng, side, allow, hints, mesh=self._drill_mesh(haf, extension))
             self.checks.append(dict(what=f"drill on {name}", samples=1, clear=not hit, collisions={k: round(v, 2) for k, v in hit.items()}))
             sgn = -1.0 if float(unit(self.parts[name]["axis"]) @ side) > 0 else 1.0
             poses.append((name, side, eng, q, np.array(last[1:4]), last[8], outer, sgn, allow))
-        mesh = self._drill_mesh(tr["socketAF"])
+        mesh = self._drill_mesh(tr["socketAF"], extension)
         allow_all = set().union(*[x[8] for x in poses])
         first = True; prev = None
         for name, side, eng, q, off, ang0, outer, sgn, allow in poses:
@@ -465,7 +552,10 @@ class Step:
         self._check_tool_path(tr, mesh, allow_all)
         tr["socketScale"] = round(tr.get("socketAF", SOCKET_SUPPLIED_AF) / SOCKET_SUPPLIED_AF, 4)
         self.toolTracks.append(tr)
-        self._use_tool("drill", f"Cordless drill + {socket_label(tr['socketAF'])} socket" + ("" if abs(tr["socketScale"] - 1) < 0.02 else " (socket resized from the supplied 9/16 in model)"))
+        self._use_tool("drill", f"Cordless drill + {socket_label(tr['socketAF'])} socket" + ("" if abs(tr["socketScale"] - 1) < 0.02 else " (socket resized from the supplied 9/16 in model)")
+                       + (f" + {fmt(extension / 25.4, 1)} in extension (not supplied: generic bar)" if extension else ""))
+        if getattr(self, "_held_wrench", None):               # v2.2: drill turns the fastener while a wrench holds its mate
+            self._held_wrench["end"] = self.t
         return self
 
     # ---------------------------------------------------------------- tool path helpers
@@ -696,11 +786,18 @@ class Step:
         self._use_tool("rivetgun", "Cordless blind-rivet gun")
         return self
 
-    def wrench(self, name, side, hints=((0, -1, 0), (0, 0, 1), (0, 1, 0)), strokes=2, swing_deg=S.WRENCH.swing, label=None, bolt=False):
-        """Adjustable wrench: open the jaw to the measured hex width, engage, turn in strokes."""
+    def wrench(self, name, side, hints=((0, -1, 0), (0, 0, 1), (0, 1, 0)), strokes=2, swing_deg=S.WRENCH.swing, label=None, bolt=False,
+               total_deg=None, approach="axis", hold=False, centre=None):
+        """Adjustable wrench: open the jaw to the measured hex width, engage, turn in strokes.
+        v2.2: total_deg = exact total turn (strokes of ≤ swing_deg that add up to it);
+        approach = "axis" (along the fastener axis, v2.1) or "handle" (slid on sideways onto the flats, along
+        the handle — where there is no room along the axis); hold = engage and hold the part still (no strokes)
+        until release_wrench() — e.g. holding a bolt head while the drill turns its nut."""
         self._carried(name)
         p = self.u.A[name]; side = unit(side)
-        if bolt:                                                       # hex head: centre of the head
+        if centre is not None:
+            C = np.asarray(centre, float); thick = p["length"]
+        elif bolt:                                                     # hex head: centre of the head
             hh = head_height(p); C = np.asarray(p["head"]) - unit(p["axis"]) * hh / 2; thick = hh
         else:
             C = (np.asarray(p["head"]) + np.asarray(p["tip"])) / 2; thick = p["length"]
@@ -710,11 +807,16 @@ class Step:
         allow = {name} | set(p.get("contacts", []))
         hits = None; best = None
         wm = self.u.tmesh[tool]
+
+        def app_vec(q):
+            return side * S.WRENCH.approach if approach == "axis" else quat_to_mat(q) @ np.array([1.0, 0, 0]) * S.WRENCH.approach_side
+
         # v2.1: the roll must keep the wrench clear over the whole stroke (engaged, swung, lifted off,
         # approach along the axis); a shorter swing (more strokes) is used where the full one does not fit
-        total_deg = swing_deg * strokes
+        total_deg_ = total_deg if total_deg is not None else swing_deg * strokes
         req = swing_deg
-        for sw in (swing_deg, *S.WRENCH.fallback_swings):
+        swings = (0,) if hold else (swing_deg, *S.WRENCH.fallback_swings)
+        for sw in swings:
             for h in hints:
                 for k in range(S.WRENCH.roll_steps):
                     xh = quat_to_mat(quat_axis_angle(side, k * math.pi / (S.WRENCH.roll_steps / 2))) @ unit(h)
@@ -725,8 +827,17 @@ class Step:
                     hit = self._pose_hits(wm, o0, q, allow)
                     worst = sum(hit.values())
                     if not hit:
-                        for pos, qq in [(o1, qs_), (o1 + side * S.WRENCH.lift, qs_), (o0 + side * S.WRENCH.lift, q), (o0 + side * S.WRENCH.approach_check, q), (o0 + side * S.WRENCH.approach, q),
-                                        (C + quat_to_mat(slerp(q, qs_, 0.5)) @ np.array([0, 0, w / 2]), slerp(q, qs_, 0.5))]:
+                        if hold or approach != "axis":
+                            av = app_vec(q)
+                            poses = [(o0 + av * f, q) for f in (0.15, 0.35, 0.6, 1.0)]
+                            if not hold:
+                                poses += [(o1, qs_), (o1 + side * S.WRENCH.lift, qs_), (o0 + side * S.WRENCH.lift, q),
+                                          (C + quat_to_mat(slerp(q, qs_, 0.5)) @ np.array([0, 0, w / 2]), slerp(q, qs_, 0.5)),
+                                          (o0 + side * S.WRENCH.lift + av * 0.5, q), (o0 + side * S.WRENCH.lift + av, q)]
+                        else:
+                            poses = [(o1, qs_), (o1 + side * S.WRENCH.lift, qs_), (o0 + side * S.WRENCH.lift, q), (o0 + side * S.WRENCH.approach_check, q), (o0 + side * S.WRENCH.approach, q),
+                                     (C + quat_to_mat(slerp(q, qs_, 0.5)) @ np.array([0, 0, w / 2]), slerp(q, qs_, 0.5))]
+                        for pos, qq in poses:
                             hh = self._pose_hits(wm, pos, qq, allow)
                             if hh: worst = 0.01 + sum(hh.values()) * 0.1; break
                     if best is None or worst < best[0]: best = (worst, q, hit, sw)
@@ -734,20 +845,28 @@ class Step:
                 if best and best[0] == 0: break
             if best and best[0] == 0: break
         q = best[1]; hits = best[2] or ({"(stroke)": round(best[0], 2)} if best[0] else {})
-        swing_deg = best[3]; strokes = int(math.ceil(total_deg / swing_deg - 1e-6))
-        if swing_deg < req and not hits:
-            self.flag(f"{name}: only a short collision-free wrench arc exists here ({swing_deg}° strokes instead of {req}°) — "
-                      "a ratcheting or offset box wrench is recommended (not supplied); confirm")
-        self.checks.append(dict(what=f"wrench on {name}", samples=1, clear=not hits, collisions={k: round(v, 2) for k, v in hits.items()}))
+        swing_deg = best[3]
+        if not hold:
+            strokes = int(math.ceil(total_deg_ / swing_deg - 1e-6))
+            if total_deg is not None: swing_deg = total_deg / strokes
+            if best[3] < req and not hits:
+                self.flag(f"{name}: only a short collision-free wrench arc exists here ({best[3]}° strokes instead of {req}°) — "
+                          "a ratcheting or offset box wrench is recommended (not supplied); confirm")
+        self.checks.append(dict(what=f"wrench {'holding' if hold else 'on'} {name}", samples=1, clear=not hits, collisions={k: round(v, 2) for k, v in hits.items()}))
 
         def org(qq): return C + quat_to_mat(qq) @ np.array([0, 0, w / 2])
         t0 = self.t
         self._shot(t0, C, radius=S.WRENCH.shot_radius, axis=side, kind="tool", tool=(self.u.tmesh[tool], org(q), q))
         sgn = -1.0 if float(unit(self.parts[name]["axis"]) @ side) > 0 else 1.0
         self._sub(tr, "jaw", t0, 0, 0); self._sub(tr, "jaw", t0 + S.WRENCH.jaw_open_at, w + S.WRENCH.jaw_play, 0)   # opened before it appears
-        self._tool_key(tr, t0, org(q) + side * S.WRENCH.approach, q)
+        self._tool_key(tr, t0, org(q) + app_vec(q), q)
         self._tool_key(tr, t0 + S.WRENCH.engage_dur, org(q), q)
-        ftr = self.parts[name]; last = ftr["keys"][-1]; off = np.array(last[1:4]); ang = last[8]
+        if hold:
+            self._held_wrench = dict(tr=tr, pos=org(q), q=q, av=app_vec(q), allow=allow, end=None)
+            self.t = t0 + S.WRENCH.engage_dur + 0.15
+            self._use_tool("wrench", "Adjustable wrench (jaw set to the measured hex)")
+            return self
+        last = self._last(name); off = np.array(last[1:4]); ang = last[8]
         t = t0 + S.WRENCH.first_stroke_at
         for s in range(strokes):
             qs = quat_mul(quat_axis_angle(side, -math.radians(swing_deg)), q)      # clockwise seen from outside
@@ -763,47 +882,389 @@ class Step:
                 t += S.WRENCH.stroke_cycle
             else:
                 t += S.WRENCH.last_stroke
-        self._tool_key(tr, t + S.WRENCH.retract_dur, org(qs) + side * S.WRENCH.approach, qs)
+        if approach == "axis":
+            self._tool_key(tr, t + S.WRENCH.retract_dur, org(qs) + app_vec(qs), qs)
+        else:                                # v2.2: lift off the flats, swing back, slide out the way it came in
+            self._tool_key(tr, t + 0.25, org(qs) + side * S.WRENCH.lift, qs)
+            self._tool_key(tr, t + 0.65, org(q) + side * S.WRENCH.lift, q)
+            t += 0.65
+            self._tool_key(tr, t + S.WRENCH.retract_dur, org(q) + side * S.WRENCH.lift + app_vec(q), q)
         self.t = t + S.WRENCH.retract_dur
         self._check_tool_path(tr, self.u.tmesh[tool], allow)
         self.toolTracks.append(tr)
         self._use_tool("wrench", "Adjustable wrench (jaw set to the measured hex)")
         return self
 
-    def bead(self, centre, normal, radius, start_deg=90, sweep=360, dur=3.2, bead_d=4.0, label="silicone bead"):
-        """Caulking dispenser: nozzle follows the joint, the knob drives the plunger, the bead grows."""
+    def release_wrench(self):
+        """v2.2: end of a wrench hold (see wrench(hold=True)): stays engaged until now, then slides off."""
+        h = self._held_wrench; tr = h["tr"]
+        self._tool_key(tr, self.t, h["pos"], h["q"])
+        self._tool_key(tr, self.t + S.WRENCH.retract_dur, h["pos"] + h["av"], h["q"])
+        self.t += S.WRENCH.retract_dur
+        self._check_tool_path(tr, self.u.tmesh["wrench"], h["allow"])
+        self.toolTracks.append(tr); self._held_wrench = None
+        return self
+
+    def bead(self, centre, normal, radius, start_deg=90, sweep=360, dur=3.2, bead_d=4.0, label="silicone bead",
+             colour=None, product="Caulking dispenser, WEICON HT300 silicone (red, as supplied)", sealant=None):
+        """Caulking dispenser: nozzle follows the joint, the knob drives the plunger, the bead grows.
+        v2.2: colour / product / sealant (cartridge contents colour) per operation."""
         n = unit(normal); u, v = perp_basis(n); C = np.asarray(centre, float)
         k = S.CAULKING.segments
         angs = [math.radians(start_deg + sweep * i / k) for i in range(k + 1)]
-        pts = [C + radius * (math.cos(t) * u + math.sin(t) * v) + n * (bead_d * 0.35) for t in angs]
+        pts = [C + radius * (math.cos(t) * u + math.sin(t) * v) for t in angs]
+        tangs = [unit(-math.sin(t) * u + math.cos(t) * v) for t in angs]
+        return self._bead_run(pts, [n] * (k + 1), tangs, dur, bead_d, label, colour, product, sealant,
+                              shot=(C, radius + S.CAULKING.shot_margin, n))
+
+    def bead_path(self, points, normal, dur, bead_d, label, colour, product, sealant=None, attach=None, xform=None, closed=True,
+                  corner=6.0, shot=None):
+        """v2.2: bead along a polyline on a face (rounded corners). points / normal in the CAD frame of `attach`
+        (the bead fx moves with that part); xform = (T, q) = the part's current delta (staged pose) for the tool path."""
+        sm = rounded_polyline(points, corner, closed)
+        Ls = np.cumsum([0] + [np.linalg.norm(sm[i + 1] - sm[i]) for i in range(len(sm) - 1)])
+        k = max(S.CAULKING.segments, int(Ls[-1] / 12))
+        res = [np.array([np.interp(l, Ls, [p[j] for p in sm]) for j in range(3)]) for l in np.linspace(0, Ls[-1], k + 1)]
+        tangs = [unit(res[min(i + 1, k)] - res[max(i - 1, 0)]) for i in range(k + 1)]
+        n = unit(normal)
+        return self._bead_run(res, [n] * (k + 1), tangs, dur, bead_d, label, colour, product, sealant, attach=attach, xform=xform,
+                              shot=shot)
+
+    def _bead_run(self, surf, normals, tangs, dur, bead_d, label, colour, product, sealant, attach=None, xform=None, shot=None):
+        k = len(surf) - 1
+        R = quat_to_mat(xform[1]) if xform else np.eye(3); T = np.asarray(xform[0], float) if xform else np.zeros(3)
+        W = lambda p: R @ np.asarray(p, float) + T                     # CAD frame of the part -> world (tool path)
+        pts = [p + n * (bead_d * 0.35) for p, n in zip(surf, normals)]  # fx (part frame)
         tr = dict(tool="caulking", keys=[])
+        if sealant: tr["sealant"] = sealant
         t0 = self.t
-        tang0 = unit(-math.sin(angs[0]) * u + math.cos(angs[0]) * v)
-        ax0 = unit(n * 1.0 - tang0 * S.CAULKING.nozzle_tilt)
-        q0 = frame_quat(ax0, n)
-        self._shot(t0, C, radius=radius + S.CAULKING.shot_margin, axis=n, kind="tool", tool=(self.u.tmesh["caulking"], pts[0] + n * 1.0, q0))
-        self._tool_key(tr, t0, pts[0] + ax0 * S.CAULKING.approach, q0)
-        self._tool_key(tr, t0 + S.CAULKING.approach_dur, pts[0] + n * 1.0, q0)
+        nw = [R @ n for n in normals]; tw = [R @ tg for tg in tangs]; pw = [W(p) for p in pts]
+        ax0 = unit(nw[0] * 1.0 - tw[0] * S.CAULKING.nozzle_tilt)
+        q0 = frame_quat(ax0, nw[0])
+        if shot is not None:
+            C, rad, sax = shot
+            self._shot(t0, W(C) if xform else C, radius=rad, axis=R @ np.asarray(sax, float), kind="tool", tool=(self.u.tmesh["caulking"], pw[0] + nw[0] * 1.0, q0))
+        self._tool_key(tr, t0, pw[0] + ax0 * S.CAULKING.approach, q0)
+        self._tool_key(tr, t0 + S.CAULKING.approach_dur, pw[0] + nw[0] * 1.0, q0)
         worst = {}
-        for i, (P, t) in enumerate(zip(pts, angs)):
-            tang = unit(-math.sin(t) * u + math.cos(t) * v)
-            ax = unit(n * 1.0 - tang * S.CAULKING.nozzle_tilt)
-            q = frame_quat(ax, n)
+        ax = ax0; q = q0
+        for i in range(k + 1):
+            ax = unit(nw[i] * 1.0 - tw[i] * S.CAULKING.nozzle_tilt)
+            q = frame_quat(ax, nw[i])
             ti = t0 + S.CAULKING.start_at + dur * i / k
-            self._tool_key(tr, ti, P + n * 1.0, q)
+            self._tool_key(tr, ti, pw[i] + nw[i] * 1.0, q)
             if i % S.CAULKING.check_every == 0:
-                Mx = np.eye(4); Mx[:3, :3] = quat_to_mat(q); Mx[:3, 3] = P + n * 1.0
+                Mx = np.eye(4); Mx[:3, :3] = quat_to_mat(q); Mx[:3, 3] = pw[i] + nw[i] * 1.0
                 for nn, d in self.u.world.hits(self.u.tmesh["caulking"], Mx, tol=S.COLLISION.caulking_tol).items(): worst[nn] = max(worst.get(nn, 0), d)
-        self.checks.append(dict(what="caulking dispenser path", samples=k // S.CAULKING.check_every + 1, clear=not worst, collisions={a: round(b, 2) for a, b in worst.items()}))
+        self.checks.append(dict(what=f"caulking dispenser path ({label})", samples=k // S.CAULKING.check_every + 1, clear=not worst, collisions={a: round(b, 2) for a, b in worst.items()}))
         self._sub(tr, "knob", t0 + S.CAULKING.approach_dur, 0, 0); self._sub(tr, "knob", t0 + S.CAULKING.start_at + dur, 2 * math.pi * S.CAULKING.knob_turns, 0)
         self._sub(tr, "plate", t0 + S.CAULKING.approach_dur, 0, 0); self._sub(tr, "plate", t0 + S.CAULKING.start_at + dur, S.CAULKING.plate_travel, 0)
-        self._tool_key(tr, t0 + S.CAULKING.retract_at + dur, pts[-1] + ax * S.CAULKING.approach, q)
-        self.fx.append(dict(type="bead", points=[list(map(float, p)) for p in pts], diameter=bead_d,
-                            colour=self.u.tools["caulking"].get("beadColour", "#c8281e"), grow=[round(t0 + S.CAULKING.start_at, 3), round(t0 + S.CAULKING.start_at + dur, 3)], label=label))
+        self._tool_key(tr, t0 + S.CAULKING.retract_at + dur, pw[-1] + ax * S.CAULKING.approach, q)
+        fx = dict(type="bead", points=[list(map(float, p)) for p in pts], diameter=bead_d,
+                  colour=colour or self.u.tools["caulking"].get("beadColour", "#c8281e"), grow=[round(t0 + S.CAULKING.start_at, 3), round(t0 + S.CAULKING.start_at + dur, 3)], label=label)
+        if attach: fx["attach"] = self.u.ids[attach]
+        self.fx.append(fx)
         self.toolTracks.append(tr)
         self.t = t0 + S.CAULKING.retract_at + dur
-        self._use_tool("caulking", "Caulking dispenser, WEICON HT300 silicone (red, as supplied)")
+        self._use_tool("caulking", product)
         return self
+
+    # ---------------------------------------------------------------- v2.2 gasket, decals on parts, dimensions
+    def gasket(self, points, normal, attach, xform, label="door gasket", corner=4.0):
+        """Square foam strip pressed by hand along a closed path on a face of `attach` (fx 'gasket', moves with the
+        part): laid progressively from its start point as the release liner is peeled off. points / normal in
+        the CAD frame on the face; xform = the part's current (staged) delta, for the camera."""
+        sec = S.GASKET.section; n = unit(normal)
+        path = rounded_polyline(points, corner, True, samples=3)
+        Ls = np.cumsum([0] + [np.linalg.norm(path[i + 1] - path[i]) for i in range(len(path) - 1)])
+        dur = float(Ls[-1] / S.GASKET.lay_mm_per_s)
+        R = quat_to_mat(xform[1]); T = np.asarray(xform[0], float)
+        c = np.mean(points, axis=0); ext = float(np.max(np.ptp(np.asarray(points), axis=0)))
+        self._shot(self.t, R @ c + T, radius=ext / 2 + 30, kind="wide", axis=R @ n)
+        t0 = self.t + 0.3
+        self.fx.append(dict(type="gasket", points=[list(map(float, p + n * sec / 2)) for p in path], normal=list(map(float, n)),
+                            section=sec, colour=S.GASKET.colour, liner=S.GASKET.liner, grow=[round(t0, 3), round(t0 + dur, 3)],
+                            attach=self.u.ids[attach], label=label))
+        self.t = t0 + dur + 0.3
+        return self
+
+    def sticker(self, sid, file, centre, normal, up, width, height, attach, dur=1.8):
+        """Paper sticker pressed onto a part face (fx 'decal' attached to the part: it stays on in every view)."""
+        t0 = self.t
+        self.fx.append(dict(type="decal", id=sid, file=file, centre=list(map(float, centre)), normal=list(map(float, unit(normal))),
+                            up=list(map(float, unit(up))), width=width, height=height, attach=self.u.ids[attach], kit=True,
+                            keys=[[0, 120, 0], [round(t0, 3), 120, 0], [round(t0 + dur * 0.6, 3), 3, 0], [round(t0 + dur * 0.8, 3), 0, 0.5], [round(t0 + dur, 3), 0, 1]]))
+        self.t = t0 + dur
+        return self
+
+    def dims(self, items, t0, t1, attach=None, ref=None):
+        """Orange dimension call-outs (inches) shown from t0 to t1 (fx 'dims'). items: dict(a, b, line (point on the
+        dimension line), normal, text, up) in mm; extension lines from a and b to the dimension line, arrowheads,
+        the label at its middle; ref = reference point (datum) marked with a ring."""
+        segs, arrows, labels = [], [], []
+        for it in items:
+            a, b, L = (np.asarray(it[k], float) for k in ("a", "b", "line"))
+            d = unit(b - a); n = unit(it["normal"])
+            off = (L - a) - d * float((L - a) @ d)                   # perpendicular offset of the dimension line
+            pa, pb = a + off, b + off
+            ou = unit(off) if np.linalg.norm(off) > 1e-6 else np.zeros(3)
+            for e0, e1 in ((a, pa), (b, pb)):                        # extension lines (gap at the feature, 2 mm overrun)
+                if np.linalg.norm(e1 - e0) > S.DIMS.gap + 0.5: segs.append([e0 + ou * S.DIMS.gap, e1 + ou * 2.0])
+            segs.append([pa, pb])
+            arrows += [[pa, d * -1.0], [pb, d]]
+            up = unit(it.get("up", np.cross(n, d)))
+            side = -1.0 if it.get("below") else 1.0
+            labels.append(dict(pos=list(map(float, (pa + pb) / 2 + up * side * (S.DIMS.text_h * 0.85) + n * 0.4)), text=it["text"],
+                               right=list(map(float, unit(np.cross(up, n)))), up=list(map(float, up)), normal=list(map(float, n))))
+        f = dict(type="dims", colour=S.DIMS.colour, width=S.DIMS.line_w, arrow=S.DIMS.arrow, textH=S.DIMS.text_h,
+                 segments=[[list(map(float, p)) for p in sg] for sg in segs], arrows=[[list(map(float, p)), list(map(float, v))] for p, v in arrows],
+                 labels=labels, refs=[list(map(float, ref))] if ref is not None else [], t=[round(t0, 3), round(t1, 3)])
+        if attach: f["attach"] = self.u.ids[attach]
+        self.fx.append(f)
+        return self
+
+    # ---------------------------------------------------------------- v2.2 motor leads (fx 'cable', group "leads")
+    def leads_begin(self, leads):
+        """Register the routed motor leads (dict id -> dict colour, points (mm, world; motor exit first, last =
+        end of the insulation at the final termination / park point), terminal (None = pending)).
+        Checks every lead against the installed parts."""
+        self.u.leads = {k: dict(v, end=[[0.0, 0.0, 0.0, 0.0]], attach=None, ferrule=None) for k, v in leads.items()}
+        return self
+
+    def _lead_samples(self, pts, off=None):
+        """Points along a lead (every CABLE.check_step mm), the free end displaced by `off` (follow weight)."""
+        P = np.asarray(pts, float); Ls = np.r_[0, np.cumsum(np.linalg.norm(np.diff(P, axis=0), axis=1))]
+        ss = np.arange(0, Ls[-1], S.CABLE.check_step)
+        Q = np.array([[np.interp(x, Ls, P[:, j]) for j in range(3)] for x in ss])
+        if off is not None:
+            w = np.clip((ss - (Ls[-1] - S.CABLE.follow_len)) / S.CABLE.follow_len, 0, 1); w = w * w * (3 - 2 * w)
+            Q = Q + np.outer(w, off)
+        return Q, ss, Ls[-1]
+
+    def check_leads(self, label, offsets=None, allow_end=(), allow_zone=None):
+        """Collision samples (spheres) along every lead; allow_zone(point) -> extra allowed parts there."""
+        sph = self.u.__dict__.get("_lsph")
+        if sph is None: sph = self.u._lsph = trimesh.creation.icosphere(subdivisions=1, radius=S.CABLE.check_r)
+        worst = {}; n = 0
+        for lid, L in self.u.leads.items():
+            Q, ss, tot = self._lead_samples(L["points"], None if offsets is None else offsets.get(lid))
+            for P, x in zip(Q, ss):
+                al = set(allow_zone(P, x, tot) if allow_zone else ())
+                if tot - x < 14: al |= set(allow_end)
+                Mx = np.eye(4); Mx[:3, 3] = P; n += 1
+                for nm, d in self.u.world.hits(sph, Mx, allow=al, tol=0.25).items(): worst[f"{lid}: {nm}"] = max(worst.get(f"{lid}: {nm}", 0), d)
+        self.checks.append(dict(what=f"motor leads ({label})", samples=n, clear=not worst,
+                                collisions={a: round(b, 2) for a, b in sorted(worst.items(), key=lambda kv: -kv[1])[:4]}))
+        return worst
+
+    def leads_fx(self, grow=None):
+        """Emit the whole lead group for this step with its current end keys, attachments and ferrules."""
+        for lid, L in self.u.leads.items():
+            f = dict(type="cable", group="leads", id=lid, colour=L["colour"], diameter=S.CABLE.od, points=[list(map(float, p)) for p in L["points"]],
+                     follow=S.CABLE.follow_len, end=[[round(k[0], 3), *map(float, k[1:4])] for k in L["end"]], label=L.get("label", lid))
+            if grow is not None: f["grow"] = [round(grow[0] + L.get("stagger", 0.0), 3), round(grow[1] + L.get("stagger", 0.0), 3)]
+            if L["attach"]: f["attach"] = dict(node=self.u.ids[L["attach"][0]], t=round(L["attach"][1], 3), base=list(map(float, L["attach"][2])))
+            if L["ferrule"]:
+                C = S.SPLICE if L["ferrule"].get("kind") == "splice" else S.FERRULE
+                f["ferrule"] = dict(L["ferrule"], length=C.length, od=C.od, odCrimped=C.od_crimped, colour=C.colour)
+            self.fx.append(f)
+        return self
+
+    def _lead_end(self, lid, off):
+        """World position and direction of a lead's insulation end with the free end displaced by `off`."""
+        Q, ss, tot = self._lead_samples(self.u.leads[lid]["points"], off)
+        P = np.asarray(self.u.leads[lid]["points"], float)
+        w = 1.0; end = P[-1] + np.asarray(off, float) * w
+        d = unit(P[-1] - P[-2])
+        return end, d
+
+    def lead_keys(self, lid, keys):
+        """Append end-offset keys [[t, (dx, dy, dz)]] (mm, relative to the routed end) for one lead."""
+        L = self.u.leads[lid]
+        for t, off in keys: L["end"].append([t, *map(float, off)])
+        return self
+
+    def leads_reset_time(self):
+        """A new step starts: every lead keeps its last end offset from t = 0 (ferrule already on, already shown)."""
+        for L in self.u.leads.values():
+            last = L["end"][-1]; L["end"] = [[0.0, *last[1:4]]]
+            if L["ferrule"]: L["ferrule"] = dict(L["ferrule"], show=-1.0, crimp=-1.0 if L["ferrule"]["crimp"] is not None else None)
+            if L["attach"]: L["attach"] = (L["attach"][0], -1.0, L["attach"][2])
+        return self
+
+    def crimp(self, lids, work, hints=((-1, 0, 0), (0, 0, 1), (0, 0, -1), (0, -1, 0)), splices=None):
+        """Crimper (supplied model) on each lead end at its work position: the ferrule is slid onto the stripped end,
+        the open crimper comes in along its handles until the die nest surrounds the ferrule, the handles close
+        (crimp), open again and the crimper backs out. work: lid -> end offset (mm) where the end is held.
+        splices: lid -> offset (mm) from that lead's end to the centre of its pair — a splice sleeve (SPLICE) holding
+        both stripped ends is crimped there instead of a ferrule (carried by this lead's fx)."""
+        splices = splices or {}
+        tool = "crimper"; mesh = self.u.tmesh[tool]; tr = dict(tool=tool, keys=[])
+        jaw_o, hd_o = math.radians(S.CRIMP.open_jaw_deg), -math.radians(S.CRIMP.open_handle_deg)
+        prev = None
+        for k, lid in enumerate(lids):
+            L = self.u.leads[lid]; off = np.asarray(work[lid], float)
+            end, d = self._lead_end(lid, off)
+            sp = splices.get(lid)
+            C = S.SPLICE if sp is not None else S.FERRULE
+            side = np.zeros(3) if sp is None else np.asarray(sp, float)
+            fc = end + side + d * C.length / 2                        # sleeve centre (die nest)
+            t0 = self.t
+            L["ferrule"] = dict(show=round(t0, 3), slide=S.CRIMP.slide_on, crimp=None)
+            if sp is not None: L["ferrule"] |= dict(kind="splice", offset=[float(v) for v in side])
+            # roll: handles (+Y) perpendicular to the lead, the whole tool clear at the nest and along the approach
+            best = None
+            for h in hints:
+                for r in range(12):
+                    Y = quat_to_mat(quat_axis_angle(d, r * math.pi / 6)) @ unit(h); Y = Y - d * (Y @ d)
+                    if np.linalg.norm(Y) < 1e-3: continue
+                    Y = unit(Y); q = frame_quat(Y, np.cross(Y, d))
+                    hit = self._pose_hits(mesh, fc, q, set())
+                    worst = sum(hit.values())
+                    if not hit:
+                        for f in (0.3, 0.6, 1.0):
+                            hh = self._pose_hits(mesh, fc + Y * S.CRIMP.approach * f, q, set())
+                            if hh: worst = 0.01 + sum(hh.values()) * 0.1; break
+                    if best is None or worst < best[0]: best = (worst, q, Y, hit)
+                    if worst == 0: break
+                if best[0] == 0: break
+            _, q, Y, hit = best
+            self.checks.append(dict(what=f"crimper on {lid}" + (" (splice)" if sp is not None else ""), samples=1, clear=best[0] == 0,
+                                    collisions={a: round(b, 2) for a, b in hit.items()}))
+            ts = t0 + S.CRIMP.slide_on + 0.1
+            if prev is None: self._tool_key(tr, ts, fc + Y * S.CRIMP.approach, q)
+            else:
+                self._tool_key(tr, ts - 0.05, prev[0] + prev[1] * S.CRIMP.approach, prev[2])
+                self._tool_key(tr, ts + 0.3, fc + Y * S.CRIMP.approach, q); ts += 0.3
+            for ch, v in (("jaw", jaw_o), ("handle", hd_o)): self._sub(tr, ch, ts, v, 0)
+            self._shot(ts - 0.2, fc, radius=S.CRIMP.shot_radius, axis=d, kind="tool", tool=(mesh, fc, q))
+            te = ts + S.CRIMP.approach_dur
+            self._tool_key(tr, te, fc, q)                                   # nest around the ferrule
+            tc0 = te + S.CRIMP.close_at; tc1 = tc0 + S.CRIMP.close_dur
+            for ch, v in (("jaw", jaw_o), ("handle", hd_o)):
+                self._sub(tr, ch, tc0, v, 1); self._sub(tr, ch, tc1, 0, 1)                    # crimp
+                self._sub(tr, ch, tc1 + S.CRIMP.hold, 0, 1); self._sub(tr, ch, tc1 + S.CRIMP.hold + S.CRIMP.open_dur, v, 1)
+            L["ferrule"]["crimp"] = round(tc1, 3)
+            tr_ = tc1 + S.CRIMP.hold + S.CRIMP.open_dur
+            self._tool_key(tr, tr_, fc, q)
+            self._tool_key(tr, tr_ + S.CRIMP.retract_dur, fc + Y * S.CRIMP.approach, q)
+            self.t = tr_ + S.CRIMP.retract_dur
+            prev = (fc, Y, q)
+        self._check_tool_path(tr, mesh, set())
+        self.toolTracks.append(tr)
+        self._use_tool("crimper", "Ratchet crimping pliers (supplied model) — wire-end ferrules" + (" and splices" if splices else ""))
+        return self
+
+    # ---------------------------------------------------------------- v2.2 thread tapping
+    def tap(self, holes, hints=((0, -1, 0), (1, 0, 0), (0, 1, 0)), diameter=None):
+        """Drill with the (resized) supplied tap: align on the hole axis, engage, cut through the sheet (the tap
+        turns, orange arrow clockwise from the tool side), reverse out (arrow counter-clockwise), hop, retract.
+        holes: list of dict(part=<sheet being tapped>, entry=(mm, where the tap meets the sheet), axis=(into the
+        hole), depth=(sheet thickness, mm), through=(parts the tap passes on its way, e.g. a clearance hole))."""
+        tool = "tapdrill"; mesh = self.u.tmesh[tool]; tr = dict(tool=tool, keys=[])
+        prev = None
+        r_arrow = (diameter or 4.0) / 2 + S.SPIN_ARROW.margin
+        for k, h in enumerate(holes):
+            ax = unit(h["axis"]); side = -ax; E = np.asarray(h["entry"], float)
+            allow = {h["part"]} | set(h.get("through", ()))
+            q, hit = self._tool_pose_free(tool, E - ax * 0.0, side, allow, hints, mesh=mesh)
+            self.checks.append(dict(what=f"tap drill on {h['part']} hole {k + 1}", samples=1, clear=not hit, collisions={a: round(b, 2) for a, b in hit.items()}))
+            t0 = self.t
+            if prev is None:
+                H = self._clear_height(tool, mesh, E, q, side, allow, start=S.TAP.first_clear)
+                self._tool_key(tr, t0, E + side * H, q); t0 += S.DRILL.first_lead
+            else:
+                pE, ps, pq = prev
+                H = max(self._clear_height(tool, mesh, pE, pq, ps, allow, start=S.TAP.hop_clear), self._clear_height(tool, mesh, E, q, side, allow, start=S.TAP.hop_clear))
+                Hh = self._hop_height(tool, mesh, pE, pq, ps, E, q, side, allow, H)
+                if Hh is not None:
+                    self._tool_key(tr, t0, pE + ps * Hh, pq); self._tool_key(tr, t0 + S.DRILL.hop_dur, E + side * Hh, q); t0 += S.DRILL.hop_dur
+                else:
+                    self._tool_key(tr, t0, pE + ps * H, pq)
+                    t0 += self._hop(tr, mesh, t0, S.DRILL.hop_dur, pE + ps * H, pq, E + side * H, q, allow)
+            self._shot(t0 - 0.4, E, radius=S.TAP.shot_radius, axis=side, kind="tool", tool=(mesh, E, q))
+            self._tool_key(tr, t0 + S.DRILL.near_at, E + side * S.TAP.near_gap, q)
+            te = t0 + S.DRILL.engage_at; self._tool_key(tr, te, E, q)
+            cut = h["depth"] + S.TAP.lead
+            tc = te + cut * S.TAP.s_per_mm; self._tool_key(tr, tc, E + ax * cut, q)
+            turns = cut / S.TAP.visual_pitch
+            self._sub(tr, "tap", te, 0, 0); self._sub(tr, "tap", tc, -2 * math.pi * turns, 0)
+            tb0 = tc + S.TAP.dwell; tb1 = tb0 + cut * S.TAP.reverse_s_per_mm
+            self._tool_key(tr, tb0, E + ax * cut, q); self._tool_key(tr, tb1, E, q)
+            self._sub(tr, "tap", tb0, -2 * math.pi * turns, 0); self._sub(tr, "tap", tb1, 0, 0)
+            c_arrow = E + side * S.SPIN_ARROW.axial_offset
+            self.fx.append(dict(type="spinArrow", centre=list(map(float, c_arrow)), axis=list(map(float, side)), sense=-1.0, radius=float(r_arrow), t=[round(te, 3), round(tc, 3)], turns=turns))
+            self.fx.append(dict(type="spinArrow", centre=list(map(float, c_arrow)), axis=list(map(float, side)), sense=1.0, radius=float(r_arrow), t=[round(tb0, 3), round(tb1, 3)], turns=turns))
+            self.t = tb1 + S.DRILL.after
+            prev = (E, side, q)
+        pE, ps, pq = prev
+        H = self._clear_height(tool, mesh, pE, pq, ps, set(), start=S.TAP.final_clear)
+        self._tool_key(tr, self.t + S.DRILL.retract_dur, pE + ps * H, pq); self.t += S.DRILL.retract_dur
+        self._check_tool_path(tr, mesh, set().union(*[{h["part"]} | set(h.get("through", ())) for h in holes]))
+        tr["tapDiameter"] = diameter
+        self.toolTracks.append(tr)
+        self._use_tool("tapdrill", f"Cordless drill + tap (supplied tap model resized to Ø{fmt(diameter or 0)} mm — thread to confirm)")
+        return self
+
+    # ---------------------------------------------------------------- v2.2 ratchet with deep socket
+    def ratchet(self, name, side, total_deg=120, hints=((0, -1, 0), (0, 0, 1), (0, 0, -1), (0, 1, 0)), swing=S.RATCHET.swing, af=None):
+        """Socket wrench (supplied 3/8 in ratchet + the supplied deep socket, resized to the nut): slid onto the nut
+        along its axis, short strokes (the handle swings back without lifting: ratchet), slid off."""
+        self._carried(name)
+        p = self.u.A[name]; side = unit(side); a = unit(p["axis"])
+        af = af or p["across_flats"][0]
+        outer = np.asarray(p["tip"]) if float(unit(np.asarray(p["tip"]) - np.asarray(p["head"])) @ side) > 0 else np.asarray(p["head"])
+        eng = outer - side * max(S.DRILL.depth_min, p["length"] * S.DRILL.depth_share)
+        mesh = self._ratchet_mesh(af)
+        allow = {name} | set(p.get("contacts", []))
+        best = None
+        for h in hints:
+            for k in range(36):
+                xh = quat_to_mat(quat_axis_angle(side, k * math.pi / 18)) @ unit(h)
+                if np.linalg.norm(xh - side * (xh @ side)) < 1e-3: continue
+                q = frame_quat(side, xh); qs_ = quat_mul(quat_axis_angle(side, -math.radians(swing)), q)
+                hit = self._pose_hits(mesh, eng, q, allow); worst = sum(hit.values())
+                if not hit:
+                    for pos, qq in [(eng, qs_), (eng, slerp(q, qs_, 0.5)), (eng + side * S.RATCHET.approach * 0.5, q), (eng + side * S.RATCHET.approach, q), (eng + side * S.RATCHET.approach, qs_)]:
+                        hh = self._pose_hits(mesh, pos, qq, allow)
+                        if hh: worst = 0.01 + sum(hh.values()) * 0.1; break
+                if best is None or worst < best[0]: best = (worst, q, hit)
+                if worst == 0: break
+            if best[0] == 0: break
+        q = best[1]; hits = best[2] or ({"(stroke)": round(best[0], 2)} if best[0] else {})
+        self.checks.append(dict(what=f"ratchet on {name}", samples=1, clear=not hits, collisions={k: round(v, 2) for k, v in hits.items()}))
+        tr = dict(tool="ratchet", keys=[], socketAF=af, socketScale=round(af / SOCKET_SUPPLIED_AF, 4))
+        t0 = self.t
+        self._shot(t0, outer, radius=S.RATCHET.shot_radius, axis=side, kind="tool", tool=(mesh, eng, q))
+        self._tool_key(tr, t0, eng + side * S.RATCHET.approach, q)
+        self._tool_key(tr, t0 + S.RATCHET.engage_dur, eng, q)
+        strokes = int(math.ceil(total_deg / swing - 1e-6)); sw = total_deg / strokes
+        last = self._last(name); off = np.array(last[1:4]); ang = last[8]
+        sgn = -1.0 if float(unit(self.parts[name]["axis"]) @ side) > 0 else 1.0
+        t = t0 + S.RATCHET.engage_dur + 0.1
+        for s_ in range(strokes):
+            qs = quat_mul(quat_axis_angle(side, -math.radians(sw)), q)
+            f0, f1 = s_ / strokes, (s_ + 1) / strokes
+            self._tool_key(tr, t, eng + off * (1 - f0), q); self._key(name, t, off * (1 - f0), ang=ang, ease=0)
+            ang += sgn * math.radians(sw)
+            self._tool_key(tr, t + S.RATCHET.stroke_dur, eng + off * (1 - f1), qs); self._key(name, t + S.RATCHET.stroke_dur, off * (1 - f1), ang=ang, ease=1)
+            t += S.RATCHET.stroke_dur
+            if s_ < strokes - 1:                                   # handle swings back, the nut stays (ratchet)
+                self._tool_key(tr, t + S.RATCHET.back_dur, eng + off * (1 - f1), q); t += S.RATCHET.back_dur
+        self._tool_key(tr, t + S.RATCHET.retract_dur, eng + side * S.RATCHET.approach, qs)
+        self.t = t + S.RATCHET.retract_dur
+        self._check_tool_path(tr, mesh, allow)
+        self.toolTracks.append(tr)
+        self._use_tool("ratchet", f"3/8 in ratchet (supplied) + {socket_label(af)} deep socket (resized from the supplied 9/16 in model)")
+        return self
+
+    def _ratchet_mesh(self, af):
+        key = ("ratchet", round(af, 2))
+        if key not in self.u.tmesh:
+            m = self.u.tmesh["ratchet"].copy(); v = m.vertices.copy()
+            sel = v[:, 1] < 50.6; k = af / SOCKET_SUPPLIED_AF; v[sel, 0] *= k; v[sel, 2] *= k
+            m.vertices = v; self.u.tmesh[key] = m
+        return self.u.tmesh[key]
 
     def mark(self, names, hints=((0, 1, 0), (1, 0, 0)), dir_hint=(1, 0, 0)):
         """Marker: a straight line from the centre of the head across its edge onto the clamped surface."""
@@ -825,8 +1286,12 @@ class Step:
             ts = [t0 + S.MARK.settle + S.MARK.seg_dur * i for i in range(len(pts))]
             for P, ti in zip(pts, ts): self._tool_key(tr, ti, P, q)
             self._tool_key(tr, ts[-1] + S.MARK.end, pts[-1] + ax * S.MARK.retract, q)
-            self.fx.append(dict(type="line", points=[list(map(float, x)) for x in pts], width=S.MARK.width, colour=S.MARK.colour,
-                                draw=[round(ts[0], 3), round(ts[-1], 3)], label=f"tightening mark on {name}"))
+            fx = dict(type="line", points=[list(map(float, x)) for x in pts], width=S.MARK.width, colour=S.MARK.colour,
+                      draw=[round(ts[0], 3), round(ts[-1], 3)], label=f"tightening mark on {name}")
+            O = self.u.bench_parts.get(name)
+            if O is not None:                         # v2.2: marked on the bench — the mark moves with the bolt
+                fx["points"] = [list(map(float, np.asarray(x) - O)) for x in pts]; fx["attach"] = self.u.ids[name]
+            self.fx.append(fx)
             self.t = ts[-1] + S.MARK.end
             first = False
         self._check_tool_path(tr, self.u.tmesh["marker"], set(names).union(*[set(self.u.A[n].get("contacts", [])) for n in names]))
@@ -834,20 +1299,45 @@ class Step:
         self._use_tool("marker", "Marker (Sharpie Fine Point)")
         return self
 
-    def decal(self, did, dur=2.0):
+    def decal(self, did, dur=2.0, frame=None):
+        """frame = (target, radius) to frame more than the decal itself (v2.2: its dimension call-outs)."""
         d = self.u.decals[did]
         zc = (d["zLeft"] + d["zRight"]) / 2; yc = (d["yTop"] + d["yBottom"]) / 2
         t0 = self.t
-        self._shot(t0, (0, yc, zc), radius=max(60, d["widthMm"] / 2 + 25), kind="detail", preferred=(1, 0.12, 0.0))
+        if frame: self._shot(t0, frame[0], radius=frame[1], kind="detail", preferred=(1, 0.12, 0.0))
+        else: self._shot(t0, (0, yc, zc), radius=max(60, d["widthMm"] / 2 + 25), kind="detail", preferred=(1, 0.12, 0.0))
         self.fx.append(dict(type="decal", id=did, file=d["file"], centre=[0.25, yc, zc], normal=[1, 0, 0], up=[0, 1, 0],
                             width=d["widthMm"], height=d["heightMm"],
                             keys=[[0, 150, 0], [round(t0, 3), 150, 0], [round(t0 + dur * 0.6, 3), 4, 0], [round(t0 + dur * 0.8, 3), 0, 0.5], [round(t0 + dur, 3), 0, 1]]))
         self.t = t0 + dur
         return self
 
-    def spin(self, names, pivot, axis, turns, dur, ramp=0.8):
+    def spin(self, names, pivot, axis, turns, dur, ramp=0.8, arrow=None, airflow=None):
+        """v2.2: arrow = dict(centre, radius) — orange rotation arrow about `axis` in the sense of rotation while it
+        runs; airflow = dict(paths, allow) — blue arrows travelling along the air paths (polylines, mm, world: in
+        through the inlet, out of the wheel, up through the unit; distinct indicator). Each path is checked with a
+        small sphere against the installed parts; `allow` = porous parts the air passes through (filter media,
+        blade passages)."""
         bb = np.array([self.u.A[n]["bbox"] for n in names]); c = (bb[:, :3].min(0) + bb[:, 3:].max(0)) / 2
         self._shot(self.t, c, radius=float(np.linalg.norm(bb[:, 3:].max(0) - bb[:, :3].min(0)) / 2), kind="wide")
+        if arrow:
+            self.fx.append(dict(type="spinArrow", centre=list(map(float, arrow["centre"])), axis=list(map(float, unit(axis))),
+                                sense=1.0 if turns > 0 else -1.0, radius=float(arrow["radius"]), t=[round(self.t + 0.2, 3), round(self.t + dur, 3)],
+                                turns=abs(turns), big=True))
+        if airflow:
+            sph = trimesh.creation.icosphere(subdivisions=1, radius=S.AIRFLOW.check_r)
+            worst = {}; n = 0
+            allow = set(airflow.get("allow", ()))
+            for P in airflow["paths"]:
+                Q, _, _ = self._lead_samples(P)
+                for q in Q:
+                    Mx = np.eye(4); Mx[:3, 3] = q; n += 1
+                    for nm, d in self.u.world.hits(sph, Mx, allow=allow, tol=0.25).items(): worst[nm] = max(worst.get(nm, 0), d)
+            self.checks.append(dict(what="airflow paths (inlet, wheel, up through the unit)", samples=n, clear=not worst,
+                                    collisions={a: round(b, 2) for a, b in worst.items()}))
+            self.fx.append(dict(type="airflow", paths=[[list(map(float, p)) for p in P] for P in airflow["paths"]], colour=S.AIRFLOW.colour,
+                                speed=S.AIRFLOW.speed, length=S.AIRFLOW.arrow_len, spacing=S.AIRFLOW.spacing,
+                                t=[round(self.t + ramp, 3), round(self.t + dur, 3)]))
         for n in names:
             self._track(n, axis=axis, pivot=pivot)
             self._key(n, 0); self._key(n, self.t)
@@ -865,7 +1355,7 @@ class Step:
         c = Counter(base_name(n) for n in names)
         for b, q in c.items():
             ex = next(n for n in names if base_name(n) == b)
-            self.hardware.append(dict(name=b, qty=q, where=where, **spec_of(ex, self.u.A[ex])))
+            self.hardware.append(dict(name=self.u.labels.get(ex, b), qty=q, where=where, **spec_of(ex, self.u.A[ex])))
         return self
 
     def _use_tool(self, tid, label):
@@ -878,13 +1368,57 @@ class Step:
         self._install(names)
         return self
 
+    # ---------------------------------------------------------------- v2.2 staging, kit view
+    def _group_pose(self, names, offset, tilt, pivot=None):
+        bb = np.array([self.u.A[n]["bbox"] for n in names]); P = (bb[:, :3].min(0) + bb[:, 3:].max(0)) / 2 if pivot is None else np.asarray(pivot, float)
+        q = quat_axis_angle(tilt[0], math.radians(tilt[1])) if tilt else ID_Q
+        return np.asarray(offset, float) + P - quat_to_mat(q) @ P, q, P
+
+    def stage(self, names, offset, tilt=None, approach=None, dur=1.6, label=None, pivot=None, allow=()):
+        """v2.2: bring parts to a staging pose OFF the unit (offset from CAD, optional tilt about the group centre)
+        and leave them there: they are part of the product from this step (visible, listed) and keep the pose in
+        the following steps (holds) until an operation moves them — e.g. place(path=[offset, …], tilt=tilt).
+        approach: start offset relative to the staging pose (mm), checked against the unit."""
+        names = list(names)
+        T, q, P = self._group_pose(names, offset, tilt, pivot)
+        for n in names: self._track(n)
+        if approach is not None:
+            A0 = np.asarray(approach, float)
+            for n in names: self._key(n, 0, T + A0, q); self._key(n, self.t, T + A0, q)
+            mats = []
+            for u in np.linspace(0, 1, S.PLACE.samples):
+                Mx = np.eye(4); Mx[:3, :3] = quat_to_mat(q); Mx[:3, 3] = T + A0 * (1 - u); mats.append(Mx)
+            self._check(label or f"stage {', '.join(base_name(n) for n in names[:3])}", self._group_mesh(names), mats, allow=allow)
+            bb = np.array([self.u.A[n]["bbox"] for n in names]); c = (bb[:, :3].min(0) + bb[:, 3:].max(0)) / 2
+            self._shot(self.t, quat_to_mat(q) @ (c - P) + P + np.asarray(offset, float), radius=float(np.linalg.norm(bb[:, 3:].max(0) - bb[:, :3].min(0))) / 2 + 30, kind="wide", ignore=names)
+            for n in names: self._key(n, self.t + dur, T, q, ease=1)
+            self.t += dur
+        else:
+            for n in names: self._key(n, 0, T, q)
+        self._appear(names); self.u.held.update(names)
+        return self
+
+    def kit(self, names, offset):
+        """v2.2: explicit position in the components view (mm, translation from CAD), used as is (no ×2 / cap):
+        for parts whose first key is not a good exploded position (bench, staged door)."""
+        for n in names:
+            assert n in self.parts and self.u.installed_by.get(n) == self.i, f"kit(): {n} is not installed in this step"
+            self.parts[n]["kit"] = [float(v) for v in offset]
+        return self
+
     # ---------------------------------------------------------------- output
     def _frame_shots(self):
         """Opening overview (components + where they go) and closing result view of the step."""
-        names = list(self.focus or self.components or self.parts.keys())
+        names = list(self.focus or self.components or [n for n, tr in self.parts.items() if not tr.get("hold")])
         names = [n for n in names if n in self.u.A]
         if not names: return
-        bb = np.array([self.u.A[n]["bbox"] for n in names]); lo, hi = bb[:, :3].min(0), bb[:, 3:].max(0)
+
+        def end_box(n):                               # v2.2: staged / bench parts are framed where they are
+            b = np.asarray(self.u.A[n]["bbox"], float); tr = self.parts.get(n)
+            if n in self.u.held and tr and tr["keys"]:
+                T = np.asarray(tr["keys"][-1][1:4], float); return np.r_[b[:3] + T, b[3:] + T]
+            return b
+        bb = np.array([end_box(n) for n in names]); lo, hi = bb[:, :3].min(0), bb[:, 3:].max(0)
         R = float(np.linalg.norm(hi - lo)) / 2
         # the opening overview also shows where the components start (staging offsets of their tracks)
         slo, shi = lo.copy(), hi.copy()
@@ -930,12 +1464,16 @@ class Step:
                 if abs(a1 - a0) > 1e-9 and abs(target - a1) > 1e-9:
                     for k in ks: k[8] = round(a0 + (k[8] - a0) * (target - a0) / (a1 - a0), 6)
             keys = [[k[0], *m3(k[1:4]), *k[4:8], k[8], k[9]] for k in tr["keys"]]
-            parts.append(dict(node=tr["node"], axis=tr["axis"], pivot=m3(tr["pivot"]), keys=keys))
+            extra = {}
+            if tr.get("hold"): extra["hold"] = True
+            if tr.get("kit") is not None: extra["kit"] = m3(tr["kit"])
+            parts.append(dict(node=tr["node"], axis=tr["axis"], pivot=m3(tr["pivot"]), keys=keys, **extra))
         tools = []
         for tr in self.toolTracks:
             o = {k: v for k, v in tr.items() if k not in ("keys",)}
             o["keys"] = [[k[0], *m3(k[1:4]), *k[4:8]] for k in tr["keys"]]
             if "jawMm" in o: o["jaw"] = round(o.pop("jawMm") * M, 5)
+            if "extension" in o: o["extension"] = round(o["extension"] * M, 5)
             if "sub" in o:
                 o["sub"] = {p: [[k[0], (k[1] * M if p in ("plate", "jaw") else k[1]), k[2]] for k in ks] for p, ks in o["sub"].items()}
             tools.append(o)
@@ -947,6 +1485,21 @@ class Step:
             if f["type"] == "line": g["width"] = f["width"] * M
             if f["type"] == "mandrels": g["items"] = [dict(i, head=m3(i["head"])) for i in f["items"]]
             if f["type"] == "spinArrow": g["centre"] = m3(f["centre"]); g["radius"] = f["radius"] * M
+            if f["type"] == "gasket": g["points"] = [m3(p) for p in f["points"]]; g["section"] = f["section"] * M
+            if f["type"] == "cable":
+                g["points"] = [m3(p) for p in f["points"]]; g["diameter"] = f["diameter"] * M; g["follow"] = f["follow"] * M
+                g["end"] = [[k[0], *m3(k[1:4])] for k in f["end"]]
+                if "attach" in f: g["attach"] = dict(f["attach"], base=m3(f["attach"]["base"]))
+                if "ferrule" in f:
+                    g["ferrule"] = dict(f["ferrule"], length=f["ferrule"]["length"] * M, od=f["ferrule"]["od"] * M, odCrimped=f["ferrule"]["odCrimped"] * M)
+                    if "offset" in f["ferrule"]: g["ferrule"]["offset"] = m3(f["ferrule"]["offset"])
+            if f["type"] == "dims":
+                g["segments"] = [[m3(p) for p in sg] for sg in f["segments"]]; g["arrows"] = [[m3(p), v] for p, v in f["arrows"]]
+                g["labels"] = [dict(l, pos=m3(l["pos"])) for l in f["labels"]]; g["refs"] = [m3(r) for r in f["refs"]]
+                g["width"] = f["width"] * M; g["arrow"] = f["arrow"] * M; g["textH"] = f["textH"] * M
+            if f["type"] == "airflow":
+                g["paths"] = [[m3(p) for p in P] for P in f["paths"]]; g["speed"] = f["speed"] * M
+                g["length"] = f["length"] * M; g["spacing"] = f["spacing"] * M
             if f["type"] == "decal":
                 g["centre"] = m3(f["centre"]); g["width"] = f["width"] * M; g["height"] = f["height"] * M
                 g["keys"] = [[k[0], k[1] * M, k[2]] for k in f["keys"]]
@@ -962,6 +1515,24 @@ class Step:
             focus=[u.ids[n] for n in (self.focus or self.components)], duration=dur,
             checks=self.checks, tracks=dict(parts=parts, tools=tools, fx=fx),
         )
+
+
+def rounded_polyline(points, r, closed=True, samples=4):
+    """Polyline through `points` with every corner replaced by a quadratic arc of size r (mm)."""
+    P = [np.asarray(p, float) for p in points]; n = len(P)
+    out = []
+    idx = range(n) if closed else range(1, n - 1)
+    if not closed: out.append(P[0])
+    for i in idx:
+        a, c, b = P[i - 1], P[i], P[(i + 1) % n]
+        din, dout = unit(c - a), unit(b - c)
+        rr = min(r, np.linalg.norm(c - a) / 2.2, np.linalg.norm(b - c) / 2.2)
+        s0, s1 = c - din * rr, c + dout * rr
+        for f in np.linspace(0, 1, samples + 2):
+            out.append((1 - f) ** 2 * s0 + 2 * (1 - f) * f * c + f * f * s1)
+    if closed: out.append(out[0])
+    else: out.append(P[-1])
+    return out
 
 
 def slerp(a, b, t):
@@ -982,9 +1553,14 @@ def socket_label(af):
 
 def report(U, out_md):
     """docs/unit-engineering-report.md: hardware table, validation results, open engineering items."""
-    L = ["# Unit installation tutorial — engineering accuracy report (v2.1)", "",
+    L = ["# Unit installation tutorial — engineering accuracy report (v2.2)", "",
          "*Generated by `pipeline/unit/build_unit.py` — do not edit by hand.*", "",
-         "Source: `MF-550-210-B_GROUPED_ASSEMBLY.step` (AP242). The STEP carries **no part numbers, descriptions or BOM data**",
+         "Source (v2.2): `MF-550-210-B_GROUPED_ASSEMBLY_03.step` merged by `pipeline/unit/merge_cad.py` with the Impeller Guard",
+         "solid of the previous revision (empty in _03) and the supplied `cshm_06.stp` connector insert (not in _03, position",
+         "assumed). The L-connector group (NPTA12 body with seal, O-ring, sealing nut, locknut) replaces the cable strain relief.",
+         "Wiring reference: `MF550_MF1050_MF1950_MF560_MF750 (1).pdf` (3-phase wiring, 230/3/60 and 460/3/60); this unit: 230/3/60",
+         "(confirmed by engineering), paired winding leads joined by splice.", "",
+         "The STEP carries **no part numbers, descriptions or BOM data**",
          "(only the material \"Steel\" on every part), so every size below is **measured from the modelled geometry**",
          "(`pipeline/unit/analyse_unit.py`: cylindrical faces along the fastener axis, hex flats, overall length) and",
          "inch / metric designations are the nearest standard size to the measurement. Nothing is marked *verified* because",
@@ -1062,12 +1638,14 @@ def main():
     U = Unit(analysis, asm, tools, decals)
     import steps_unit
     steps_unit.define(U)
+    U.finalize_holds()
     missing = [n for n in U.A if n not in U.installed_by]
     if missing: raise SystemExit(f"parts never installed: {missing}")
     steps = [s.to_json() for s in U.steps]
     for n in asm["nodes"]:
         n["step"] = U.installed_by.get(n["name"]) if n["kind"] == "part" else None
         n["explode"] = [0.0, 0.0, 0.0]
+        if n["name"] in U.labels: n["label"] = U.labels[n["name"]]          # v2.2 display names (CAD names unchanged)
     kids = {n["id"]: n for n in asm["nodes"]}
     def first_step(nid):
         n = kids[nid]
@@ -1076,6 +1654,9 @@ def main():
         return min(v) if v else None
     for row in asm["bom"]:
         row["steps"] = sorted({first_step(i) for i in row["nodes"]} - {None})
+        if row["name"] in U.labels: row["label"] = U.labels[row["name"]]
+    for row in asm.get("partsList", []):
+        if row["name"] in U.labels: row["label"] = U.labels[row["name"]]
     asm["steps"] = steps
     asm["meta"].update(tutorial="unit", sequenceSource="authored installation sequence (pipeline/unit/steps_unit.py), validated against the CAD",
                        stepCount=len(steps), units="metres", productDisplay="Mist-Fit 550")

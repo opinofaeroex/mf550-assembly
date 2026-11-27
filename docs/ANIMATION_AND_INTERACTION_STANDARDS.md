@@ -3,6 +3,8 @@
 **Status:** binding reference for all future work on the Mist-Fit 550 assembly viewer.
 **Reference implementation:** v2.1, merged as `cc98332` (PR #9). Its animations, camera behaviour, collision rules,
 tool interactions and operator interface are the **baseline**: every change must keep or exceed this quality.
+**v2.2** (main-unit process update) extends it with the techniques marked *v2.2* below: bench sub-assemblies,
+staged parts with holds, effects attached to parts, motor leads, new tools and indicators.
 
 **Who reads this:**
 - every developer, before changing an assembly step, an animation, a tool, the camera or the interface;
@@ -61,9 +63,9 @@ public/js/main.js                appearance (hidden / active / ghost), floor sha
 
 | Field | Format | Meaning |
 |---|---|---|
-| `tracks.parts[]` | `{node, axis, pivot, keys:[[t, Tx,Ty,Tz, qx,qy,qz,qw, angle, ease]]}` | Rigid **delta** on the CAD pose: `D = Tr(T)·R(q)·Tr(P)·Rot(axis, angle)·Tr(−P)`. The **last key is identity**, so every motion ends exactly at the CAD position. |
+| `tracks.parts[]` | `{node, axis, pivot, keys:[[t, Tx,Ty,Tz, qx,qy,qz,qw, angle, ease]], hold?, kit?}` | Rigid **delta** on the CAD pose: `D = Tr(T)·R(q)·Tr(P)·Rot(axis, angle)·Tr(−P)`. The **last key is identity**, so every motion ends exactly at the CAD position. |
 | `tracks.tools[]` | `{tool, keys:[[t, pos(3), quat(4)]], sub:{channel:[[t, value, ease]]}, socketScale, socketAF, bit, jaw}` | Pose of the tool's **working frame** (origin = working point, +Y into the tool). `sub` drives moving tool components: `trigger`, `nose`, `knob`, `plate`, `jaw`. |
-| `tracks.fx[]` | `bead`, `line`, `mandrels`, `decal`, `spinArrow` | Effects with their own timing (grow / draw / show / pull / press / `t:[t0,t1]`). |
+| `tracks.fx[]` | `bead`, `line`, `mandrels`, `decal`, `spinArrow`; *v2.2:* `gasket`, `cable`, `dims`, `airflow` | Effects with their own timing (grow / draw / show / pull / press / `t:[t0,t1]`). *v2.2:* `attach` (node id) = the effect follows that part's rigid motion; `kit` = also shown in the components view; `group` = a later step's group supersedes the earlier one (motor leads). |
 | `camera` | `{dir, xray, underside, wide, close, shots:[[t, tx,ty,tz, dx,dy,dz, radius]], shotKinds, shotBlocked, shotInside}` | Authored hints and the build-time camera shots (model frame, metres). |
 | `checks[]` | `{what, samples, clear, collisions}` | Every collision check of the step (shown in the engineering report). |
 | `hardware[]`, `tools[]`, `flags[]` | | Hardware lines with measured sizes and status; tools used; open engineering items (not shown to the operator, see § 7). |
@@ -98,6 +100,9 @@ older system. Its exploded view uses `CONFIG.explodeScale = 6` with `CONFIG.expl
 | Placement alternatives | `choose_place()` (`steps_unit.py`): picks the first collision-free option from an ordered list (vertical first). |
 | Sub-assembly | Relative motions first (impeller wheel up onto the motor shaft, inlet bellmouth up under it), checked mesh-to-mesh by `sub_assembly_checks()`. Then the group moves as one. |
 | Hand-off between steps | A fastener started by hand in one step continues from that pose in the next (`Unit._carry`, `Step._carried`). There is no jump. |
+| *v2.2* Bench sub-assembly | `Unit.bench_begin(names)` / `bench_end()`: the named parts are worked on at CAD + `BENCH.offset` (0.7 m above the open top). Their facts and collision meshes move there, so every operation (`place`, `fastener`, `drill`, `mark` …) runs unchanged, checked against the bench parts **and** the unit; keys stay deltas on the CAD pose. Then the whole group moves into the unit with `place()` (Phase 3: motor on its bracket, lowered in). |
+| *v2.2* Staged parts and holds | `Step.stage(names, offset, tilt, approach)`: parts appear at a work position off the unit (door laid face down, connector insert below the L-connector). `Unit.finalize_holds()` gives every later step a constant `hold` track until the part moves again (the runtime shows untracked parts at their CAD pose); holds are not active parts. |
+| *v2.2* Components-view position | `Step.kit(names, offset)`: explicit kit translation (used as is) where the first key is not a good exploded position (bench parts, the door clear of the filter modules). |
 
 **Rule A4 — Vertical first, no gratuitous lateral moves.**
 - Prefer straight up / down where the mechanism allows it:
@@ -126,6 +131,8 @@ older system. Its exploded view uses `CONFIG.explodeScale = 6` with `CONFIG.expl
   - A resized socket is labelled.
   - A placeholder bit is orange and labelled.
   - An unreachable screw turns in without a tool.
+  - *v2.2:* a socket extension and a resized tap are labelled; unconfirmed electrical terminations stay
+    unterminated (the motor leads not identical in both wiring diagrams are routed and parked, not connected).
 
 ---
 
@@ -231,8 +238,9 @@ Part penetration tolerance is 0.6 mm (coarse tessellation), tools 1.5 mm, caulki
 - Tightening sense is right-hand: clockwise seen from the tool side (`sgn` in `fastener()`, `drill()`,
   `wrench()`).
 
-Current state: 198 checks, 196 clear. All 16 tool paths and all 14 clip slides are clear. The two remaining
-not-clear checks are flagged CAD issues (see the engineering report).
+Current state (v2.2): 161 checks, 158 clear. 18 of 19 tool paths and all 16 clip slides are clear. The three
+not-clear checks are flagged CAD issues (see the engineering report): two bellmouth-plate screws without a modelled
+hole, and the tap grazing two side-wall clearance holes that are about 0.5 mm off the screw axes.
 
 ---
 
@@ -268,6 +276,12 @@ Every segment of the resulting track is collision-checked (§ 4).
 | **Caulking dispenser** (`bead`) | Nozzle follows the joint (48 keys) with a trailing tilt. Knob turns and plunger advances (`sub`). The bead grows along its path (`bead` fx) and stays applied in later steps. |
 | **Marker** (`mark`) | A straight line from the head centre across its edge onto the clamped surface (`line` fx draws on). |
 | **By hand** (`drive_with_hand`) | Only where no supplied tool can reach (checked) or none is needed. |
+| *v2.2* **Drill + extension** (`drill(extension=…)`) | Drill body set back on a socket extension (generic Ø12 mm bar, labelled) where the body cannot reach: the motor-bracket bolt next to the front wall. Collision mesh includes the bar. |
+| *v2.2* **Ratchet + deep socket** (`ratchet`) | Supplied Husky 3/8 in ratchet with the supplied deep socket (resized radially): slid on along the axis, short strokes, the handle swings back without lifting, slid off. Used where an open wrench has no swing room (L-connector locknut). |
+| *v2.2* **Adjustable wrench, sideways / hold** (`wrench(approach="handle", hold=True, total_deg=…)`) | Slid onto flats along its handle where the axis is blocked (gauge stem through the box side opening); `hold` engages and holds a bolt head while the drill drives its nut (`release_wrench()`); `total_deg` = exact total turn (gauge ends dial-upright). |
+| *v2.2* **Crimper** (`crimp`) | Ferrule slid onto the lead end; the open crimper (lower jaw and handle on their pins, `sub` channels `jaw` / `handle`) comes in along its handles until the die nest surrounds the ferrule, closes, opens, backs out. Roll chosen collision-free. Spliced pairs (`splices={lead: offset}`): both leads held side by side, one larger splice sleeve (`SPLICE`) centred between them, one crimp per pair. |
+| *v2.2* **Tap drill** (`tap`) | Drill with the supplied tap (resized radially to the hole, labelled): align on the hole axis, cut through the sheet (tap turns, arrow clockwise), reverse out (arrow counter-clockwise), hop, retract. |
+| *v2.2* **Caulking, other sealants** (`bead`, `bead_path`) | Colour per material (`SEALANT`: HT200 grey, silicone white) and the cartridge contents recoloured; `bead_path` follows a polyline with rounded corners, also on a staged part (`attach`, `xform`). |
 
 **Rule D3 — Indicators instead of unrealistic tool motion.** When moving the tool would misrepresent the
 operation, show an indicator instead. The reference case:
@@ -280,6 +294,17 @@ operation, show an indicator instead. The reference case:
   alters the CAD fastener geometry.
 - New indicators follow the same pattern: an fx type built at build time, styled in `public/js/unit/standards.js`,
   timed to the operation, and hidden outside it.
+- *v2.2* **Rotation of a running impeller**: the same orange arrow, large, about the shaft in the sense of rotation
+  (backward-curved blades: counter-clockwise seen from above).
+- *v2.2* **Airflow** (`airflow` fx): blue (#2f8fff) arrows travelling along the physical air path while the
+  impeller runs (`spin(airflow=dict(paths, allow))`: in through the filters and the bellmouth into the eye, radially
+  out of the wheel, then up around the motor — never through a solid part: each path is sphere-checked, only porous
+  media / blade passages allowed) — never orange, so rotation and airflow cannot be confused.
+- *v2.2* **Formed-in-place gaskets**: a sealant bead laid with the caulking gun (`bead_path`), in the colour engineering
+  specifies for the animation (door gasket: black silicone, Ø = the CAD gap); the foam-strip `gasket` fx stays for
+  strip gaskets.
+- *v2.2* **Dimension call-outs** (`dims` fx, `Step.dims`): orange lines, arrowheads, a reference ring at the
+  datum and inch labels, shown only while the decal / label they position is applied.
 
 **Rule D4 — Realistic tool appearance.**
 - Tools are the supplied CAD models with their original geometry; never replace them with generic shapes.
@@ -300,15 +325,17 @@ operation, show an indicator instead. The reference case:
 - its access path is open;
 - the parts it fastens into are present.
 
-Example (Phase 3, v2.1):
-- The motor mounting bracket is positioned and fastened first, with nothing in its way, so its position,
-  orientation and interface are clear.
-- The impeller and drive motor then rise from below into it.
-- The motor bolts come after the motor, because they thread into it.
+Example (Phase 3, v2.2 — engineering request; v2.1 had the bracket fastened first):
+- The drive motor is mounted on the motor mounting bracket on the bench: motor up to the bracket, lock washers and
+  bolts started by hand, impeller wheel onto the shaft, bolts tightened, tightening marks.
+- The assembly is lowered into the unit onto the clip nuts of the bracket supports, then the bracket is fastened
+  (drill with extension on all four bolts).
+- The inlet bellmouth is not attached to the wheel: it goes in from below with its mounting-plate hardware (Phase 4).
+- The motor leads are routed, crimped and terminated before Phase 4 (they pass through the L-connector).
 
 **Rule E2 — One installation per part.**
-- Every one of the 220 CAD components is installed in exactly one step. This is checked by the build
-  (`parts never installed`) and by the tests.
+- Every one of the 223 CAD components (v2.2: `MF-550-210-B_GROUPED_ASSEMBLY_03` + the connector insert) is
+  installed in exactly one step. This is checked by the build (`parts never installed`) and by the tests.
 - Parts that come pre-installed with the main body are shown with `show()` in step 1 (no motion) and listed as
   hardware there. Example: the ten back-panel closed-end rivets.
 - They stay in the BOM.
@@ -382,7 +409,7 @@ change as done until it passes.
        rebuilt (byte-identical when nothing changed).
    - The STEP files are needed only for a new CAD revision or new tools: `docs/unit-tutorial.md` § 2 lists the
      regeneration chain (convert, analyse, build tools, rectify decals, build).
-2. **Run the automated tests:** `npm test` runs 145 checks: sections [1]–[13] on the parts tutorial and [14] on
+2. **Run the automated tests:** `npm test` runs 157 checks (v2.2): sections [1]–[13] on the parts tutorial and [14] on
    the unit tutorial, including every v2.1 rule. `ONLY=unit npm test` runs section [14] alone. Add checks for
    new rules.
 3. **Do the visual review:**
@@ -431,9 +458,9 @@ Step API (`build_unit.py`, class `Step`):
 
 | Category | Methods |
 |---|---|
-| Parts | `place`, `fastener` (`bolt` / `screw` / `nut` / `washer` / `rivet` / `clip`), `drive_with_hand`, `show`, `spin` |
-| Tools | `drill`, `rivet`, `wrench`, `bead`, `mark` |
-| Effects | `decal` |
+| Parts | `place`, `fastener` (`bolt` / `screw` / `nut` / `washer` / `rivet` / `clip`), `drive_with_hand`, `show`, `spin`; *v2.2:* `stage`, `kit`, `Unit.bench_begin` / `bench_end` |
+| Tools | `drill`, `rivet`, `wrench`, `bead`, `mark`; *v2.2:* `bead_path`, `ratchet`, `crimp`, `tap`, `release_wrench` |
+| Effects | `decal`; *v2.2:* `sticker`, `gasket`, `dims`, motor leads (`leads_begin`, `lead_keys`, `crimp`, `leads_fx`, `check_leads`) |
 | Pacing and focus | `wait`, and the `focus` attribute (parts the step's camera frames when it has no motion of its own) |
 | Records | `hw`, `flag` |
 
@@ -479,6 +506,7 @@ nothing (byte-identical build output, identical scene fingerprints).
 | `CAULKING` | Segments, approach, nozzle tilt, knob / plunger. |
 | `MARK` | Approach, segment timing, line width and colour. |
 | `CAMERA` | Minimum radii per shot kind, candidate grid, scoring weights, line-of-sight and inside tests, merge window, overview / result framing. |
+| *v2.2* `BENCH`, `CABLE`, `FERRULE`, `SPLICE`, `CRIMP`, `TAP`, `RATCHET`, `GASKET`, `SEALANT`, `DIMS`, `AIRFLOW` | Bench offset and kit position; 22 AWG lead size, bundle pitch, feed rate, follow length; ferrule; splice sleeve; crimper opening and timing; tapping feed; ratchet stroke; gasket section (CAD door gap); sealant colours (incl. the black silicone door gasket); dimension call-out style; airflow arrows, path profile and stream angles. Also `DRILL.extension_mm`, `DRILL.ext_r`, `WRENCH.approach_side`. |
 
 **`public/js/unit/standards.js` (run time; m, s, rad):**
 
@@ -490,6 +518,7 @@ nothing (byte-identical build output, identical scene fingerprints).
 | `XRAY` | Decal alpha 0.18. |
 | `RIVET_GUN_STYLE` | Palette, roughness and metalness per solid, grip split. |
 | `LOOP` | Hold 1.6 s. |
+| *v2.2* `DIMS`, `AIRFLOW`, `CABLE`, `GASKET` | Call-out colours / font, airflow arrow style, lead tube and ferrule materials, gasket material. |
 
 Operation-specific geometry stays in its operation: marker line shape, decal press keys, socket length of the
 drill collision mesh. **Do not force unrelated operations into one generic motion.** Shared values are for things
@@ -537,3 +566,4 @@ When a rule has to be broken (a real mechanical exception), keep the rule. Docum
 |---|---|
 | 2.1 (`cc98332`) | Reference implementation: per-operation camera shots, collision-free clips and tool paths, vertical-first motions, Phase 3 dependency order, pre-installed rivets, drill rotation arrow, rivet-gun materials, exploded views ×2, no yellow warnings. |
 | Standards (after 2.1, app version unchanged) | This document; shared parameters moved to `standards.py` / `standards.js` (no visible change, verified); `tools/unit-review.cjs` (contact sheet + scene fingerprints); `CLAUDE.md`. |
+| 2.2 | Main-unit process update: `_03` CAD (L-connector) + connector insert (`merge_cad.py`, `analyse_unit.py --keep`); bench sub-assembly, staging + holds, kit positions; effects attached to parts; motor leads (`cable` fx, group supersede, end follow), crimper, ratchet, tap drill, drill extension, wrench hold / sideways / exact turn; gasket, sealant colours, stickers, dimension call-outs, airflow indicator; removed operations shown with the main body. Engineering review: 230/3/60 wiring with spliced pairs, black silicone door gasket by caulking gun, filter labels extracted from the photograph (`extract_stickers.py`), airflow along the real air path. |

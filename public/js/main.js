@@ -127,7 +127,7 @@ class App {
     this.selCallout = new Callout($('callout-layer'), 'sel');
     this.stepCallout.onChange = this.selCallout.onChange = () => viewer.requestRender();
     this.activeParts = model.steps.map((s) => new Set([...s.nodes.flatMap((id) => model.partsUnder(id)),
-      ...(s.tracks ? s.tracks.parts.filter((tr) => model.node(tr.node).step !== null && model.node(tr.node).step <= model.steps.indexOf(s)).map((tr) => tr.node) : [])]));
+      ...(s.tracks ? s.tracks.parts.filter((tr) => !tr.hold && model.node(tr.node).step !== null && model.node(tr.node).step <= model.steps.indexOf(s)).map((tr) => tr.node) : [])]));
     // parts of the (sub-)assembly being worked on; null = whole product
     this.stepContext = model.steps.map((s) => (this.unit || s.assembly === model.rootId ? null
       : new Set(s.assemblyInstances.flatMap((id) => model.partsUnder(id)))));
