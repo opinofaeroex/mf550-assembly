@@ -245,7 +245,7 @@ class CABLE:
 
 class FERRULE:
     """Wire-end ferrule crimped on a lead (type / size not in the supplied data: generic 0.34 mm² sleeve)."""
-    length = 6.0
+    length = 12.7                 # v2.3: = the 0.50 in stripped length (engineering minimum), generic sleeve
     od = 1.5
     od_crimped = 1.25
     colour = "#c9ccd1"
@@ -254,10 +254,31 @@ class FERRULE:
 class SPLICE:
     """Crimp splice joining a pair of winding leads (230/3/60; type / size not in the supplied data:
     generic uninsulated splice for 2 x 22 AWG, both stripped ends entering from the wire side)."""
-    length = 8.0
+    length = 12.7                 # v2.3: = the 0.50 in stripped length
     od = 2.4
     od_crimped = 2.0
     colour = "#c9ccd1"
+
+
+class ZIPTIE:
+    """v2.3 cable ties (fx 'ziptie'): small nylon ties as in the photographs; size not specified (generic)."""
+    band = 2.5                    # mm band width (shown as a round band)
+    head = (5.0, 4.2, 3.4)        # mm head box (along the loop, outward, across)
+    tail = 45.0                   # mm tail before it is cut
+    tail_cut = 1.5                # mm left after cutting
+    colour = "#f1efe7"            # natural nylon (white in the photographs)
+
+
+class STRIP:
+    """v2.3 cable preparation: outer jacket and conductor insulation stripped (tool not supplied: by hand)."""
+    jacket_od = 8.0               # mm motor cable outer jacket: contains the 9 x Ø1.6 leads (3 x 3) with a 1 mm wall
+    jacket_colour = "#1a1b1e"
+    conductor_len = 60.0          # mm of the nine leads exposed beyond the jacket (fits the hood: gland to insert)
+    strip_len = 12.7              # mm = 0.50 in, the stated MINIMUM exposed conductor (engineering)
+    core_d = 0.65                 # mm 22 AWG conductor
+    core_colour = "#c47a46"       # copper
+    slug_slide = 0.7              # s insulation slug pulled off
+    twist_turns = 2.5
 
 
 class CRIMP:
@@ -301,6 +322,8 @@ class GASKET:
     """Door gasket geometry. The access door gasket is formed in place with silicone (SEALANT.gasket, engineering
     v2.2 review); the square foam strip (fx 'gasket') stays available as a technique for strip gaskets."""
     section = 7.2                 # mm: the gap between the door back face and the body front face (CAD)
+    tape_w = 25.4                 # v2.3: rubber gasket tape .187 x 1 in (work instruction Mistfit 550 230_460.xlsx)
+    tape_t = 4.76
     colour = "#1c1d1f"
     liner = "#e0b23a"             # yellow release liner, peeled off as the strip is laid
     lay_mm_per_s = 300
@@ -315,6 +338,7 @@ class SEALANT:
                                   # v2.2 review: black for the animation); product not specified
     gasket_d = GASKET.section     # bead Ø = the CAD gap between the door and the body face
     gasket_dur = 6.0              # s along the whole opening outline (one continuous bead)
+    joint_d = 3.0                 # v2.3: black silicone bead along the tape's inner edge (size not specified)
 
 
 class DIMS:

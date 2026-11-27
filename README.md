@@ -1,6 +1,6 @@
 # Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.2** (main-unit assembly process update — see [§ 0.0](#00-whats-new-in-version-22); v2.1: [§ 0](#0-whats-new-in-version-21); unit installation tutorial: [§ 0.00](#000-whats-new-in-version-20)) · by **AEROEX Technologies**
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.3** (main-unit assembly refinement — see [§ 0.v23](#0v23-whats-new-in-version-23); v2.2: [§ 0.0](#00-whats-new-in-version-22); v2.1: [§ 0](#0-whats-new-in-version-21); unit installation tutorial: [§ 0.00](#000-whats-new-in-version-20)) · by **AEROEX Technologies**
 
 Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
 CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
@@ -25,6 +25,52 @@ down, and an augmented-reality mode for phones and tablets.
 > **Development standard.** Before changing steps, animations, tools, the camera or the interface, read
 > [docs/ANIMATION_AND_INTERACTION_STANDARDS.md](docs/ANIMATION_AND_INTERACTION_STANDARDS.md). v2.1 is the quality
 > baseline; [CLAUDE.md](CLAUDE.md) makes the standard mandatory for Claude Code sessions.
+
+## 0.v23 What's new in version 2.3
+
+An engineering refinement of the **unit installation** (main-unit assembly) process. **40 steps in 9 phases, 225
+components.** Details: [docs/unit-tutorial.md § v2.3](docs/unit-tutorial.md#v23--main-unit-assembly-refinement);
+open engineering items: [docs/unit-engineering-report.md](docs/unit-engineering-report.md).
+
+* **Clip nuts.** Every clip-nut step ends with the check *fully seated, aligned with the hole, firmly holding its
+  position*. Clip Nut and Clip Nut (1) come with the main body (shown from step 1, not animated).
+* **L-connector.** Black; supplied with its O-ring and sealing nut fitted (no O-ring operation). HT200 is wound onto
+  its **thread** with the caulking gun before it goes through the hole.
+* **Motorized impeller on a worktable.** The motor + impeller (manufacturer sub-assembly) stands on a worktable beside
+  the unit; Motor Mounting Bracket-1 is fitted onto it there. Each bolt is tightened with a **torque wrench** to the
+  *approved torque specification* (no value invented), then marked; the yellow **rotation-arrow sticker** goes on
+  the bracket and the motor cable is **tied to the bracket tab**. The assembly is then lifted into the unit.
+* **Cable before the bracket.** The cable is routed through the L-connector *before* the bracket is fastened.
+* **Cable preparation in the correct order.** Nine leads inside a black outer jacket: connector hood threaded on →
+  jacket stripped → leads stripped (**0.50 in min**, orange dimension) → winding pairs twisted → ferrules and splices
+  crimped → insert wired (step label beside the model) → hood fitted over the insert.
+* **Bellmouth.** *Machine screws*; the bellmouth is fitted to its mounting plate on the worktable first, then the
+  plate assembly goes into the unit.
+* **Filters and door.** A soft highlight keeps the filter part-number labels readable. Door gasket: **rubber tape**
+  (1 in × .187 in) first, then black silicone along its inner edge and over the joints.
+* **Brackets, back panel, cable, gauge.** Filter clamp bolt brackets tapped on the worktable, then fitted. Back
+  panel: data tag (serial number left blank), motor information, WARNING and CAUTION labels from the photographs.
+  Cable coiled on the back panel and secured with **two cable ties**. Gauge hole tapped, gauge installed before the
+  electrical verification.
+* **Electrical verification.** A *listen* check with an icon: smooth rotation, no abnormal friction or rubbing noise.
+* **Pending.** The connector lock is not animated: the separate-body connector model was not supplied. The connector
+  hood is an approximate model (flagged).
+
+| Motorized impeller on the worktable, torque wrench | Rotation-arrow sticker | Cable tie on the bracket tab |
+|---|---|---|
+| ![Torque](docs/screenshots/23-v23-torque-wrench.png) | ![Arrow](docs/screenshots/24-v23-arrow-sticker.png) | ![Tie](docs/screenshots/25-v23-tab-tie.png) |
+
+| Leads stripped, 0.50 in min | Insert wired (label beside the model) | Hood over the insert |
+|---|---|---|
+| ![Strip](docs/screenshots/26-v23-strip.png) | ![Insert](docs/screenshots/27-v23-insert.png) | ![Hood](docs/screenshots/28-v23-hood.png) |
+
+| Bellmouth on its plate (worktable) | Gasket tape, then silicone | Back-panel labels |
+|---|---|---|
+| ![Bellmouth](docs/screenshots/29-v23-bellmouth-plate.png) | ![Tape](docs/screenshots/30-v23-gasket-tape.png) | ![Labels](docs/screenshots/31-v23-back-labels.png) |
+
+| Cable coiled, two cable ties | Brackets tapped on the worktable | Listen check |
+|---|---|---|
+| ![Coil](docs/screenshots/32-v23-cable-coil.png) | ![Tap](docs/screenshots/33-v23-bracket-tap.png) | ![Listen](docs/screenshots/34-v23-listen-check.png) |
 
 ## 0.0 What's new in version 2.2
 
@@ -887,6 +933,13 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 
 ## Changelog
 
+* **2.3** — Main-unit assembly refinement (see § 0.v23): 40 steps; clip-nut verification text; black L-connector with
+  HT200 on its thread; motorized impeller on a worktable (bench sub-assemblies with rotation, worktable prop), torque
+  wrench, rotation-arrow sticker, cable tie; cable routed before the bracket is fastened; jacketed motor cable with
+  hood, jacket / insulation stripping, twisted pairs, 0.50 in minimum dimension; connector hood (approximate) and data
+  tag added to the CAD (225 parts); bellmouth on its plate first; soft highlight; door gasket tape + silicone;
+  brackets tapped on the worktable; back-panel labels; cable coil with two cable ties; gauge hole tapped and gauge
+  before the electrical verification; listen check with icon; step label beside the model; tests updated (section 14).
 * **2.2** — Main-unit process update (see § 0.0): `_03` CAD + connector insert, bench sub-assembly, motor leads,
   crimper / ratchet / tap drill, gasket and sealants, filter labels, dimension call-outs, airflow indicator, Fibre
   Bed Filter, removed operations; attached effects, staged parts with holds and explicit kit positions in the
@@ -950,3 +1003,9 @@ phonemizer inside the offline recording tool; not distributed with the app) · N
 sherpa-onnx (CC-BY-4.0 / Apache-2.0; optional review tool only) · OpenCascade Technology via cadquery-ocp (LGPL-2.1 w/ exception / Apache-2.0) ·
 gltfpack / meshoptimizer (MIT) · trimesh (MIT) · Embree (Apache-2.0) · MediaPipe Tasks Vision + Hand
 Landmarker model (Apache-2.0, loaded at runtime when gesture control is enabled) · Playwright, IWER (dev/test only).
+
+**Torque wrench model (v2.3).** This work is based on "Torque Wrench"
+(https://sketchfab.com/3d-models/torque-wrench-6c03d41877604eeba06f316666728f3c) by Pollymeowth
+(https://sketchfab.com/pollymeowth42) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/).
+Changes: re-framed and scaled in `pipeline/unit/build_torque_wrench.py`, combined with the deep socket of the
+supplied drill model (`public/assets/unit/tools/torquewrench.glb`).

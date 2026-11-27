@@ -40,7 +40,7 @@ sessions.
 - **Ending poses.** Every motion ends exactly at the CAD pose.
 - **Missing data.** Never invent data the CAD or the supplied documents do not contain (sizes, torques, holes,
   wiring, tool models): show the honest closest representation and flag it.
-- **Sequence.** It follows real dependencies. Every one of the 223 components (v2.2) is installed exactly once;
+- **Sequence.** It follows real dependencies. Every one of the 225 components (v2.3) is installed exactly once;
   pre-installed parts use `show()`.
 - **Operator UI.** No warning colours or clutter. Engineering flags go to the engineering report; genuine safety
   requirements go into the instruction text.
