@@ -1,12 +1,75 @@
-# Unit installation tutorial — technical implementation report (v2.0, refined in v2.1)
+# Unit installation tutorial — technical implementation report (v2.0, refined in v2.1 and v2.2)
 
 The v2.0 tutorial shows how the **complete Mist-Fit 550 unit** is installed, starting from the assembled and
-painted main body. It covers 32 steps in 9 phases, with tool operations, silicone, tightening marks and decals.
+painted main body. Since v2.2 it covers 33 steps in 9 phases, with tool operations, sealants, gaskets, wiring,
+tightening marks, labels and decals.
 It is an extension of the existing application. The original 69-step parts tutorial is unchanged; the header
 switch (*Unit installation · Parts assembly*) or `?tutorial=parts` opens it.
 
 Engineering data, open items and validation results: **[unit-engineering-report.md](unit-engineering-report.md)**.
 Rules every future change must follow: **[ANIMATION_AND_INTERACTION_STANDARDS.md](ANIMATION_AND_INTERACTION_STANDARDS.md)**.
+
+## v2.2 — main-unit assembly process update
+
+Same pipeline, runtime modules and data format (new optional fields and fx types). Engineering items still open
+are listed in the [engineering report](unit-engineering-report.md) and in the PR.
+
+**CAD (`MF-550-210-B_GROUPED_ASSEMBLY_03`).** Compared with the previous assembly, the only change is the cable
+entry: `1_Cable Strain Relief` + `2_Strain Relief Nut` are **replaced** by the `L_Connector` group —
+`NPTA12_L_body_with_seal` (90° elbow), `NPTA12_o_ring`, `NPTA12_sealing_nut`, `NPTA12_locknut` — at the same hole,
+outlet pointing down. All 218 other parts are identical (names, groups, positions). The _03 export has an
+**empty Impeller Guard** (0 solids), and the supplied connector insert `cshm_06.stp` is **not** in _03.
+`pipeline/unit/merge_cad.py` therefore writes one STEP: _03 + the guard solid of the previous revision (same
+placement, asserted) + the insert as a top-level part `CSHM 06 Connector Insert` (real geometry, rigid placement
+below the L-connector outlet — an assumed position, flagged). `analyse_unit.py --keep` keeps the previous facts and
+collision meshes of the 218 unchanged parts (re-reading the same geometry otherwise changes last digits), so only
+the five new parts are new data. 223 parts.
+
+**Sequence (33 steps).** Changes, in order:
+
+| Step | Operation | What it does |
+|---|---|---|
+| 3 | Seal and fit the L-connector | HT200 bead (WEICON Flex 310 M HT 200: grey, silicone-free MS polymer; cartridge contents grey) around the Ø21.4 mm hole, O-ring onto the body, body through the hole. |
+| 4 | Tighten the L-connector locknut | Inside: locknut by hand, then the supplied **ratchet + deep socket** (27 mm A/F, resized) — the adjustable wrench has no swing room there (checked). |
+| 5–9 | Motor on its bracket (bench) | `Unit.bench_begin`: bracket set out 0.7 m above the unit; motor offered up from below; lock washers + bolts started; impeller wheel onto the shaft; bolts tightened (drill, arrows); tightening marks (attached to the bolts). |
+| 10 | Install the motor assembly in the unit | Bracket clip nuts, then the whole assembly lowered straight down through the filter base opening (collision-checked). |
+| 11 | Fasten the motor mounting bracket | Drill on all four bolts individually, orange arrows, with a 6 in extension (not supplied: generic bar, labelled) — the bolt next to the front wall is otherwise out of reach. |
+| 12 | Route the motor leads | Nine 22 AWG leads (Ø1.6 mm) from the lead-exit boss of the motor, 3 × 3 bundle through the L-connector bore and elbow, out of the sealing nut (hand-tightened); fed in at 95 mm/s, collision-checked. |
+| 13 | Crimp ferrules and splices | Crimper (supplied): sleeve slid on, crimper in along its handles, jaw + handle close / open, out — ferrules on GND, White, White; one splice on each winding pair (Black + Grey, Red + Blue, Orange + Brown; generic 2 × 22 AWG splice, flagged) — 6 crimps. |
+| 14 | Wire the connector insert | Insert brought to a work position 45 mm below its seat; splices pushed into 1, 2, 3, ferrules into 5, 6 and PE; terminal 4 empty (230/3/60). |
+| 18 | Install the inlet bellmouth | The bellmouth is held by the six plate bolts (not by the wheel; its flange does not pass between the bracket supports), so it is raised from below here. |
+| 19–20 | Stage filters | Labels (Part # MF55-F001 / F002, extracted from the PaperStickersLayers photograph by `extract_stickers.py`, 102 × 34 mm, centred) pressed on at the staging point; they move with the filters (attached) and stay on in the components view. Dimension call-outs show their position. |
+| 21 | Access door clip nuts | All four: Clip Nut (12) / (5) at the top, **Clip Nut / Clip Nut (1)** at the bottom (now animated). The door rivets come set with the door. |
+| 22 | Silicone door gasket | Door laid face down (staged, flipped); one continuous **black silicone** bead (Ø7.2 mm = the CAD door gap) laid with the supplied caulking gun around the filter-opening outline (0.5 mm outside the measured opening); it moves with the door (attached). |
+| 23 | Install and fasten the filter cover | Door turned over and fitted; **Bonded Sealed Washers** (renamed; the Ø5.56 mm bore is the bonded rubber lip) and bolts. |
+| 24 | Front panel decals | Orange dimension call-outs in inches from the top-left corner of the front panel (REF ring) for each decal — photo-measured values (±0.08 in), flagged. |
+| 25 | Brackets + thread tapping | Brackets positioned; their four Ø3.30 mm holes tapped from outside through the side-panel holes (drill + supplied tap resized to Ø4.09 mm, arrows forward / reverse). |
+| 26 | Fasten the brackets | Screws (drill, placeholder bit); clamp bolts from below; each bolt head **held by the wrench** under the flange while the drill drives its nut over the bolt. |
+| 27 | Connect the impeller connector | The wired insert rises 45 mm into its seat; the terminated leads follow it. |
+| 28 | Verification | Impeller turning counter-clockwise seen from above (backward-curved blades), large orange rotation arrow, separate **blue airflow arrows along the air path**: up through the stage filters and the bellmouth into the eye, radially out of the wheel, up around the motor through the impeller-guard openings (six streams, sphere-checked). |
+| 29 | Fibre Bed Filter | Renamed from HEPA everywhere (title, text, narration, BOM label). |
+| 31 | Gauge + box cover | Gauge in from the front; the adjustable wrench slid on the stem flats through the box side opening turns it 90° to dial-upright; then the gauge box cover (exploded in the kit) and its screws. |
+
+Removed operations: *Install the back panel screws*, *Rivet the back panel*, *Rivet the filter base*, *Rivet the
+track mount legs* — those 2 screws and 24 rivets are shown with the main body from step 1 (never animated).
+
+**Wiring (230/3/60, confirmed by engineering).** The wiring PDF draws nine motor conductors and terminates them
+differently per supply: 230/3/60 — Black+Grey → 1, Red+Blue → 2, Orange+Brown → 3, pin 4 not used; 460/3/60 —
+Black → 1, Blue → 2, Brown → 3, Orange+Grey+Red joined → 4; both — White → 5, White → 6, GND → PE. This unit is
+230/3/60 and the paired leads are joined by splice: each pair arrives side by side, one crimped splice holds both
+stripped ends and is pushed into the terminal like a ferrule (splice type and size not supplied: generic, flagged).
+The insert's contact numbering and PE terminal position remain assumptions accepted by engineering (no markings in
+the model). `WIRING`, `TERMINATED` and `SPLICES` in `steps_unit.py` hold this.
+
+**Runtime (`UnitRig.js`).** Effects with `attach` follow their part's rigid motion (`followOf(node)`, set from the
+track's translation + rotation, not its spin) in every step and in the components view; `cable` fx: tube with a
+feed (`grow`), an end that follows end-offset keys or the part holding it (smoothstep over the last 85 mm,
+vertices updated only when the offset changes), ferrule or splice sleeve (`ferrule.kind = 'splice'`, `offset` = centre of the pair); the latest step's lead `group`
+supersedes earlier ones; `gasket`, `dims`, `airflow` fx (arrows travel along polyline `paths`); tracks with `kit` positions; drill extension bar; caulking sealant colour.
+`main.js`: hold tracks are not active parts.
+
+**Validation.** `npm run unit:build`: 33 steps, 161 checks, 158 clear (3 flagged CAD items). `npm test`: see the PR.
+`npm run unit:review` frames of every changed step were inspected.
 
 ## v2.1 — camera, mechanical accuracy and sequence refinements
 
@@ -159,10 +222,13 @@ and the published `assembly.json` supplies nodes and BOM.
 To rebuild after a CAD change (needs the STEP files):
 
 ```bash
-python3 pipeline/convert_step.py MF-550-210-B_GROUPED_ASSEMBLY.step --out /tmp/unit
+# v2.2: one STEP from _03 + the guard of the previous revision + the connector insert
+python3 pipeline/unit/merge_cad.py MF-550-210-B_GROUPED_ASSEMBLY_03.step MF-550-210-B_GROUPED_ASSEMBLY.step cshm_06.stp \
+        /tmp/cad/MF-550-210-B_GROUPED_ASSEMBLY.step
+python3 pipeline/convert_step.py /tmp/cad/MF-550-210-B_GROUPED_ASSEMBLY.step --out /tmp/unit
 cp /tmp/unit/MF-550-210-B_GROUPED_ASSEMBLY.glb public/assets/unit/
-python3 pipeline/unit/analyse_unit.py MF-550-210-B_GROUPED_ASSEMBLY.step
-python3 pipeline/unit/build_tools.py <folder with the tool STEP files> public/assets/unit/tools
+python3 pipeline/unit/analyse_unit.py /tmp/cad/MF-550-210-B_GROUPED_ASSEMBLY.step --keep
+python3 pipeline/unit/build_tools.py <folder with the tool STEP files> public/assets/unit/tools [--only crimper,ratchet,tapdrill]
 python3 pipeline/unit/rectify_decals.py MISTFIT550_Decals.png public/assets/unit/decals
 python3 pipeline/unit/build_unit.py /tmp/unit/assembly.json
 ```

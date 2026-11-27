@@ -1,6 +1,6 @@
 # Mist-Fit 550 — WebAR Assembly Instructions
 
-**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.1** (per-operation camera, collision-free motions, Phase 3 reorder — see [§ 0](#0-whats-new-in-version-21); unit installation tutorial: [§ 0.00](#000-whats-new-in-version-20)) · by **AEROEX Technologies**
+**Live app:** https://opinofaeroex.github.io/mf550-assembly/ · **Version 2.2** (main-unit assembly process update — see [§ 0.0](#00-whats-new-in-version-22); v2.1: [§ 0](#0-whats-new-in-version-21); unit installation tutorial: [§ 0.00](#000-whats-new-in-version-20)) · by **AEROEX Technologies**
 
 Interactive, browser-based assembly instructions for the **Mist-Fit 550**, generated directly from its
 CAD model (internal identifier `MF-550-210-B`): animated exploded view, an automatic camera that
@@ -25,6 +25,53 @@ down, and an augmented-reality mode for phones and tablets.
 > **Development standard.** Before changing steps, animations, tools, the camera or the interface, read
 > [docs/ANIMATION_AND_INTERACTION_STANDARDS.md](docs/ANIMATION_AND_INTERACTION_STANDARDS.md). v2.1 is the quality
 > baseline; [CLAUDE.md](CLAUDE.md) makes the standard mandatory for Claude Code sessions.
+
+## 0.0 What's new in version 2.2
+
+A precision update of the **unit installation** (main-unit assembly) process, built on the v2.1 techniques.
+33 steps in 9 phases. Details: [docs/unit-tutorial.md § v2.2](docs/unit-tutorial.md#v22--main-unit-assembly-process-update);
+open engineering items: [docs/unit-engineering-report.md](docs/unit-engineering-report.md).
+
+* **New CAD revision.** `MF-550-210-B_GROUPED_ASSEMBLY_03`: the cable strain relief is replaced by the L-connector
+  (NPTA12 body with seal, O-ring, sealing nut, locknut). The supplied **CSHM 06 connector insert** is integrated as
+  its own part (its position is not in the CAD: assumed below the L-connector, flagged).
+* **Cable entry.** HT200 sealant (grey) instead of silicone; the locknut inside is tightened with the supplied
+  ratchet and deep socket.
+* **Motor on its bracket first.** The motor, lock washers, bolts and impeller are assembled, tightened and marked on
+  the bench, then lowered into the unit; all four bracket bolts are driven by the drill (with an extension) and the
+  orange rotation arrow.
+* **Motor leads and connector (230/3/60).** Nine 22 AWG leads routed through the L-connector. With the supplied
+  crimper: ferrules on GND and the two white leads, and one splice on each winding pair (Black + Grey, Red + Blue,
+  Orange + Brown). Everything is pushed into the insert: pairs to 1 / 2 / 3, white leads to 5 / 6, GND to PE,
+  terminal 4 empty. The insert engages in its seat in Phase 7.
+* **Filters and door.** Part-number labels on both stage filters, extracted from the supplied photograph (attached
+  in every view); all four door clip nuts; the door gasket is a bead of black silicone laid with the supplied caulking
+  gun; *Bonded Sealed Washer*; the door stands clear of the filters in the components view.
+* **Clamp brackets.** Screw holes tapped with the drill and the (resized) supplied tap; clamp bolt heads held with
+  the wrench while the drill drives the nuts.
+* **Decals.** Orange dimension call-outs in inches from the top reference point (photo-measured values, flagged).
+* **Verification.** Impeller rotation arrow (counter-clockwise from above: backward-curved wheel) plus a separate
+  blue airflow indicator along the real air path: up through the stage filters and the inlet bellmouth into the
+  eye, radially out of the wheel, then up around the motor through the impeller guard.
+* **Fibre Bed Filter** replaces "HEPA filter" everywhere; the gauge is tightened with the wrench before its box cover.
+* **Removed operations.** Back panel screws and the back / filter-base / leg rivets come with the main body (visible
+  from step 1).
+
+| Motor on its bracket (bench) | Crimping ferrules and splices | Connector engagement |
+|---|---|---|
+| ![Bench](docs/screenshots/13-v22-bench-motor.png) | ![Crimp](docs/screenshots/14-v22-crimp.png) | ![Connector](docs/screenshots/15-v22-connector.png) |
+
+| Door gasket + silicone | Decal dimensions (inches) | Rotation + upward airflow |
+|---|---|---|
+| ![Gasket](docs/screenshots/16-v22-gasket.png) | ![Dims](docs/screenshots/17-v22-decal-dims.png) | ![Airflow](docs/screenshots/18-v22-airflow.png) |
+
+| Tapping the bracket holes | Wrench holds the bolt, drill drives the nut | Gauge tightened through the box side |
+|---|---|---|
+| ![Tap](docs/screenshots/19-v22-tapping.png) | ![Hold](docs/screenshots/20-v22-wrench-hold.png) | ![Gauge](docs/screenshots/21-v22-gauge-wrench.png) |
+
+Components view: the access door stands in front of and above the filter modules, whose labels stay attached.
+
+![Components](docs/screenshots/22-v22-components.png)
 
 ## 0. What's new in version 2.1
 
@@ -721,8 +768,11 @@ in-page spy on the audio element logs every play / pause / end with its recordin
 has no speech voices, so the Web Speech API (fallback voice) is replaced by a deterministic in-page mock that
 logs every speak / start / end / cancel (the app code is unchanged). Headless Chromium renders in software, which
 the app would detect as *Low performance*; sections 1–12 therefore pin the *High quality* profile (full model,
-v1.4 visuals) and section 13 tests the profiles. Section 14 tests the unit tutorial (v2.0, extended in v2.1).
-145 checks in v2.1:
+v1.4 visuals) and section 13 tests the profiles. Section 14 tests the unit tutorial (v2.0, extended in v2.1 and
+v2.2). 157 checks in v2.2 (145 in v2.1; v2.2 adds the CAD revision, removed operations, HT200 + ratchet, bench
+sub-assembly, motor leads + crimper + pending terminations, connector engagement, filter labels, door clip nuts /
+gasket / silicone / kit position, decal dimensions, tapping, wrench hold, rotation + airflow indicators, Fibre Bed
+Filter naming and the gauge order):
 
 * **Viewer & data** — loads without errors; geometry of all 220 parts within tolerance of the B-rep (max 0.25 mm measured).
 * **Exploded view ×6 (v2.1)** — all 208 displacement vectors keep their direction; 191 are exactly 6× the
@@ -837,6 +887,10 @@ classifier returns *thumbs up* for it. A live webcam test needs a person in fron
 
 ## Changelog
 
+* **2.2** — Main-unit process update (see § 0.0): `_03` CAD + connector insert, bench sub-assembly, motor leads,
+  crimper / ratchet / tap drill, gasket and sealants, filter labels, dimension call-outs, airflow indicator, Fibre
+  Bed Filter, removed operations; attached effects, staged parts with holds and explicit kit positions in the
+  runtime; tests extended (section 14).
 * **2.1** — Unit tutorial refinements: build-time per-operation camera shots (overview → approach → close-up of
   every fastener / tool → result; line of sight and camera position collision-checked) followed at run time by
   `UnitCamera.update()` with smooth orbiting blends, manual control never overridden, Refocus / loop restart back

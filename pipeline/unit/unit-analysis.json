@@ -8440,131 +8440,150 @@
     "Unit Body"
    ]
   },
-  "1_Cable Strain Relief": {
-   "name": "1_Cable Strain Relief",
+  "NPTA12_L_body_with_seal": {
+   "name": "NPTA12_L_body_with_seal",
    "group": "L_Connector",
    "bbox": [
-    -407.544,
-    27.566,
-    -16.135,
-    -362.877,
-    59.836,
-    16.135
+    -413.112,
+    7.851,
+    -17.318,
+    -364.25,
+    61.019,
+    17.318
    ],
    "centre": [
-    -385.211,
-    43.701,
+    -388.681,
+    34.435,
+    0.0
+   ],
+   "fastener": false
+  },
+  "NPTA12_sealing_nut": {
+   "name": "NPTA12_sealing_nut",
+   "group": "L_Connector",
+   "bbox": [
+    -411.31,
+    -2.304,
+    -15.191,
+    -380.927,
+    22.001,
+    15.191
+   ],
+   "centre": [
+    -396.119,
+    9.849,
     0.0
    ],
    "fastener": true,
    "axis": [
-    -1.0,
     -0.0,
-    0.0
+    -1.0,
+    -0.0
    ],
    "head": [
-    -407.543,
-    43.701,
+    -396.119,
+    -2.299,
     0.0
    ],
    "tip": [
-    -363.887,
-    43.701,
+    -396.119,
+    22.001,
     0.0
    ],
-   "length": 43.656,
+   "length": 24.3,
    "cylinders": [
     {
-     "d": 8.731,
-     "from_head": 4.366,
-     "len": 13.891
+     "d": 13.4,
+     "from_head": 0.5,
+     "len": 0.7
     },
     {
-     "d": 12.7,
-     "from_head": 0.0,
-     "len": 4.366
-    },
-    {
-     "d": 15.799,
-     "from_head": 18.256,
-     "len": 25.4
-    },
-    {
-     "d": 21.336,
-     "from_head": 18.256,
-     "len": 5.588
-    },
-    {
-     "d": 23.622,
-     "from_head": 5.947,
-     "len": 0.149
+     "d": 22.7,
+     "from_head": 12.55,
+     "len": 11.75
     }
    ],
    "across_flats": [
-    23.88
+    14.03,
+    15.55,
+    17.64,
+    20.03,
+    25.16,
+    27.3,
+    28.4,
+    28.86,
+    28.9,
+    29.6
    ],
    "contacts": [
-    "2_Strain Relief Nut",
-    "Back Panel"
+    "NPTA12_L_body_with_seal"
    ]
   },
-  "2_Strain Relief Nut": {
-   "name": "2_Strain Relief Nut",
+  "NPTA12_locknut": {
+   "name": "NPTA12_locknut",
    "group": "L_Connector",
    "bbox": [
     -377.857,
-    28.461,
-    -15.24,
-    -371.189,
-    58.941,
-    15.24
+    28.469,
+    -15.232,
+    -371.857,
+    58.933,
+    15.232
    ],
    "centre": [
-    -374.523,
+    -374.857,
     43.701,
     0.0
    ],
    "fastener": true,
    "axis": [
-    -1.0,
-    -0.0,
+    1.0,
+    0.0,
     0.0
    ],
    "head": [
-    -377.857,
+    -371.857,
     43.701,
     0.0
    ],
    "tip": [
-    -371.189,
+    -377.857,
     43.701,
     0.0
    ],
-   "length": 6.668,
+   "length": 6.0,
    "cylinders": [
     {
-     "d": 0.813,
-     "from_head": 1.588,
-     "len": 4.674
-    },
-    {
-     "d": 19.05,
+     "d": 21.5,
      "from_head": 0.0,
-     "len": 6.668
-    },
-    {
-     "d": 30.48,
-     "from_head": 0.0,
-     "len": 1.588
+     "len": 6.0
     }
    ],
    "across_flats": [
-    26.4
+    27.0
    ],
    "contacts": [
-    "1_Cable Strain Relief",
-    "Back Panel"
+    "Back Panel",
+    "NPTA12_L_body_with_seal"
    ]
+  },
+  "NPTA12_o_ring": {
+   "name": "NPTA12_o_ring",
+   "group": "L_Connector",
+   "bbox": [
+    -380.619,
+    29.63,
+    -14.071,
+    -378.619,
+    57.772,
+    14.071
+   ],
+   "centre": [
+    -379.619,
+    43.701,
+    0.0
+   ],
+   "fastener": false
   },
   "External Tooth Lock Washer (2)": {
    "name": "External Tooth Lock Washer (2)",
@@ -10673,6 +10692,24 @@
     "Pan Head Machine Screw (7)",
     "Unit Body"
    ]
+  },
+  "CSHM 06 Connector Insert": {
+   "name": "CSHM 06 Connector Insert",
+   "group": null,
+   "bbox": [
+    -423.024,
+    -145.7,
+    -25.054,
+    -389.024,
+    -105.6,
+    25.046
+   ],
+   "centre": [
+    -406.024,
+    -125.65,
+    -0.004
+   ],
+   "fastener": false
   }
  }
 }

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
-import { KIT_VIEW, RIVET_GUN_STYLE, SPIN_ARROW } from './standards.js';
+import { AIRFLOW, CABLE, DIMS, GASKET, KIT_VIEW, RIVET_GUN_STYLE, SPIN_ARROW } from './standards.js';
 
 /**
  * UnitRig — applies the unit-installation tracks (v2.0) to the scene.
@@ -16,12 +16,18 @@ import { KIT_VIEW, RIVET_GUN_STYLE, SPIN_ARROW } from './standards.js';
  *          arrow around a fastener axis shown only while it is being tightened (the drill body and
  *          socket stay still — the CAD fastener geometry is never altered to fake a rotation)
  *
+ * v2.2: effects can be attached to a part (`attach`: node id) — stickers, the silicone door gasket,
+ *       tightening marks made on the bench — and follow that part's rigid motion (translation + rotation
+ *       of its track, not the spin about its own axis) in every step and in the components view;
+ *       motor leads ('cable', group 'leads': the latest step's group is shown), dimension call-outs
+ *       ('dims'), upward airflow ('airflow'); crimper / ratchet / tap-drill tools; drill socket extension.
+ *
  * The rig only moves objects; visibility of not-yet-installed parts is the Appearance state
  * (main.js), so materials, x-ray and selection keep working as in the parts tutorial.
  */
 const ease = (u) => (u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2);
 const _m = new THREE.Matrix4(), _m2 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
-const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _s = new THREE.Vector3(1, 1, 1);
+const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _s = new THREE.Vector3(1, 1, 1), _Y = new THREE.Vector3(0, 1, 0);
 
 /** Interpolate a keyed channel; returns [index, u] of the segment containing t. */
 function seg(keys, t) {
@@ -88,6 +94,51 @@ function makeSpinArrow(r, sense) {
   return g;
 }
 
+/** Text label for the dimension call-outs: canvas texture on a plane (height h metres). */
+function makeLabel(text, h) {
+  const c = document.createElement('canvas'); const ctx = c.getContext('2d');
+  ctx.font = DIMS.font; const w = Math.ceil(ctx.measureText(text).width) + 28;
+  c.width = w; c.height = 88;
+  ctx.font = DIMS.font; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  ctx.lineJoin = 'round'; ctx.lineWidth = 12; ctx.strokeStyle = DIMS.halo; ctx.strokeText(text, w / 2, 46);
+  ctx.fillStyle = DIMS.textColour; ctx.fillText(text, w / 2, 46);
+  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const mat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(h * 1.6 * w / 88, h * 1.6), mat);
+  m.raycast = () => {}; m.renderOrder = DIMS.renderOrder;
+  return m;
+}
+
+/** Thin cylinder between two points (dimension lines). */
+function segMesh(a, b, r, mat) {
+  const A = new THREE.Vector3().fromArray(a), B = new THREE.Vector3().fromArray(b);
+  const L = A.distanceTo(B); const g = new THREE.CylinderGeometry(r, r, L, 6, 1, true);
+  const m = new THREE.Mesh(g, mat); m.position.copy(A).add(B).multiplyScalar(0.5);
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+  m.raycast = () => {}; m.renderOrder = DIMS.renderOrder;
+  return m;
+}
+
+/** Square-section strip swept along a closed path on a face (door gasket). */
+function gasketGeometry(points, normal, section) {
+  const P = points.map((p) => new THREE.Vector3().fromArray(p)); const n = new THREE.Vector3().fromArray(normal).normalize();
+  const N = P.length, h = section / 2, pos = [], idx = [];
+  for (let i = 0; i < N; i++) {
+    const t = P[(i + 1) % N].clone().sub(P[(i - 1 + N) % N]).normalize();
+    const b = new THREE.Vector3().crossVectors(t, n).normalize();
+    for (const [u, v] of [[1, 1], [1, -1], [-1, -1], [-1, 1]]) {
+      const q = P[i].clone().addScaledVector(n, u * h).addScaledVector(b, v * h); pos.push(q.x, q.y, q.z);
+    }
+  }
+  for (let i = 0; i < N - 1; i++) for (let k = 0; k < 4; k++) {
+    const a = i * 4 + k, b = i * 4 + ((k + 1) % 4), c = (i + 1) * 4 + k, d = (i + 1) * 4 + ((k + 1) % 4);
+    idx.push(a, c, b, b, c, d);
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setIndex(idx);
+  g.computeVertexNormals();
+  return { g, segs: N - 1 };
+}
+
 export class UnitRig {
   constructor({ viewer, model, loaded, base = 'assets/unit/' }) {
     this.viewer = viewer; this.model = model; this.loaded = loaded; this.base = base;
@@ -98,6 +149,7 @@ export class UnitRig {
     this.parts = new Map();                        // nid -> { obj, L0, A, Ainv }
     this.moved = new Set();
     this.fx = new Map();                           // step index -> [fx objects]
+    this.follow = new Map();                       // v2.2: nid -> rigid motion (Matrix4) of the part now
     this.decalAlpha = 1;
     this.ready = this.#loadTools();
     this.#indexParts();
@@ -133,7 +185,7 @@ export class UnitRig {
       });
       if (id === 'rivetgun') styleRivetGun(nodes);      // before the group joins the scene: tool frame = world
       this.fxRoot.add(group);
-      this.tools[id] = { group, nodes, base, info };
+      this.tools[id] = { group, nodes, base, info, inner: gltf.scene };
     }));
     // placeholder driver bit for the drill (no bit model was supplied): 1/4 in hex, labelled orange
     const d = this.tools.drill;
@@ -145,6 +197,9 @@ export class UnitRig {
       bit.traverse((o) => { if (o.isMesh) o.raycast = () => {}; });
       bit.name = 'placeholder-bit'; bit.visible = false;
       d.group.add(bit); d.bit = bit;
+      // v2.2: socket extension bar (not supplied: generic, labelled in the tools list), length set per track
+      const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 1, 12), new THREE.MeshStandardMaterial({ color: 0xb3b8bf, metalness: 0.85, roughness: 0.35 }));
+      bar.raycast = () => {}; bar.visible = false; d.group.add(bar); d.extBar = bar;
     }
   }
 
@@ -152,7 +207,11 @@ export class UnitRig {
   #resetMoved() {
     for (const id of this.moved) this.#setLocal(this.parts.get(id), null);
     this.moved.clear();
+    this.follow.clear();
   }
+
+  /** v2.2: rigid motion of a part now (identity when it sits at its CAD pose) — attached effects follow it. */
+  followOf(nid) { return this.follow.get(nid) || UnitRig.IDENTITY; }
 
   #setLocal(p, D) {
     const o = p.obj;
@@ -163,7 +222,7 @@ export class UnitRig {
     o.matrixWorldNeedsUpdate = true;
   }
 
-  #delta(track, t, out) {
+  #delta(track, t, out, rigid = null) {
     const k = track.keys;
     const [i, u0] = seg(k, t);
     const a = k[i], b = k[Math.min(i + 1, k.length - 1)];
@@ -172,6 +231,7 @@ export class UnitRig {
     _q.set(a[4], a[5], a[6], a[7]); _q2.set(b[4], b[5], b[6], b[7]); _q.slerp(_q2, u);
     const ang = a[8] + (b[8] - a[8]) * u;
     out.compose(_v, _q, _s);
+    if (rigid) rigid.copy(out);
     if (ang) {
       const P = track._pivot || (track._pivot = new THREE.Vector3().fromArray(track.pivot));
       const ax = track._axis || (track._axis = new THREE.Vector3().fromArray(track.axis).normalize());
@@ -203,6 +263,23 @@ export class UnitRig {
       const bit = tr.bit === 'placeholder-hex';
       if (tool.bit) tool.bit.visible = bit;
       for (const n of ['Deep_Socket_9-16in_1-4in_Drive_6pt', 'Adapter_1-4in_Hex_to_1-4in_Square']) if (tool.nodes[n]) tool.nodes[n].visible = !bit;
+      const ext = tr.extension || 0;                       // v2.2: drill body set back on a socket extension
+      tool.inner.position.y = ext; tool.inner.updateMatrix();
+      if (tool.extBar) {
+        tool.extBar.visible = ext > 0;
+        if (ext > 0) { tool.extBar.scale.set(1, ext + 0.006, 1); tool.extBar.position.set(0, 0.0505 + ext / 2 - 0.003, 0); }
+      }
+    }
+    if (id === 'caulking') {                               // v2.2: cartridge contents coloured as the sealant used
+      const n = tool.nodes.Silicone_WEICON_HT300_Red;
+      if (n) n.traverse((o) => {
+        if (!o.isMesh) return;
+        if (!o.userData.mat0) o.userData.mat0 = o.material;
+        if (tr.sealant) {
+          o.userData.mats = o.userData.mats || {};
+          o.material = o.userData.mats[tr.sealant] || (o.userData.mats[tr.sealant] = new THREE.MeshStandardMaterial({ color: new THREE.Color(tr.sealant), roughness: 0.5, metalness: 0 }));
+        } else o.material = o.userData.mat0;
+      });
     }
     for (const [part, def] of Object.entries(mp)) {
       const ch = sub[part];
@@ -224,6 +301,7 @@ export class UnitRig {
         _m.makeTranslation(ax.x * d, ax.y * d, ax.z * d);
       }
       if (part === 'socket' && tr.socketScale && Math.abs(tr.socketScale - 1) > 1e-3) _m.multiply(_m2.makeScale(tr.socketScale, 1, tr.socketScale));
+      if (part === 'socket' && id === 'drill' && tr.extension) _m.premultiply(_m2.makeTranslation(0, -tr.extension, 0));   // socket stays on the fastener
       for (const n of def.nodes) {
         const node = tool.nodes[n]; if (!node) continue;
         node.matrix.multiplyMatrices(_m, tool.base[n]);
@@ -248,7 +326,62 @@ export class UnitRig {
         const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: f.type === 'bead' ? 0.35 : 0.6, metalness: 0 });
         const mesh = new THREE.Mesh(geo, mat); mesh.raycast = () => {};
         mesh.userData = { fx: f, segs, radial };
+        if (f.attach !== undefined) mesh.matrixAutoUpdate = false;
         out.push(mesh);
+      } else if (f.type === 'gasket') {
+        const { g, segs } = gasketGeometry(f.points, f.normal, f.section);
+        const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: GASKET.roughness, metalness: 0 }));
+        mesh.raycast = () => {}; mesh.matrixAutoUpdate = false;
+        mesh.userData = { fx: f, segs };
+        out.push(mesh);
+      } else if (f.type === 'cable') {
+        out.push(this.#buildCable(f));
+      } else if (f.type === 'dims') {
+        const g = new THREE.Group(); g.userData = { fx: f };
+        const mat = new THREE.MeshBasicMaterial({ color: DIMS.colour, transparent: true, opacity: 1, depthWrite: false });
+        for (const [a, b] of f.segments) g.add(segMesh(a, b, f.width / 2, mat));
+        for (const [p, v] of f.arrows) {
+          const c = new THREE.Mesh(new THREE.ConeGeometry(f.arrow * 0.3, f.arrow, 10), mat);
+          const dir = new THREE.Vector3().fromArray(v).normalize();
+          c.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
+          c.position.fromArray(p).addScaledVector(dir, -f.arrow / 2); c.raycast = () => {}; c.renderOrder = DIMS.renderOrder; g.add(c);
+        }
+        for (const L of f.labels) {
+          const m = makeLabel(L.text, f.textH);
+          const n = new THREE.Vector3().fromArray(L.normal), up = new THREE.Vector3().fromArray(L.up), right = new THREE.Vector3().fromArray(L.right);
+          m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, n));
+          m.position.fromArray(L.pos); g.add(m);
+        }
+        for (const r of f.refs) {
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(DIMS.refRadius, f.width * 0.7, 6, 24), mat);
+          ring.position.fromArray(r); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0));
+          const dot = new THREE.Mesh(new THREE.SphereGeometry(f.width * 1.6, 8, 6), mat); dot.position.fromArray(r);
+          for (const o of [ring, dot]) { o.raycast = () => {}; o.renderOrder = DIMS.renderOrder; g.add(o); }
+        }
+        g.userData.mats = [mat, ...g.children.filter((o) => o.material && o.material.map).map((o) => o.material)];
+        if (f.attach !== undefined) g.matrixAutoUpdate = false;
+        out.push(g);
+      } else if (f.type === 'airflow') {
+        const g = new THREE.Group(); g.userData = { fx: f, arrows: [] };
+        const mat = new THREE.MeshBasicMaterial({ color: AIRFLOW.colour, transparent: true, opacity: 0, depthWrite: false });
+        const L = f.length, hs = AIRFLOW.headShare;
+        const shaft = new THREE.CylinderGeometry(AIRFLOW.shaftRadius, AIRFLOW.shaftRadius, L * (1 - hs), 8); shaft.translate(0, L * (1 - hs) / 2, 0);
+        const head = new THREE.ConeGeometry(AIRFLOW.headRadius, L * hs, 12); head.translate(0, L * (1 - hs) + L * hs / 2, 0);
+        // one stream per path: polyline with cumulative arc length; the arrows travel along it, tangent-aligned
+        f.paths.forEach((P, c) => {
+          const pts = P.map((p) => new THREE.Vector3().fromArray(p)), cum = [0];
+          for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
+          const H = cum[cum.length - 1], path = { pts, cum, H };
+          const per = Math.ceil(H / f.spacing);
+          for (let j = 0; j < per; j++) {
+            const a = new THREE.Group(); a.add(new THREE.Mesh(shaft, mat), new THREE.Mesh(head, mat));
+            a.traverse((o) => { if (o.isMesh) { o.raycast = () => {}; o.renderOrder = AIRFLOW.renderOrder; } });
+            a.userData = { path, s0: j * f.spacing + (c % 2) * f.spacing / 2 };
+            g.add(a); g.userData.arrows.push(a);
+          }
+        });
+        g.userData.mat = mat;
+        out.push(g);
       } else if (f.type === 'mandrels') {
         for (const it of f.items) {
           const g = new THREE.CylinderGeometry(0.00095, 0.00095, 0.024, 8); g.translate(0, 0.012, 0);
@@ -277,6 +410,7 @@ export class UnitRig {
         const right = new THREE.Vector3().crossVectors(up, n);
         m.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, n));
         m.userData = { fx: f, normal: n, centre: new THREE.Vector3().fromArray(f.centre) };
+        if (f.attach !== undefined) { m.matrixAutoUpdate = false; m.userData.local = new THREE.Matrix4(); }
         out.push(m);
       }
     }
@@ -285,15 +419,118 @@ export class UnitRig {
     return out;
   }
 
+  /** v2.2 motor lead: tube along the routed path; its free end follows end-offset keys or the part holding it. */
+  #buildCable(f) {
+    const pts = f.points.map((p) => new THREE.Vector3().fromArray(p));
+    const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
+    const len = curve.getLength();
+    const segs = Math.max(16, Math.round(len * 1000 / CABLE.segMm)), radial = CABLE.radial;
+    const geo = new THREE.TubeGeometry(curve, segs, f.diameter / 2, radial, false);
+    const base = geo.attributes.position.array.slice();
+    const w = new Float32Array(segs + 1);                  // follow weight per ring (smoothstep over the last `follow` m)
+    for (let j = 0; j <= segs; j++) { const x = Math.min(1, Math.max(0, (j / segs * len - (len - f.follow)) / f.follow)); w[j] = x * x * (3 - 2 * x); }
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: CABLE.roughness, metalness: 0 });
+    const mesh = new THREE.Mesh(geo, mat); mesh.raycast = () => {};
+    mesh.userData = { fx: f, segs, radial, base, w, off: new THREE.Vector3(NaN, 0, 0), endDir: curve.getTangentAt(1).normalize(), end: pts[pts.length - 1].clone() };
+    if (f.ferrule) {
+      const fr = f.ferrule;
+      const g = new THREE.CylinderGeometry(fr.od / 2, fr.od / 2, fr.length, 12); g.translate(0, fr.length / 2, 0);
+      const fm = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(fr.colour), metalness: CABLE.ferrule.metalness, roughness: CABLE.ferrule.roughness }));
+      fm.raycast = () => {}; fm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), mesh.userData.endDir);
+      mesh.add(fm); mesh.userData.ferrule = fm;
+      mesh.userData.fOff = new THREE.Vector3().fromArray(fr.offset ?? [0, 0, 0]);   // splice: centred between the pair
+    }
+    return mesh;
+  }
+
+  /** Current end offset of a lead: keys, or the rigid motion of the part holding its end. */
+  #cableOffset(o, t) {
+    const f = o.userData.fx;
+    if (f.attach && (t === Infinity || t >= f.attach.t)) {
+      const e = this.followOf(f.attach.node).elements; return _v2.set(e[12], e[13], e[14]);
+    }
+    const k = f.end;
+    if (t === Infinity) { const l = k[k.length - 1]; return _v2.set(l[1], l[2], l[3]); }
+    const [i, u0] = seg(k, t); const a = k[i], b = k[Math.min(i + 1, k.length - 1)]; const u = ease(u0);
+    return _v2.set(a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u);
+  }
+
+  #cableTail(o, t = o.userData.t) {
+    const off = this.#cableOffset(o, t ?? Infinity);
+    const U = o.userData;
+    if (U.off.equals(off)) return;
+    U.off.copy(off);
+    const pos = o.geometry.attributes.position, arr = pos.array, ring = U.radial + 1;
+    for (let j = 0; j <= U.segs; j++) {
+      const w = U.w[j]; if (w === 0 && !U.dirty) continue;
+      for (let r = 0; r < ring; r++) {
+        const i = (j * ring + r) * 3;
+        arr[i] = U.base[i] + off.x * w; arr[i + 1] = U.base[i + 1] + off.y * w; arr[i + 2] = U.base[i + 2] + off.z * w;
+      }
+    }
+    pos.needsUpdate = true; o.geometry.computeBoundingSphere();
+    if (U.ferrule) U.ferrule.position.copy(U.end).add(off).add(U.fOff);
+  }
+
   /** Effects of one step at time t (t = Infinity: completed state, for earlier steps / the overview). */
-  #applyFx(index, t) {
+  #applyFx(index, t, pos = this.pos, kitOnly = false) {
     for (const o of this.#buildFx(index)) {
       const f = o.userData.fx;
+      if (kitOnly) { if (!f.kit) { o.visible = false; continue; } }
+      if (f.group && t === Infinity && this.#superseded(index, f.group, pos)) { o.visible = false; continue; }
       if (f.type === 'bead' || f.type === 'line') {
         const [t0, t1] = f.type === 'bead' ? f.grow : f.draw;
         const u = Math.max(0, Math.min(1, (t - t0) / Math.max(1e-6, t1 - t0)));
         o.visible = u > 0;
         o.geometry.setDrawRange(0, Math.ceil(u * o.userData.segs) * o.userData.radial * 6);
+      } else if (f.type === 'gasket') {
+        const [t0, t1] = f.grow;
+        const u = Math.max(0, Math.min(1, (t - t0) / Math.max(1e-6, t1 - t0)));
+        o.visible = u > 0;
+        o.geometry.setDrawRange(0, Math.ceil(u * o.userData.segs) * 24);
+      } else if (f.type === 'cable') {
+        const g = f.grow;
+        const u = !g || t === Infinity ? 1 : Math.max(0, Math.min(1, (t - g[0]) / Math.max(1e-6, g[1] - g[0])));
+        o.visible = u > 0;
+        o.geometry.setDrawRange(0, Math.ceil(u * o.userData.segs) * o.userData.radial * 6);
+        o.userData.t = t;
+        this.#cableTail(o, t);
+        const fr = o.userData.ferrule;
+        if (fr) {
+          const F = f.ferrule;
+          const shown = t === Infinity || F.show < 0 || t >= F.show;
+          fr.visible = shown && u >= 1;
+          if (fr.visible) {
+            const slide = t === Infinity || F.show < 0 ? 0 : Math.max(0, 1 - (t - F.show) / F.slide);
+            fr.position.copy(o.userData.end).add(o.userData.off).add(o.userData.fOff).addScaledVector(o.userData.endDir, 0.012 * slide);
+            const crimped = F.crimp !== null && F.crimp !== undefined && (t === Infinity || F.crimp < 0 || t >= F.crimp);
+            const k = crimped ? F.odCrimped / F.od : 1;
+            fr.scale.set(k, 1, k);
+          }
+        }
+      } else if (f.type === 'dims') {
+        const [t0, t1] = f.t;
+        const vis = t !== Infinity && t >= t0 && t <= t1;
+        o.visible = vis;
+        if (vis) { const a = Math.min(1, (t - t0) / DIMS.fade, (t1 - t) / DIMS.fade); for (const m of o.userData.mats) m.opacity = Math.max(0, a); }
+      } else if (f.type === 'airflow') {
+        const [t0, t1] = f.t;
+        const vis = t !== Infinity && t >= t0 && t <= t1;
+        o.visible = vis;
+        if (vis) {
+          const a = Math.min(1, (t - t0) / AIRFLOW.fade, (t1 - t) / AIRFLOW.fade);
+          for (const ar of o.userData.arrows) {
+            const { pts, cum, H } = ar.userData.path, s = (ar.userData.s0 + (t - t0) * f.speed) % H;
+            let i = 1; while (i < cum.length - 1 && cum[i] < s) i++;
+            const u = (s - cum[i - 1]) / Math.max(1e-9, cum[i] - cum[i - 1]);
+            ar.position.lerpVectors(pts[i - 1], pts[i], u);
+            // aim along the path a little ahead (smooth turns at the eye and the wheel exit)
+            const ahead = Math.min(H, s + f.length * 0.5); let k = i; while (k < cum.length - 1 && cum[k] < ahead) k++;
+            const v = _v.subVectors(pts[k], ar.position); if (v.lengthSq() > 1e-12) ar.quaternion.setFromUnitVectors(_Y, v.normalize());
+            ar.visible = s < H - f.length;
+          }
+          o.userData.mat.opacity = AIRFLOW.opacity * Math.max(0, a);
+        }
       } else if (f.type === 'mandrel') {
         const vis = t >= f.show && t < f.pull[1] && t !== Infinity;
         o.visible = vis;
@@ -321,6 +558,7 @@ export class UnitRig {
         }
         o.visible = true;
         o.position.copy(o.userData.centre).addScaledVector(o.userData.normal, off);
+        if (o.userData.local) o.userData.local.compose(o.position, o.quaternion, _s);
         o.userData.alpha = 0.8 + 0.2 * press;
         o.material.opacity = o.userData.alpha * this.decalAlpha;
       }
@@ -346,12 +584,47 @@ export class UnitRig {
     this.#resetMoved();
     for (const t of Object.values(this.tools)) t.group.visible = false;
     const N = this.model.stepCount;
+    if (pos === -1) this.#applyKit();
     for (let k = 0; k < N; k++) {
       const done = pos === -2 || (pos >= 0 && k < pos);
-      if (done) this.#applyFx(k, Infinity); else this.#hideFx(k);
+      if (done) this.#applyFx(k, Infinity, pos);
+      else if (pos === -1) this.#applyFx(k, Infinity, pos, true);   // v2.2: stickers stay on their parts in the kit
+      else this.#hideFx(k);
     }
-    if (pos === -1) this.#applyKit();
+    this.#updateFollowers(pos);
     this.viewer.requestRender();
+  }
+
+  /** v2.2: a later step that re-emits an fx group (the motor leads) supersedes the earlier ones. */
+  #superseded(k, group, pos) {
+    const cur = pos === -2 ? this.model.stepCount : pos;
+    const steps = this.groups || (this.groups = this.#groupSteps());
+    const list = steps[group] || [];
+    return list.some((j) => j > k && j <= cur);
+  }
+
+  #groupSteps() {
+    const out = {};
+    this.model.steps.forEach((s, i) => { for (const f of s.tracks.fx) if (f.group) (out[f.group] = out[f.group] || []).includes(i) || out[f.group].push(i); });
+    return out;
+  }
+
+  /** v2.2: attached effects (and lead ends held by a part) follow the current rigid motion of their part. */
+  #updateFollowers(pos) {
+    const N = this.model.stepCount;
+    for (let k = 0; k < N; k++) {
+      const list = this.fx.get(k); if (!list) continue;
+      for (const o of list) {
+        if (!o.visible) continue;
+        const f = o.userData.fx;
+        if (f.attach !== undefined && typeof f.attach !== 'object') {
+          const F = this.followOf(f.attach);
+          if (o.userData.local) o.matrix.multiplyMatrices(F, o.userData.local); else o.matrix.copy(F);
+          o.matrixWorldNeedsUpdate = true;
+        }
+        if (f.type === 'cable') this.#cableTail(o);
+      }
+    }
   }
 
   /**
@@ -366,11 +639,16 @@ export class UnitRig {
         const n = this.model.node(tr.node);
         if (!n || this.model.steps.indexOf(s) !== n.step) continue;
         const p = this.parts.get(tr.node);
-        this.#delta(tr, 0, D);
-        const e = D.elements, len = Math.hypot(e[12], e[13], e[14]);
-        const k = len > 1e-6 ? Math.max(1, Math.min(UnitRig.KIT_SCALE, UnitRig.KIT_MAX / len)) : 1;
-        e[12] *= k; e[13] *= k; e[14] *= k;
+        if (tr.kit) {                                     // v2.2: explicit components-view position (used as is)
+          D.makeTranslation(tr.kit[0], tr.kit[1], tr.kit[2]);
+        } else {
+          this.#delta(tr, 0, D);
+          const e = D.elements, len = Math.hypot(e[12], e[13], e[14]);
+          const k = len > 1e-6 ? Math.max(1, Math.min(UnitRig.KIT_SCALE, UnitRig.KIT_MAX / len)) : 1;
+          e[12] *= k; e[13] *= k; e[14] *= k;
+        }
         this.#setLocal(p, D); this.moved.add(tr.node);
+        this.follow.set(tr.node, D.clone());
       }
     }
   }
@@ -382,10 +660,13 @@ export class UnitRig {
     const D = new THREE.Matrix4();
     for (const tr of s.tracks.parts) {
       const p = this.parts.get(tr.node); if (!p) continue;
-      this.#setLocal(p, this.#delta(tr, t, D)); this.moved.add(tr.node);
+      const F = this.follow.get(tr.node) || new THREE.Matrix4();
+      this.#setLocal(p, this.#delta(tr, t, D, F)); this.moved.add(tr.node);
+      this.follow.set(tr.node, F);
     }
     for (const tr of s.tracks.tools) this.#toolPose(tr.tool, tr, t);
     this.#applyFx(index, t);
+    this.#updateFollowers(index);
     this.viewer.requestRender();
   }
 
@@ -397,5 +678,6 @@ export class UnitRig {
     return pts;
   }
 }
+UnitRig.IDENTITY = new THREE.Matrix4();
 UnitRig.KIT_SCALE = KIT_VIEW.scale;       // v2.1: exploded (components) view displacement ×2 (standards.js)
 UnitRig.KIT_MAX = KIT_VIEW.maxOffset;     // m

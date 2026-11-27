@@ -75,3 +75,38 @@ export const RIVET_GUN_STYLE = Object.freeze({
 
 /** Step loop (UnitSequencer.js): pause at the end of a step before it repeats. */
 export const LOOP = Object.freeze({ hold: 1.6 });
+
+// ------------------------------------------------------------------ v2.2 (main-unit process update)
+
+/** Dimension call-outs (fx 'dims'): orange lines, arrowheads, reference ring and inch labels. */
+export const DIMS = Object.freeze({
+  colour: 0xff7a1a,        // the accent orange (same as the rotation arrow)
+  textColour: '#e0620a',
+  halo: 'rgba(255,255,255,0.92)',
+  font: '600 64px system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+  refRadius: 0.0035,       // m
+  fade: 0.2,               // s
+  renderOrder: 4,
+});
+
+/** Airflow indicator (fx 'airflow'): blue arrows, visually distinct from the orange rotation arrow. */
+export const AIRFLOW = Object.freeze({
+  colour: 0x2f8fff,
+  opacity: 0.78,
+  shaftRadius: 0.0024,     // m
+  headRadius: 0.0068,
+  headShare: 0.38,         // of the arrow length
+  fade: 0.4,               // s: fade in / out at the start and end of the run
+  renderOrder: 3,
+});
+
+/** Motor leads (fx 'cable') and ferrules. */
+export const CABLE = Object.freeze({
+  radial: 8,
+  segMm: 3,
+  roughness: 0.55,
+  ferrule: Object.freeze({ metalness: 0.75, roughness: 0.35, crimpDur: 0.2 }),
+});
+
+/** Door gasket (fx 'gasket'): closed-cell foam, matte. */
+export const GASKET = Object.freeze({ roughness: 0.95 });

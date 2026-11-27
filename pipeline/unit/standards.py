@@ -214,3 +214,140 @@ class CAMERA:
     result_at = 0.1               # s after the last motion
     wide_body_share = 0.9         # `wide` steps / > wide_parts components frame the whole unit
     wide_parts = 30
+
+
+# ============================================================================ v2.2 operations
+# (main-unit process update: bench sub-assembly, wiring, gaskets, tapping, dimension call-outs)
+
+class BENCH:
+    """Motor-on-bracket sub-assembly built on the bench before it goes into the unit (Unit.bench_begin)."""
+    offset = (0.0, 700.0, 0.0)    # mm above the CAD position: every bench motion stays clear of the open top
+    clip_lead = 0.2
+
+
+class HOLD:
+    """Parts staged away from their CAD pose across several steps keep that pose (Unit.finalize_holds)."""
+
+
+class CABLE:
+    """Nine 22 AWG motor leads (fx 'cable'): routed bundle through the L-connector to the connector insert."""
+    od = 1.6                      # mm: 22 AWG conductor Ø0.64 + typical PVC insulation (UL 1007) — type not specified
+    pitch = 1.75                  # mm between neighbouring leads in the bundle (3 × 3)
+    radial = 8                    # tube sides
+    seg_mm = 3.0                  # tube segment length
+    feed_mm_per_s = 95            # the free ends are fed through the L-connector at this rate
+    stagger = 0.06                # s between leads
+    follow_len = 85.0             # mm of the free end that follows an end offset (smooth weight)
+    check_step = 4.0              # mm between collision samples along each lead
+    check_r = 0.75                # mm sphere radius for the samples (insulation, 0.05 mm under the radius)
+    strip = 7.0                   # mm insulation stripped for the ferrule (visual)
+
+
+class FERRULE:
+    """Wire-end ferrule crimped on a lead (type / size not in the supplied data: generic 0.34 mm² sleeve)."""
+    length = 6.0
+    od = 1.5
+    od_crimped = 1.25
+    colour = "#c9ccd1"
+
+
+class SPLICE:
+    """Crimp splice joining a pair of winding leads (230/3/60; type / size not in the supplied data:
+    generic uninsulated splice for 2 x 22 AWG, both stripped ends entering from the wire side)."""
+    length = 8.0
+    od = 2.4
+    od_crimped = 2.0
+    colour = "#c9ccd1"
+
+
+class CRIMP:
+    open_jaw_deg = 7.0            # lower jaw opening about the main pivot
+    open_handle_deg = 14.0        # lower handle opening about its pin
+    approach = 70.0               # mm out along the tool's +Y (handles) before engaging the ferrule
+    approach_dur = 0.55
+    slide_on = 0.45               # s: ferrule slid onto the stripped end by hand
+    close_at = 0.25               # s after engagement
+    close_dur = 0.55              # handles squeezed to the ratchet release
+    hold = 0.2
+    open_dur = 0.35
+    retract_dur = 0.45
+    shot_radius = 55
+
+
+class TAP:
+    """Thread tapping with the drill and the supplied tap (resized radially, labelled)."""
+    first_clear = 120
+    hop_clear = 60
+    final_clear = 110
+    near_gap = 4.0
+    lead = 1.5                    # mm of the tap's lead past the far face of the sheet
+    s_per_mm = 0.32               # cutting feed (visual)
+    reverse_s_per_mm = 0.18       # backing out
+    dwell = 0.15
+    shot_radius = 60
+
+
+class RATCHET:
+    swing = 30                    # degrees per stroke (ratchet: no lift-off, the handle swings back)
+    back_dur = 0.45
+    stroke_dur = 0.55
+    approach = 70
+    engage_dur = 0.55
+    retract_dur = 0.5
+    shot_radius = 70
+
+
+class GASKET:
+    """Door gasket geometry. The access door gasket is formed in place with silicone (SEALANT.gasket, engineering
+    v2.2 review); the square foam strip (fx 'gasket') stays available as a technique for strip gaskets."""
+    section = 7.2                 # mm: the gap between the door back face and the body front face (CAD)
+    colour = "#1c1d1f"
+    liner = "#e0b23a"             # yellow release liner, peeled off as the strip is laid
+    lay_mm_per_s = 300
+    outside_frame = 1.0           # mm clear of the door frame (the frame passes through the opening)
+
+
+class SEALANT:
+    """Caulking materials (fx 'bead'): distinct colours so the two operations are never confused."""
+    ht200 = "#8f9397"             # WEICON Flex 310 M HT 200 — grey MS polymer, silicone-free (manufacturer TDS)
+    ht200_d = 3.0
+    gasket = "#19191b"            # silicone door gasket, formed in place with the caulking gun — black (engineering
+                                  # v2.2 review: black for the animation); product not specified
+    gasket_d = GASKET.section     # bead Ø = the CAD gap between the door and the body face
+    gasket_dur = 6.0              # s along the whole opening outline (one continuous bead)
+
+
+class DIMS:
+    """Orange dimension call-outs (fx 'dims') for decal / sticker positions, in inches."""
+    colour = "#ff7a1a"
+    line_w = 0.9                  # mm
+    arrow = 6.0                   # mm arrowhead length
+    text_h = 13.0                 # mm label height (readable in the panel-wide decal view)
+    gap = 2.0                     # mm extension-line gap
+    lead = 0.6                    # s the call-outs appear before the decal is pressed on
+
+
+class AIRFLOW:
+    """Airflow indicator while the impeller runs (fx 'airflow'), distinct from the rotation arrow: arrows travel
+    along the physical air path — up through the stage filters and the inlet bellmouth into the eye, radially out
+    of the wheel between shroud and back plate, then up around the motor through the impeller guard openings."""
+    colour = "#2f8fff"
+    speed = 180.0                 # mm/s along the path
+    arrow_len = 34.0
+    spacing = 95.0
+    check_r = 2.0                 # mm sphere along each path (collision check)
+    # air path profile in (radius from the impeller axis, height y) mm — from the CAD: stage filters y -258…-147,
+    # bellmouth throat r 77 (y -100…-65), shroud r 84→126 (y -91…-35), motor r ≤ 61 below y 0 / ≤ 84 above,
+    # wheel tip r 126; Catmull-Rom smoothed
+    profile = ((110, -290), (110, -200), (92, -150), (62, -118), (54, -92), (58, -62), (76, -36), (100, -16), (126, -2),
+               (146, 8), (150, 40), (150, 330))
+    # stream angles (deg, about the impeller axis from +X towards +Z): through the openings of the impeller guard and
+    # clear of the motor-bracket beam (|z| < 73) — ray-checked on the CAD, then sphere-checked at build time
+    angles = (45, 90, 130, 230, 270, 315)
+
+
+DRILL.ext_r = 6.0                 # v2.2: Ø12 mm socket extension bar (collision mesh and on screen)
+WRENCH.approach_side = 70         # v2.2: mm, slid on sideways along the handle (wrench(approach="handle"))
+TAP.visual_pitch = 0.8            # mm per turn of the tap on screen (thread not specified)
+DRILL.extension_mm = 152.4        # v2.2: 6 in socket extension where the drill body cannot reach (not supplied: generic)
+BENCH.kit_x = -470.0              # v2.2: components view — the motor kit stands beside the back panel (mm)
