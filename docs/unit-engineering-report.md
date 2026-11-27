@@ -19,36 +19,41 @@ no drawing or BOM was supplied to verify against.
 | Component | Fastener type | Size | Length | Qty | Installed in step | Drive / tool | Verification status |
 |---|---|---|---|---|---|---|---|
 | Closed-End Rivet | Closed-End Rivet | Ø3.97 mm body (5/32 in) | 6.30 mm body, Ø6.26 mm flange | 34 | 1. Inspect the main body | blind-rivet gun | Measured from CAD geometry; grip range and material not in CAD |
-| Pan Head Machine Screw | Pan head machine screw | Ø4.09 mm | 6.35 mm under head (1/4 in) | 2 | 1. Inspect the main body | recessed head (drive type not modelled) | Measured from CAD geometry; thread designation ambiguous: #8 (4.17 mm) or M4 (4.00 mm) — engineering confirmation |
+| Clip Nut | Clip nut (U-type) | hole Ø5.16 mm (1/4-20 tap size) | 12.3 × 24.2 × 14.5 mm | 2 | 1. Inspect the main body | pressed onto the panel edge | Measured from CAD geometry; thread (1/4-20?) inferred from hole size only |
 | Clip Nut | Clip nut (U-type) | hole Ø5.16 mm (1/4-20 tap size) | 12.3 × 24.2 × 14.5 mm | 8 | 2. Install the base clip nuts | pressed onto the panel edge | Measured from CAD geometry; thread (1/4-20?) inferred from hole size only |
 | NPTA12_L_body_with_seal | L-connector body (90° elbow) with seal | thread OD Ø21.2 mm (1/2 in NPT class) | 48.9 × 53.2 × 34.6 mm | 1 | 3. Seal and fit the L-connector | pushed through the Ø21.4 mm cable entry hole | Measured from CAD geometry; thread designation and cable sealing range not in CAD |
 | NPTA12_o_ring | O-ring | OD Ø28.1 mm | 2.0 mm section | 1 | 3. Seal and fit the L-connector | — | Measured from CAD geometry; material not in CAD |
 | NPTA12_sealing_nut | Sealing nut (cable gland) | cable bore Ø13.4 mm | 24.3 mm | 1 | 3. Seal and fit the L-connector | hand-tight on the leads | Measured from CAD geometry; sealing insert range for nine single leads not specified |
 | NPTA12_locknut | Locknut | to suit the L-connector thread | 6.0 mm thick | 1 | 4. Tighten the L-connector locknut | 27 mm A/F (1-1/16 in socket, ratchet) | Measured from CAD geometry; tightening torque not specified |
-| External Tooth Lock Washer | External tooth lock washer | ID Ø6.60 mm | OD Ø12.70 mm, 1.27 mm | 4 | 6. Install the lock washers and motor mounting bolts | — | Measured from CAD geometry; material / standard not in CAD |
-| Motor Mounting Hex Bolt | Hex head bolt | Ø6.00 mm shank (M6 class) | 12 mm under head | 4 | 6. Install the lock washers and motor mounting bolts | hex head 9.86 mm A/F (10 mm socket) | Measured from CAD geometry; thread designation (M6 × 1.0?), length 12 mm and grade not in CAD — engineering confirmation |
-| Motor Mounting Hex Bolt | Hex head bolt | Ø6.00 mm shank (M6 class) | 12 mm under head | 4 | 8. Tighten the motor mounting bolts | hex head 9.86 mm A/F (10 mm socket) | Measured from CAD geometry; thread designation (M6 × 1.0?), length 12 mm and grade not in CAD — engineering confirmation |
-| Motor Mounting Hex Bolt | Hex head bolt | Ø6.00 mm shank (M6 class) | 12 mm under head | 4 | 9. Mark the motor mounting bolts | hex head 9.86 mm A/F (10 mm socket) | Measured from CAD geometry; thread designation (M6 × 1.0?), length 12 mm and grade not in CAD — engineering confirmation |
-| Clip Nut | Clip nut (U-type) | hole Ø5.16 mm (1/4-20 tap size) | 12.3 × 24.2 × 14.5 mm | 4 | 10. Install the motor assembly in the unit | pressed onto the panel edge | Measured from CAD geometry; thread (1/4-20?) inferred from hole size only |
-| Hex Flange Bolt | Hex flange bolt | Ø6.35 mm (1/4 in) | 19.05 mm under flange (3/4 in) | 4 | 11. Fasten the motor mounting bracket | hex 9.44 mm A/F (3/8 in socket), flange Ø13.97 mm | Measured from CAD geometry; thread pitch (1/4-20 UNC?) and grade not in CAD |
-| CSHM 06 Connector Insert | Connector insert, 6 poles + PE (supplied cshm_06.stp) | 50 × 34 × 40 mm | push-release terminals (ferrules / splices) | 1 | 14. Wire the impeller connector insert | — | Supplied model (real geometry); wired for 230/3/60; position, contact numbering and PE terminal: assumptions accepted by engineering; mating housing / plug not supplied |
-| Self-Tapping Pan Head Screw | Self-tapping pan head screw | Ø4.09 mm | 9.52 mm under head (3/8 in) | 8 | 17. Fasten the bellmouth mounting plate | recessed head (drive type not modelled) | Measured from CAD geometry; screw size (#8?) and thread form not in CAD |
-| Impeller Inlet Bellmouth | Impeller Inlet Bellmouth | — | — | 1 | 18. Install the inlet bellmouth | — | Not measured; specification requires engineering confirmation |
-| Hex Flange Bolt | Hex flange bolt | Ø6.35 mm (1/4 in) | 19.05 mm under flange (3/4 in) | 6 | 18. Install the inlet bellmouth | hex 9.44 mm A/F (3/8 in socket), flange Ø13.97 mm | Measured from CAD geometry; thread pitch (1/4-20 UNC?) and grade not in CAD |
-| Hex Flange Nut | Hex flange nut | Ø6.35 mm bore (1/4 in) | 5.64 mm high | 6 | 18. Install the inlet bellmouth | 11 mm A/F (7/16 in) | Measured from CAD geometry; thread pitch not in CAD |
-| Clip Nut | Clip nut (U-type) | hole Ø5.16 mm (1/4-20 tap size) | 12.3 × 24.2 × 14.5 mm | 4 | 21. Install the access door clip nuts | pressed onto the panel edge | Measured from CAD geometry; thread (1/4-20?) inferred from hole size only |
-| Closed-End Rivet | Closed-End Rivet | Ø3.97 mm body (5/32 in) | 6.30 mm body, Ø6.26 mm flange | 6 | 22. Apply the silicone door gasket | blind-rivet gun | Measured from CAD geometry; grip range and material not in CAD |
-| Bonded Sealed Washer | Bonded sealed washer | sealing lip ID Ø5.56 mm (for the Ø6.35 mm bolt) | OD Ø15.88 mm, 3.26 mm | 4 | 23. Install and fasten the filter cover | — | Measured from CAD; rubber / metal grade and the bolt size it seals are not in the CAD |
-| Hex Flange Bolt | Hex flange bolt | Ø6.35 mm (1/4 in) | 19.05 mm under flange (3/4 in) | 4 | 23. Install and fasten the filter cover | hex 9.44 mm A/F (3/8 in socket), flange Ø13.97 mm | Measured from CAD geometry; thread pitch (1/4-20 UNC?) and grade not in CAD |
-| Filter Clamp Bolt Bracket | Filter Clamp Bolt Bracket | — | — | 2 | 25. Position the filter clamp bolt brackets and tap the screw holes | — | Not measured; specification requires engineering confirmation |
-| Pan Head Machine Screw | Pan head machine screw | Ø4.09 mm | 6.35 mm under head (1/4 in) | 4 | 26. Fasten the filter clamp bolt brackets | recessed head (drive type not modelled) | Measured from CAD geometry; thread designation ambiguous: #8 (4.17 mm) or M4 (4.00 mm) — engineering confirmation |
-| Filter Clamp Hex Bolt | Hex head bolt | Ø9.525 mm (3/8 in) | 38.1 mm under head (1-1/2 in) | 2 | 26. Fasten the filter clamp bolt brackets | hex 14.12 mm A/F (9/16 in socket — the supplied socket) | Measured from CAD geometry; thread pitch and grade not in CAD |
-| Hex Nut | Hex nut | Ø9.525 mm bore (3/8 in) | 8.33 mm high | 2 | 26. Fasten the filter clamp bolt brackets | 14.2 mm A/F (9/16 in) | Measured from CAD geometry; thread pitch not in CAD |
-| CSHM 06 Connector Insert | Connector insert, 6 poles + PE (supplied cshm_06.stp) | 50 × 34 × 40 mm | push-release terminals (ferrules / splices) | 1 | 27. Connect the impeller connector | — | Supplied model (real geometry); wired for 230/3/60; position, contact numbering and PE terminal: assumptions accepted by engineering; mating housing / plug not supplied |
-| Filter Clamp Knob | Filter Clamp Knob | — | — | 2 | 30. Install the filter clamp | — | Not measured; specification requires engineering confirmation |
-| Gauge Box Cover | Gauge Box Cover | — | — | 1 | 31. Install the pressure gauge and its box cover | — | Not measured; specification requires engineering confirmation |
-| Pan Head Machine Screw | Pan head machine screw | Ø4.09 mm | 6.35 mm under head (1/4 in) | 2 | 31. Install the pressure gauge and its box cover | recessed head (drive type not modelled) | Measured from CAD geometry; thread designation ambiguous: #8 (4.17 mm) or M4 (4.00 mm) — engineering confirmation |
-| Closed-End Rivet | Closed-End Rivet | Ø3.97 mm body (5/32 in) | 6.30 mm body, Ø6.26 mm flange | 4 | 32. Rivet the gauge box enclosure | blind-rivet gun | Measured from CAD geometry; grip range and material not in CAD |
+| Motor Mounting Bracket | Motor Mounting Bracket | — | — | 1 | 6. Install the motorized impeller in the motor mounting bracket | — | Not measured; specification requires engineering confirmation |
+| External Tooth Lock Washer | External tooth lock washer | ID Ø6.60 mm | OD Ø12.70 mm, 1.27 mm | 4 | 6. Install the motorized impeller in the motor mounting bracket | — | Measured from CAD geometry; material / standard not in CAD |
+| Motor Mounting Hex Bolt | Hex head bolt | Ø6.00 mm shank (M6 class) | 12 mm under head | 4 | 6. Install the motorized impeller in the motor mounting bracket | hex head 9.86 mm A/F (10 mm socket) | Measured from CAD geometry; thread designation (M6 × 1.0?), length 12 mm and grade not in CAD — engineering confirmation |
+| Motor Mounting Hex Bolt | Hex head bolt | Ø6.00 mm shank (M6 class) | 12 mm under head | 4 | 7. Tighten the motor mounting bolts | hex head 9.86 mm A/F (10 mm socket) | Measured from CAD geometry; thread designation (M6 × 1.0?), length 12 mm and grade not in CAD — engineering confirmation |
+| Motor Mounting Hex Bolt | Hex head bolt | Ø6.00 mm shank (M6 class) | 12 mm under head | 4 | 8. Mark the motor mounting bolts | hex head 9.86 mm A/F (10 mm socket) | Measured from CAD geometry; thread designation (M6 × 1.0?), length 12 mm and grade not in CAD — engineering confirmation |
+| Clip Nut | Clip nut (U-type) | hole Ø5.16 mm (1/4-20 tap size) | 12.3 × 24.2 × 14.5 mm | 4 | 11. Install the motor assembly in the unit | pressed onto the panel edge | Measured from CAD geometry; thread (1/4-20?) inferred from hole size only |
+| Hex Flange Bolt | Hex flange bolt | Ø6.35 mm (1/4 in) | 19.05 mm under flange (3/4 in) | 4 | 13. Fasten the motor mounting bracket | hex 9.44 mm A/F (3/8 in socket), flange Ø13.97 mm | Measured from CAD geometry; thread pitch (1/4-20 UNC?) and grade not in CAD |
+| CSHM 06 Connector Insert | Connector insert, 6 poles + PE (supplied cshm_06.stp) | 50 × 34 × 40 mm | push-release terminals (ferrules / splices) | 1 | 17. Wire the impeller connector insert | — | Supplied model (real geometry); wired for 230/3/60; position, contact numbering and PE terminal: assumptions accepted by engineering; mating housing / plug not supplied |
+| Connector Hood | Connector Hood | — | — | 1 | 18. Fit the connector hood over the insert | — | Not measured; specification requires engineering confirmation |
+| Impeller Inlet Bellmouth | Impeller Inlet Bellmouth | — | — | 1 | 20. Assemble the inlet bellmouth on its mounting plate | — | Not measured; specification requires engineering confirmation |
+| Machine Screw | Hex flange bolt | Ø6.35 mm (1/4 in) | 19.05 mm under flange (3/4 in) | 6 | 20. Assemble the inlet bellmouth on its mounting plate | hex 9.44 mm A/F (3/8 in socket), flange Ø13.97 mm | Measured from CAD geometry; thread pitch (1/4-20 UNC?) and grade not in CAD |
+| Hex Flange Nut | Hex flange nut | Ø6.35 mm bore (1/4 in) | 5.64 mm high | 6 | 20. Assemble the inlet bellmouth on its mounting plate | 11 mm A/F (7/16 in) | Measured from CAD geometry; thread pitch not in CAD |
+| Self-Tapping Pan Head Screw | Self-tapping pan head screw | Ø4.09 mm | 9.52 mm under head (3/8 in) | 8 | 22. Fasten the bellmouth mounting plate | recessed head (drive type not modelled) | Measured from CAD geometry; screw size (#8?) and thread form not in CAD |
+| Clip Nut | Clip nut (U-type) | hole Ø5.16 mm (1/4-20 tap size) | 12.3 × 24.2 × 14.5 mm | 2 | 25. Install the access door clip nuts | pressed onto the panel edge | Measured from CAD geometry; thread (1/4-20?) inferred from hole size only |
+| Closed-End Rivet | Closed-End Rivet | Ø3.97 mm body (5/32 in) | 6.30 mm body, Ø6.26 mm flange | 6 | 26. Apply the door gasket tape and silicone | blind-rivet gun | Measured from CAD geometry; grip range and material not in CAD |
+| Bonded Sealed Washer | Bonded sealed washer | sealing lip ID Ø5.56 mm (for the Ø6.35 mm bolt) | OD Ø15.88 mm, 3.26 mm | 4 | 27. Install and fasten the filter cover | — | Measured from CAD; rubber / metal grade and the bolt size it seals are not in the CAD |
+| Hex Flange Bolt | Hex flange bolt | Ø6.35 mm (1/4 in) | 19.05 mm under flange (3/4 in) | 4 | 27. Install and fasten the filter cover | hex 9.44 mm A/F (3/8 in socket), flange Ø13.97 mm | Measured from CAD geometry; thread pitch (1/4-20 UNC?) and grade not in CAD |
+| Data Tag | Data Tag | — | — | 1 | 29. Fit the data tag and the back-panel labels | — | Not measured; specification requires engineering confirmation |
+| Pan Head Machine Screw | Pan head machine screw | Ø4.09 mm | 6.35 mm under head (1/4 in) | 2 | 29. Fit the data tag and the back-panel labels | recessed head (drive type not modelled) | Measured from CAD geometry; thread designation ambiguous: #8 (4.17 mm) or M4 (4.00 mm) — engineering confirmation |
+| Filter Clamp Bolt Bracket | Filter Clamp Bolt Bracket | — | — | 2 | 31. Position the filter clamp bolt brackets | — | Not measured; specification requires engineering confirmation |
+| Pan Head Machine Screw | Pan head machine screw | Ø4.09 mm | 6.35 mm under head (1/4 in) | 4 | 32. Fasten the filter clamp bolt brackets | recessed head (drive type not modelled) | Measured from CAD geometry; thread designation ambiguous: #8 (4.17 mm) or M4 (4.00 mm) — engineering confirmation |
+| Filter Clamp Hex Bolt | Hex head bolt | Ø9.525 mm (3/8 in) | 38.1 mm under head (1-1/2 in) | 2 | 32. Fasten the filter clamp bolt brackets | hex 14.12 mm A/F (9/16 in socket — the supplied socket) | Measured from CAD geometry; thread pitch and grade not in CAD |
+| Hex Nut | Hex nut | Ø9.525 mm bore (3/8 in) | 8.33 mm high | 2 | 32. Fasten the filter clamp bolt brackets | 14.2 mm A/F (9/16 in) | Measured from CAD geometry; thread pitch not in CAD |
+| Connector Hood | Connector Hood | — | — | 1 | 33. Coil the motor cable and secure it with two cable ties | — | Not measured; specification requires engineering confirmation |
+| CSHM 06 Connector Insert | Connector insert, 6 poles + PE (supplied cshm_06.stp) | 50 × 34 × 40 mm | push-release terminals (ferrules / splices) | 1 | 33. Coil the motor cable and secure it with two cable ties | — | Supplied model (real geometry); wired for 230/3/60; position, contact numbering and PE terminal: assumptions accepted by engineering; mating housing / plug not supplied |
+| Gauge Box Cover | Gauge Box Cover | — | — | 1 | 35. Install the pressure gauge and its box cover | — | Not measured; specification requires engineering confirmation |
+| Pan Head Machine Screw | Pan head machine screw | Ø4.09 mm | 6.35 mm under head (1/4 in) | 2 | 35. Install the pressure gauge and its box cover | recessed head (drive type not modelled) | Measured from CAD geometry; thread designation ambiguous: #8 (4.17 mm) or M4 (4.00 mm) — engineering confirmation |
+| Filter Clamp Knob | Filter Clamp Knob | — | — | 2 | 38. Install the filter clamp | — | Not measured; specification requires engineering confirmation |
+| Closed-End Rivet | Closed-End Rivet | Ø3.97 mm body (5/32 in) | 6.30 mm body, Ø6.26 mm flange | 4 | 39. Rivet the gauge box enclosure | blind-rivet gun | Measured from CAD geometry; grip range and material not in CAD |
 
 Quantities counted in the CAD: Blind Rivet × 38, Clip Nut × 18, Closed-End Rivet × 44, Door Bolt Washer × 4, External Tooth Lock Washer × 4, Filter Clamp Bolt Bracket × 2, Filter Clamp Hex Bolt × 2, Hex Flange Bolt × 14, Hex Flange Nut × 6, Hex Nut × 2, Motor Mounting Hex Bolt × 4, NPTA12_locknut × 1, NPTA12_sealing_nut × 1, Pan Head Machine Screw × 14, Self-Tapping Pan Head Screw × 12.
 
@@ -56,14 +61,15 @@ Quantities counted in the CAD: Blind Rivet × 38, Clip Nut × 18, Closed-End Riv
 
 | Tool | Supplied model | Used in steps | Note |
 |---|---|---|---|
-| drill | `cc2672ec-Drill_with_9-16_Deep_Socket.step` | 8, 11, 18, 23, 26, 31 | cordless drill, 1/4in hex to 1/4in square adapter, 9/16in 6-point deep socket |
-| rivetgun | `8a47df54-RivetGun.stp` | 32 | ACCUBIRD cordless blind-rivet gun |
-| caulking | `Caulking_Dispenser_Complete.step` | 3, 22 | screw-driven cartridge dispenser with WEICON HT300 (red) silicone - no trigger: the knob drives the screw |
-| marker | `27252c7a-Marker.STEP` | 9 | Sharpie Fine Point Retractable (black) |
-| wrench | `7a13adc8-Wrench.stp` | 26, 31 | adjustable wrench, jaws modelled closed - opened on the worm to the nut's measured width |
-| crimper | `3325dc59-Crimper.step` | 13 | ratchet crimping pliers (supplied model); the wire end enters the die nest along the tool Z axis |
+| drill | `cc2672ec-Drill_with_9-16_Deep_Socket.step` | 13, 20, 27, 29, 32, 35 | cordless drill, 1/4in hex to 1/4in square adapter, 9/16in 6-point deep socket |
+| rivetgun | `8a47df54-RivetGun.stp` | 39 | ACCUBIRD cordless blind-rivet gun |
+| caulking | `Caulking_Dispenser_Complete.step` | 3, 26 | screw-driven cartridge dispenser with WEICON HT300 (red) silicone - no trigger: the knob drives the screw |
+| marker | `27252c7a-Marker.STEP` | 8 | Sharpie Fine Point Retractable (black) |
+| wrench | `7a13adc8-Wrench.stp` | 32, 35 | adjustable wrench, jaws modelled closed - opened on the worm to the nut's measured width |
+| crimper | `3325dc59-Crimper.step` | 16 | ratchet crimping pliers (supplied model); the wire end enters the die nest along the tool Z axis |
 | ratchet | `059d2df1-Husky_Socket_Wrench.stp` | 4 | Husky 3/8 in drive ratchet (supplied) with the deep socket of the supplied drill model, resized radially to the nut |
-| tapdrill | `739b225d-tapping.stp` | 25 | drill (supplied) with the supplied tap model in the chuck, resized radially to Ø4.09 mm (thread to confirm) |
+| tapdrill | `739b225d-tapping.stp` | 30, 34 | drill (supplied) with the supplied tap model in the chuck, resized radially to Ø4.09 mm (thread to confirm) |
+| torquewrench | `torque_wrench/scene.gltf (Sketchfab)` | 7 | Torque wrench (Sketchfab model, CC-BY-4.0, not a supplied engineering model) with the deep socket of the supplied drill model, resized radially to the bolt |
 
 Missing tool models (identified, not substituted): 10 mm, 3/8 in and 7/16 in sockets (shown as the supplied 9/16 in
 socket resized radially to the measured hex — labelled on screen), a screwdriver bit for the pan-head screws (placeholder
@@ -95,35 +101,42 @@ v2.1 rules (stricter than v2.0):
 | 2. Install the base clip nuts | 8 | 8 | — |
 | 3. Seal and fit the L-connector | 3 | 3 | — |
 | 4. Tighten the L-connector locknut | 3 | 3 | — |
-| 5. Position the drive motor on the motor mounting bracket | 2 | 2 | — |
-| 6. Install the lock washers and motor mounting bolts | 8 | 8 | — |
-| 7. Install the impeller on the motor shaft | 1 | 1 | — |
-| 8. Tighten the motor mounting bolts | 5 | 5 | — |
-| 9. Mark the motor mounting bolts | 1 | 1 | — |
-| 10. Install the motor assembly in the unit | 5 | 5 | — |
-| 11. Fasten the motor mounting bracket | 9 | 9 | — |
-| 12. Route the motor leads through the L-connector | 1 | 1 | — |
-| 13. Crimp ferrules and splices on the motor leads | 8 | 8 | — |
-| 14. Wire the impeller connector insert | 2 | 2 | — |
-| 15. Install the impeller guard | 1 | 1 | — |
-| 16. Install the bellmouth mounting plate | 1 | 1 | — |
-| 17. Fasten the bellmouth mounting plate | 8 | 6 | screw Self-Tapping Pan Head Screw (10) → Bellmouth Support Track: 8.76; screw Self-Tapping Pan Head Screw (6) → Bellmouth Support Track: 8.76 |
-| 18. Install the inlet bellmouth | 20 | 20 | — |
-| 19. Install Stage Filter 1 | 1 | 1 | — |
-| 20. Install Stage Filter 2 | 1 | 1 | — |
-| 21. Install the access door clip nuts | 4 | 4 | — |
-| 22. Apply the silicone door gasket | 2 | 2 | — |
-| 23. Install and fasten the filter cover | 14 | 14 | — |
-| 24. Apply the front panel decals | 0 | 0 | — |
-| 25. Position the filter clamp bolt brackets and tap the screw holes | 8 | 7 | tapdrill path (14 keys) → Unit Body: 44.87 |
-| 26. Fasten the filter clamp bolt brackets | 21 | 21 | — |
-| 27. Connect the impeller connector | 1 | 1 | — |
-| 28. Electrical system verification | 1 | 1 | — |
-| 29. Install the Fibre Bed Filter | 1 | 1 | — |
-| 30. Install the filter clamp | 3 | 3 | — |
-| 31. Install the pressure gauge and its box cover | 9 | 9 | — |
-| 32. Rivet the gauge box enclosure | 9 | 9 | — |
-| 33. Final assembly overview | 0 | 0 | — |
+| 5. Set the motorized impeller on the worktable | 1 | 1 | — |
+| 6. Install the motorized impeller in the motor mounting bracket | 9 | 9 | — |
+| 7. Tighten the motor mounting bolts | 8 | 8 | — |
+| 8. Mark the motor mounting bolts | 1 | 1 | — |
+| 9. Apply the rotation arrow sticker | 0 | 0 | — |
+| 10. Tie the motor cable to the bracket tab | 0 | 0 | — |
+| 11. Install the motor assembly in the unit | 5 | 5 | — |
+| 12. Route the motor cable through the L-connector | 1 | 1 | — |
+| 13. Fasten the motor mounting bracket | 9 | 9 | — |
+| 14. Fit the connector hood on the cable and strip the outer jacket | 1 | 1 | — |
+| 15. Strip the motor leads and twist the winding pairs | 0 | 0 | — |
+| 16. Crimp ferrules and splices on the motor leads | 8 | 8 | — |
+| 17. Wire the impeller connector insert | 1 | 1 | — |
+| 18. Fit the connector hood over the insert | 1 | 1 | — |
+| 19. Install the impeller guard | 1 | 1 | — |
+| 20. Assemble the inlet bellmouth on its mounting plate | 21 | 21 | — |
+| 21. Install the bellmouth plate assembly | 1 | 1 | — |
+| 22. Fasten the bellmouth mounting plate | 8 | 6 | screw Self-Tapping Pan Head Screw (10) → Bellmouth Support Track: 8.76; screw Self-Tapping Pan Head Screw (6) → Bellmouth Support Track: 8.76 |
+| 23. Install Stage Filter 1 | 1 | 1 | — |
+| 24. Install Stage Filter 2 | 1 | 1 | — |
+| 25. Install the access door clip nuts | 2 | 2 | — |
+| 26. Apply the door gasket tape and silicone | 2 | 2 | — |
+| 27. Install and fasten the filter cover | 14 | 14 | — |
+| 28. Apply the front panel decals | 0 | 0 | — |
+| 29. Fit the data tag and the back-panel labels | 6 | 6 | — |
+| 30. Tap the filter clamp bolt brackets | 8 | 8 | — |
+| 31. Position the filter clamp bolt brackets | 2 | 2 | — |
+| 32. Fasten the filter clamp bolt brackets | 21 | 21 | — |
+| 33. Coil the motor cable and secure it with two cable ties | 2 | 2 | — |
+| 34. Tap the gauge mounting hole | 2 | 2 | — |
+| 35. Install the pressure gauge and its box cover | 9 | 9 | — |
+| 36. Electrical system verification | 1 | 1 | — |
+| 37. Install the Fibre Bed Filter | 1 | 1 | — |
+| 38. Install the filter clamp | 3 | 3 | — |
+| 39. Rivet the gauge box enclosure | 9 | 9 | — |
+| 40. Final assembly overview | 0 | 0 | — |
 
 ## Automatic camera (v2.1)
 
@@ -135,70 +148,93 @@ seen from the side and a camera position outside the geometry. Radius = framing 
 
 | Step | Shots | Kinds | Radius mm (min–max) | Shots with an occluder |
 |---|---|---|---|---|
-| 1. Inspect the main body | 2 | overview 1, result 1 | 485–527 | — |
+| 1. Inspect the main body | 2 | overview 1, result 1 | 492–535 | — |
 | 2. Install the base clip nuts | 10 | overview 1, detail 8, result 1 | 62–343 | — |
-| 3. Seal and fit the L-connector | 7 | overview 1, tool 1, wide 2, detail 2, result 1 | 62–120 | — |
+| 3. Seal and fit the L-connector | 6 | overview 1, wide 2, tool 1, detail 1, result 1 | 62–152 | — |
 | 4. Tighten the L-connector locknut | 4 | overview 1, detail 1, tool 1, result 1 | 62–120 | — |
-| 5. Position the drive motor on the motor mounting bracket | 6 | overview 1, wide 2, detail 2, result 1 | 154–321 | — |
-| 6. Install the lock washers and motor mounting bolts | 10 | overview 1, detail 8, result 1 | 62–95 | — |
-| 7. Install the impeller on the motor shaft | 4 | overview 1, wide 1, detail 1, result 1 | 219–238 | — |
-| 8. Tighten the motor mounting bolts | 6 | overview 1, tool 4, result 1 | 95–120 | — |
-| 9. Mark the motor mounting bolts | 4 | tool 4 | 120–120 | — |
-| 10. Install the motor assembly in the unit | 8 | overview 1, detail 5, wide 1, result 1 | 62–586 | — |
-| 11. Fasten the motor mounting bracket | 10 | overview 1, detail 4, tool 4, result 1 | 62–231 | — |
-| 12. Route the motor leads through the L-connector | 5 | overview 1, wide 1, detail 2, result 1 | 80–239 | — |
-| 13. Crimp ferrules and splices on the motor leads | 8 | overview 1, tool 6, result 1 | 95–120 | — |
-| 14. Wire the impeller connector insert | 9 | overview 1, wide 1, detail 6, result 1 | 62–178 | — |
-| 15. Install the impeller guard | 4 | overview 1, wide 1, detail 1, result 1 | 258–435 | — |
-| 16. Install the bellmouth mounting plate | 4 | overview 1, wide 1, detail 1, result 1 | 272–482 | — |
-| 17. Fasten the bellmouth mounting plate | 10 | overview 1, detail 8, result 1 | 62–294 | — |
-| 18. Install the inlet bellmouth | 28 | overview 1, wide 7, detail 13, tool 6, result 1 | 62–410 | — |
-| 19. Install Stage Filter 1 | 5 | overview 1, detail 2, wide 1, result 1 | 95–480 | — |
-| 20. Install Stage Filter 2 | 5 | overview 1, detail 2, wide 1, result 1 | 95–480 | t=5.96: Filter Frame Half (1) |
-| 21. Install the access door clip nuts | 6 | overview 1, detail 4, result 1 | 62–185 | — |
-| 22. Apply the silicone door gasket | 4 | overview 1, wide 1, tool 1, result 1 | 230–276 | — |
-| 23. Install and fasten the filter cover | 16 | overview 1, wide 1, detail 9, tool 4, result 1 | 62–387 | — |
-| 24. Apply the front panel decals | 4 | overview 1, detail 3 | 198–213 | — |
-| 25. Position the filter clamp bolt brackets and tap the screw holes | 10 | overview 1, wide 2, detail 2, tool 4, result 1 | 62–294 | — |
-| 26. Fasten the filter clamp bolt brackets | 18 | overview 1, detail 8, tool 8, result 1 | 62–269 | — |
-| 27. Connect the impeller connector | 4 | overview 1, wide 1, detail 1, result 1 | 62–145 | — |
-| 28. Electrical system verification | 4 | overview 1, wide 2, result 1 | 191–330 | — |
-| 29. Install the Fibre Bed Filter | 4 | overview 1, wide 1, detail 1, result 1 | 319–507 | — |
-| 30. Install the filter clamp | 6 | overview 1, wide 1, detail 3, result 1 | 65–313 | — |
-| 31. Install the pressure gauge and its box cover | 10 | overview 1, wide 2, tool 3, detail 3, result 1 | 62–170 | — |
-| 32. Rivet the gauge box enclosure | 6 | overview 1, tool 4, result 1 | 95–120 | — |
-| 33. Final assembly overview | 2 | overview 1, result 1 | 485–527 | — |
+| 5. Set the motorized impeller on the worktable | 4 | overview 1, wide 1, detail 1, result 1 | 234–259 | — |
+| 6. Install the motorized impeller in the motor mounting bracket | 12 | overview 1, wide 1, detail 9, result 1 | 62–261 | — |
+| 7. Tighten the motor mounting bolts | 6 | overview 1, tool 4, result 1 | 95–120 | — |
+| 8. Mark the motor mounting bolts | 4 | tool 4 | 120–120 | — |
+| 9. Apply the rotation arrow sticker | 3 | overview 1, detail 1, result 1 | 110–200 | — |
+| 10. Tie the motor cable to the bracket tab | 2 | detail 1, result 1 | 95–150 | — |
+| 11. Install the motor assembly in the unit | 8 | overview 1, detail 5, wide 1, result 1 | 62–537 | — |
+| 12. Route the motor cable through the L-connector | 5 | overview 1, wide 2, detail 1, result 1 | 85–239 | — |
+| 13. Fasten the motor mounting bracket | 10 | overview 1, detail 4, tool 4, result 1 | 62–231 | — |
+| 14. Fit the connector hood on the cable and strip the outer jacket | 4 | overview 1, wide 1, detail 1, result 1 | 70–195 | — |
+| 15. Strip the motor leads and twist the winding pairs | 2 | detail 2 | 62–62 | — |
+| 16. Crimp ferrules and splices on the motor leads | 6 | tool 6 | 120–120 | — |
+| 17. Wire the impeller connector insert | 9 | overview 1, wide 1, detail 6, result 1 | 62–120 | — |
+| 18. Fit the connector hood over the insert | 3 | overview 1, wide 1, result 1 | 95–152 | — |
+| 19. Install the impeller guard | 4 | overview 1, wide 1, detail 1, result 1 | 258–435 | — |
+| 20. Assemble the inlet bellmouth on its mounting plate | 24 | overview 1, wide 8, detail 8, tool 6, result 1 | 62–298 | — |
+| 21. Install the bellmouth plate assembly | 4 | overview 1, wide 1, detail 1, result 1 | 274–545 | — |
+| 22. Fasten the bellmouth mounting plate | 10 | overview 1, detail 8, result 1 | 62–294 | — |
+| 23. Install Stage Filter 1 | 5 | overview 1, detail 2, wide 1, result 1 | 95–480 | — |
+| 24. Install Stage Filter 2 | 5 | overview 1, detail 2, wide 1, result 1 | 95–480 | t=5.96: Filter Frame Half (1) |
+| 25. Install the access door clip nuts | 4 | overview 1, detail 2, result 1 | 62–153 | — |
+| 26. Apply the door gasket tape and silicone | 5 | overview 1, wide 2, tool 1, result 1 | 218–276 | — |
+| 27. Install and fasten the filter cover | 16 | overview 1, wide 1, detail 9, tool 4, result 1 | 62–387 | — |
+| 28. Apply the front panel decals | 4 | overview 1, detail 3 | 198–213 | — |
+| 29. Fit the data tag and the back-panel labels | 8 | overview 1, wide 1, detail 3, tool 2, result 1 | 62–120 | — |
+| 30. Tap the filter clamp bolt brackets | 8 | overview 1, wide 2, tool 4, result 1 | 120–648 | — |
+| 31. Position the filter clamp bolt brackets | 6 | overview 1, wide 2, detail 2, result 1 | 62–749 | — |
+| 32. Fasten the filter clamp bolt brackets | 18 | overview 1, detail 8, tool 8, result 1 | 62–269 | — |
+| 33. Coil the motor cable and secure it with two cable ties | 6 | overview 1, wide 1, detail 3, result 1 | 70–170 | — |
+| 34. Tap the gauge mounting hole | 3 | overview 1, tool 1, result 1 | 95–120 | — |
+| 35. Install the pressure gauge and its box cover | 10 | overview 1, wide 2, tool 3, detail 3, result 1 | 62–170 | — |
+| 36. Electrical system verification | 4 | overview 1, wide 2, result 1 | 191–330 | — |
+| 37. Install the Fibre Bed Filter | 4 | overview 1, wide 1, detail 1, result 1 | 319–507 | — |
+| 38. Install the filter clamp | 6 | overview 1, wide 1, detail 3, result 1 | 65–313 | — |
+| 39. Rivet the gauge box enclosure | 6 | overview 1, tool 4, result 1 | 95–120 | — |
+| 40. Final assembly overview | 2 | overview 1, result 1 | 492–535 | — |
 
 ## Items requiring engineering confirmation
 
-- **Step 3 – Seal and fit the L-connector:** HT200 is taken as WEICON Flex 310 M HT 200 (grey, silicone-free MS polymer); bead size not specified — 3 mm shown around the Ø21.4 mm hole
-- **Step 3 – Seal and fit the L-connector:** The L-connector (NPTA12 L body with seal, O-ring, sealing nut, locknut) replaces 1_Cable Strain Relief + 2_Strain Relief Nut (MF-550-210-B_GROUPED_ASSEMBLY_03); thread designation, sealing range and tightening torque are not in the CAD
-- **Step 7 – Install the impeller on the motor shaft:** Motor shaft fit and impeller retention are inside the CAD sub-assembly (no separate shaft hardware modelled)
-- **Step 8 – Tighten the motor mounting bolts:** Tightening torque is not specified in the supplied data — engineering confirmation
-- **Step 9 – Mark the motor mounting bolts:** No reference photograph for the tightening mark was supplied: a straight line across the head onto the bracket is shown — confirm the marking convention
-- **Step 11 – Fasten the motor mounting bracket:** The drill reaches the bolt next to the front wall only with a socket extension (about 6 in): not in the supplied tools — a generic bar is shown (labelled)
-- **Step 12 – Route the motor leads through the L-connector:** Lead lengths, routing clamps and the lead exit of the motor are not specified: the leads follow the shortest clear path from the motor's lead-exit boss to the L-connector (collision-checked); 22 AWG, Ø1.6 mm insulation assumed (UL 1007 type)
-- **Step 13 – Crimp ferrules and splices on the motor leads:** Ferrule type and size are not specified: a generic 0.34 mm² (22 AWG) sleeve, 6 mm long, is shown; crimper die nest chosen by size
-- **Step 13 – Crimp ferrules and splices on the motor leads:** Splice type and size are not specified (engineering: paired leads joined by splice): a generic uninsulated crimp splice for 2 × 22 AWG (8 mm long, Ø2.4 mm) holding both stripped ends is shown, crimped with the same pliers, and its crimped end is pushed into the terminal like a ferrule — confirm the splice part and whether a jumper lead runs from the splice to the terminal
-- **Step 14 – Wire the impeller connector insert:** CSHM 06 connector insert: not part of MF-550-210-B_GROUPED_ASSEMBLY_03 — placed below the L-connector outlet, wire side up (see merge_cad.py); its position, the contact numbering (1-2-3 / 4-5-6 rows), the PE terminal position and the push-release spring terminals (orange release buttons in the wiring-drawing photographs) are assumptions accepted by engineering for now — the supplied model has no markings; revisit when the connector drawing is available
-- **Step 14 – Wire the impeller connector insert:** Wiring per the 230/3/60 diagram of the supplied drawing (supply variant confirmed by engineering): Black+Grey → 1, Red+Blue → 2, Orange+Brown → 3 (spliced pairs), 4 not used, White → 5, White → 6, GND → PE
-- **Step 15 – Install the impeller guard:** The CAD has no fasteners on the impeller guard (the brief asks for 4 machine screws): fastener type, size and locations require engineering confirmation — not animated
-- **Step 17 – Fasten the bellmouth mounting plate:** No supplied tool can reach these screws: the drill body clashes with the filter element track or the walls at all 8 positions (collision-checked) — a stubby or right-angle screwdriver is required (not supplied); the screws are shown turning in without a tool
-- **Step 17 – Fasten the bellmouth mounting plate:** Insertion path of Self-Tapping Pan Head Screw (10), Self-Tapping Pan Head Screw (6) passes through the support-track flange in the CAD (no access hole modelled) — confirm
-- **Step 17 – Fasten the bellmouth mounting plate:** Self-Tapping Pan Head Screw (10), Self-Tapping Pan Head Screw (6) touch only the support track in the CAD, not the plate — confirm hole positions
-- **Step 18 – Install the inlet bellmouth:** The flange nuts sit under the impeller shroud (about 6 mm above the bolt tips), so they are placed on the plate first and the bolts are driven up into them from below
-- **Step 18 – Install the inlet bellmouth:** v2.2: the inlet bellmouth is not attached to the impeller in the CAD (it is held by these six bolts) — it is fitted here, from below, instead of being carried on the motor assembly (its Ø280 flange does not pass between the bracket supports)
-- **Step 19 – Install Stage Filter 1:** Filter labels: artwork extracted from the PaperStickersLayers photograph as instructed by engineering (perspective-rectified, print kept, paper cleaned — pipeline/unit/extract_stickers.py); size 102 × 34 mm and the centred position measured from that photograph (±3 mm) — no drawing values supplied
-- **Step 21 – Install the access door clip nuts:** Clip Nut (12) / (5) overlap Clip Nut (6) / (7) of the main body at the same holes (duplicate in the CAD) — both are shown
-- **Step 22 – Apply the silicone door gasket:** Door gasket formed in place with silicone applied with the supplied caulking gun (engineering); black is used for the animation. Silicone product not specified; bead Ø7.2 mm = the gap between the door and the body face in the CAD, along the filter opening outline 0.5 mm outside its edge (opening 120 × 346 mm measured on the body)
-- **Step 23 – Install and fasten the filter cover:** Each Bonded Sealed Washer sits under its bolt head in the CAD, so it is fitted on the bolt first; its Ø5.56 mm bore (smaller than the Ø6.35 mm bolt) is the bonded rubber sealing lip
-- **Step 24 – Apply the front panel decals:** Decal positions are measured on the supplied photograph (perspective-rectified, ~0.6 px/mm, ±2 mm ≈ ±0.08 in): the inch dimensions shown are those measurements, not drawing values — supply the decal drawing to confirm
-- **Step 25 – Position the filter clamp bolt brackets and tap the screw holes:** Left side wall: the clearance holes of Pan Head Machine Screw (8) / (9) are about 0.5 mm off the screw axes in the CAD — the Ø4.09 mm tap grazes their edge (the tap-drill path check is not clear there); confirm the hole positions
-- **Step 25 – Position the filter clamp bolt brackets and tap the screw holes:** Thread tapping per the assumptions confirmed by engineering: bracket holes Ø3.30 mm (tap drill of M4 × 0.7, or #8-32 at high engagement) tapped for the Ø4.09 mm screw shanks, through the bracket leg — the supplied tap model (M20 × 1.0) is shown resized radially to Ø4.09 mm
-- **Step 26 – Fasten the filter clamp bolt brackets:** Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is shown in the drill — drive type of the pan-head screws is not modelled in the CAD
-- **Step 27 – Connect the impeller connector:** The mating supply plug / housing of the connector is not in the supplied data: the engagement is shown as the insert moving into its (assumed) seat; supply connection and test procedure require the approved electrical drawing
-- **Step 28 – Electrical system verification:** Impeller rotation: backward-curved centrifugal wheel (8 blades, tips trailing) — it turns counter-clockwise seen from above (positive about the vertical axis), the sense that gives its rated flow. Air enters from below through the stage filters and the inlet bellmouth into the eye, leaves the wheel radially and rises around the motor through the impeller guard to the Fibre Bed Filter (engineering: the air must flow up). Confirm against the motor's direction arrow; no test procedure, current or acceptance criteria were supplied
-- **Step 30 – Install the filter clamp:** Clamp knob tightening (gasket compression) is not specified — hand-tight shown
-- **Step 31 – Install the pressure gauge and its box cover:** Gauge tubing / pressure connection is not in the CAD — engineering confirmation; the gauge is turned 90° by its stem flats (13.6 mm across, measured) to finish dial-upright — tightening torque not specified
-- **Step 31 – Install the pressure gauge and its box cover:** Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is shown in the drill — drive type of the pan-head screws is not modelled in the CAD
-- **Step 32 – Rivet the gauge box enclosure:** These rivets join main-body parts but sit outside the MAIN BODY group in the CAD; they are riveted here as agreed
+- **Step 3 – Seal and fit the L-connector:** HT200 is taken as WEICON Flex 310 M HT 200 (grey, silicone-free MS polymer); applied round the L-connector thread as the work instruction says (grey caulking to the thread) — bead size not specified: 3 mm, 1.3 turns behind the O-ring
+- **Step 3 – Seal and fit the L-connector:** The O-ring and the sealing nut come fitted on the L-connector body (supplied configuration): no separate O-ring operation (engineering v2.3). Thread designation, sealing range and tightening torque are not in the CAD
+- **Step 5 – Set the motorized impeller on the worktable:** The worktable is a presentation element (not part of the unit); its size and height are generic
+- **Step 6 – Install the motorized impeller in the motor mounting bracket:** Motor bolts M6 x 1.0 x 12 mm with star lock washers per the work instruction (Mistfit 550 230_460.xlsx); the CAD models hex bolts with external tooth lock washers
+- **Step 7 – Tighten the motor mounting bolts:** Tightening torque is not specified in the supplied data: the instruction refers to the approved torque specification — engineering to supply the value
+- **Step 8 – Mark the motor mounting bolts:** Tightening marks as in the Marks&Arrow / ImpellerMountingPlate photographs (red line across the bolt and washer onto the bracket)
+- **Step 9 – Apply the rotation arrow sticker:** Rotation arrow sticker: artwork extracted from the Marks&Arrow photograph (extract_labels.py); size 26 x 77 mm and position (x -112.7, z -2.3 on the bracket web, beside the motor, opposite the cable) measured on that photograph with the four motor bolts as references (±2 mm); it points in the impeller's rotation sense (counter-clockwise seen from above)
+- **Step 10 – Tie the motor cable to the bracket tab:** Motor cable tie at the bracket tab as in the ZipTie and ElectricalConnection photographs and the work instruction ("use small tie strap to secure wire to tab on bracket and cut end of tie strap off"); tie size not specified — generic 2.5 mm nylon tie
+- **Step 12 – Route the motor cable through the L-connector:** Motor cable: outer jacket Ø8 mm assumed (contains the nine Ø1.6 mm leads with a 1 mm wall; cable type not specified); routing from the motor's lead exit over the bracket tab to the L-connector as in the ElectricalConnection photograph, collision-checked; the cable end is laid out behind the unit for its preparation
+- **Step 13 – Fasten the motor mounting bracket:** The drill reaches the bolt next to the front wall only with a socket extension (about 6 in): not in the supplied tools — a generic bar is shown (labelled)
+- **Step 14 – Fit the connector hood on the cable and strip the outer jacket:** Connector hood: APPROXIMATE model (connector_cover_approx.step, reconstructed from a photograph with assumed dimensions), scaled to enclose the CSHM 06 insert and to the photographed size, as instructed by engineering — replace with the manufacturer's hood
+- **Step 14 – Fit the connector hood on the cable and strip the outer jacket:** Outer jacket strip length 60 mm chosen so the leads reach the insert inside the hood (not specified)
+- **Step 15 – Strip the motor leads and twist the winding pairs:** Stripped length: 0.50 in is the MINIMUM given by engineering (shown with the dimension); follow the terminal manufacturer's strip length where it is longer. Stripping tool not supplied: the insulation is shown pulled off by hand
+- **Step 15 – Strip the motor leads and twist the winding pairs:** Pair conductors twisted before they go into one splice (twin entry) — electrically appropriate for a crimp splice; the work instruction does not give the twist (engineering request) — confirm with the splice manufacturer's instructions
+- **Step 16 – Crimp ferrules and splices on the motor leads:** Ferrule type and size are not specified: a generic 0.34 mm² (22 AWG) sleeve as long as the 0.50 in strip is shown; crimper die nest chosen by size
+- **Step 16 – Crimp ferrules and splices on the motor leads:** Splice type and size are not specified (engineering: paired leads joined by splice): a generic uninsulated crimp splice for 2 × 22 AWG (12.7 mm, Ø2.4 mm) over the twisted pair is shown, crimped with the same pliers; its crimped end is pushed into the terminal like a ferrule — confirm the splice part and whether a jumper lead runs from the splice to the terminal
+- **Step 17 – Wire the impeller connector insert:** CSHM 06 connector insert (ILME, supplied model, one solid): contact numbering (1-2-3 / 4-5-6 rows), the PE terminal position and the SQUICH push-release spring terminals are assumptions accepted by engineering — the model has no markings
+- **Step 17 – Wire the impeller connector insert:** PENDING: the separate-body connector model (Electrical_Connector_cshm_06) was not supplied — the connector locking animation is not shown (the supplied cshm_06.stp is a single solid)
+- **Step 17 – Wire the impeller connector insert:** Wiring per the 230/3/60 diagram of the supplied drawing (supply variant confirmed by engineering): Black+Grey → 1, Red+Blue → 2, Orange+Brown → 3 (spliced pairs), 4 not used, White → 5, White → 6, GND → PE
+- **Step 18 – Fit the connector hood over the insert:** Insert fixing screws in the hood and the gland's tightening torque are not in the supplied data (approximate hood model)
+- **Step 19 – Install the impeller guard:** The CAD has no fasteners on the impeller guard (the brief asks for 4 machine screws): fastener type, size and locations require engineering confirmation — not animated
+- **Step 20 – Assemble the inlet bellmouth on its mounting plate:** Machine screws as instructed by engineering ("blunt machine screws" in the work instruction); the CAD models these six fasteners with a hex flange head (Hex Flange Bolt (7)…(13)), so they are driven with a socket — confirm the screw part
+- **Step 22 – Fasten the bellmouth mounting plate:** No supplied tool can reach these screws: the drill body clashes with the filter element track or the walls at all 8 positions (collision-checked) — a stubby or right-angle screwdriver is required (not supplied); the screws are shown turning in without a tool
+- **Step 22 – Fasten the bellmouth mounting plate:** Insertion path of Self-Tapping Pan Head Screw (10), Self-Tapping Pan Head Screw (6) passes through the support-track flange in the CAD (no access hole modelled) — confirm
+- **Step 22 – Fasten the bellmouth mounting plate:** Self-Tapping Pan Head Screw (10), Self-Tapping Pan Head Screw (6) touch only the support track in the CAD, not the plate — confirm hole positions
+- **Step 23 – Install Stage Filter 1:** Filter labels: artwork extracted from the PaperStickersLayers photograph as instructed by engineering (perspective-rectified, print kept, paper cleaned — pipeline/unit/extract_stickers.py); size 102 × 34 mm and the centred position measured from that photograph (±3 mm) — no drawing values supplied
+- **Step 25 – Install the access door clip nuts:** Clip Nut (12) / (5) overlap Clip Nut (6) / (7) of the main body at the same holes (duplicate in the CAD) — both are shown
+- **Step 25 – Install the access door clip nuts:** Clip Nut and Clip Nut (1) (lower door flange) are installed with the main body (engineering v2.3): shown from step 1, not animated
+- **Step 26 – Apply the door gasket tape and silicone:** Rubber gasket tape .187 in x 1 in (4.76 x 25.4 mm) per the work instruction (Mistfit 550 230_460.xlsx), applied long sides first, then short sides butted against them; the CAD door gap is 7.2 mm (thicker than the tape) and the short sides leave only 16 mm of door beside the opening, so the tape overlaps the opening outline there — confirm the tape position
+- **Step 26 – Apply the door gasket tape and silicone:** Silicone after the tape (engineering): black bead along the tape's inner edge and over the corner joints; silicone product and bead size not specified (Ø3.0 mm shown); piercing the tape at the bolt holes is in the text only (no tool supplied)
+- **Step 27 – Install and fasten the filter cover:** Each Bonded Sealed Washer sits under its bolt head in the CAD, so it is fitted on the bolt first; its Ø5.56 mm bore (smaller than the Ø6.35 mm bolt) is the bonded rubber sealing lip
+- **Step 28 – Apply the front panel decals:** Decal positions are measured on the supplied photograph (perspective-rectified, ~0.6 px/mm, ±2 mm ≈ ±0.08 in): the inch dimensions shown are those measurements, not drawing values — supply the decal drawing to confirm
+- **Step 29 – Fit the data tag and the back-panel labels:** Data tag, motor information sticker, WARNING and CAUTION stickers: artwork extracted from the BackSticker photographs (extract_labels.py; the unit-specific serial number is left blank); sizes and positions measured on those photographs with the back panel rivets and the two screws as references (±1.5 mm) — supply the label drawings to confirm
+- **Step 29 – Fit the data tag and the back-panel labels:** Data tag fixing: the CAD's two back panel pan head machine screws (10)/(11) sit exactly at the tag ends in the photographs, so they fix the tag (the work instruction says "rivet data tag to unit" — confirm screws or rivets); tag thickness 0.8 mm assumed (the CAD screw heads seat on the panel, 0.8 mm into the tag)
+- **Step 29 – Fit the data tag and the back-panel labels:** Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is shown in the drill — drive type of the pan-head screws is not modelled in the CAD
+- **Step 30 – Tap the filter clamp bolt brackets:** Thread tapping per the assumptions confirmed by engineering: bracket holes Ø3.30 mm (tap drill of M4 × 0.7, or #8-32 at high engagement) tapped for the Ø4.09 mm screw shanks, through the bracket leg — the supplied tap model (M20 × 1.0) is shown resized radially to Ø4.09 mm; tapped on the worktable before the brackets go on the main body (engineering v2.3)
+- **Step 31 – Position the filter clamp bolt brackets:** Left side wall: the clearance holes of Pan Head Machine Screw (8) / (9) are about 0.5 mm off the screw axes in the CAD — confirm the hole positions
+- **Step 32 – Fasten the filter clamp bolt brackets:** Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is shown in the drill — drive type of the pan-head screws is not modelled in the CAD
+- **Step 33 – Coil the motor cable and secure it with two cable ties:** Cable coil (two turns), the two cable tie positions and the connector position measured on the CableDisposition photographs (rectified on the back panel, ±5 mm); tie size not specified — generic 2.5 mm nylon ties
+- **Step 33 – Coil the motor cable and secure it with two cable ties:** The mating supply-side connector housing (with the locking lever) is not in the supplied data: the connection to the supply and the lock are not animated (separate-body connector model pending)
+- **Step 34 – Tap the gauge mounting hole:** Gauge thread not specified: measured gauge stem Ø13.5 mm and mounting hole Ø11.1 mm (7/16 in — the tap drill of a 1/4-18 NPT thread) — the supplied tap model is shown resized to Ø13.5 mm; confirm the thread and tap
+- **Step 35 – Install the pressure gauge and its box cover:** Gauge tubing / pressure connection is not in the CAD — engineering confirmation; the gauge is turned 90° by its stem flats (13.6 mm across, measured) to finish dial-upright — tightening torque not specified
+- **Step 35 – Install the pressure gauge and its box cover:** Driver bit not supplied: a placeholder 1/4 in hex bit (labelled) is shown in the drill — drive type of the pan-head screws is not modelled in the CAD
+- **Step 35 – Install the pressure gauge and its box cover:** v2.3 (engineering): gauge installation moved before the electrical verification, right after the cable is secured
+- **Step 36 – Electrical system verification:** Impeller rotation: backward-curved centrifugal wheel (8 blades, tips trailing) — it turns counter-clockwise seen from above (positive about the vertical axis), the sense that gives its rated flow. Air enters from below through the stage filters and the inlet bellmouth into the eye, leaves the wheel radially and rises around the motor through the impeller guard to the Fibre Bed Filter (engineering: the air must flow up). Confirm against the motor's direction arrow; no test procedure, current or acceptance criteria were supplied
+- **Step 38 – Install the filter clamp:** Clamp knob tightening (gasket compression) is not specified — hand-tight shown
+- **Step 39 – Rivet the gauge box enclosure:** These rivets join main-body parts but sit outside the MAIN BODY group in the CAD; they are riveted here as agreed

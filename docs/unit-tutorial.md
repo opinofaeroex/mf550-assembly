@@ -1,13 +1,75 @@
-# Unit installation tutorial — technical implementation report (v2.0, refined in v2.1 and v2.2)
+# Unit installation tutorial — technical implementation report (v2.0, refined in v2.1, v2.2 and v2.3)
 
 The v2.0 tutorial shows how the **complete Mist-Fit 550 unit** is installed, starting from the assembled and
-painted main body. Since v2.2 it covers 33 steps in 9 phases, with tool operations, sealants, gaskets, wiring,
-tightening marks, labels and decals.
+painted main body. Since v2.3 it covers 40 steps in 9 phases, with tool operations, sealants, gaskets, wiring,
+cable preparation, tightening marks, labels and decals.
 It is an extension of the existing application. The original 69-step parts tutorial is unchanged; the header
 switch (*Unit installation · Parts assembly*) or `?tutorial=parts` opens it.
 
 Engineering data, open items and validation results: **[unit-engineering-report.md](unit-engineering-report.md)**.
 Rules every future change must follow: **[ANIMATION_AND_INTERACTION_STANDARDS.md](ANIMATION_AND_INTERACTION_STANDARDS.md)**.
+
+## v2.3 — main-unit assembly refinement
+
+Same pipeline and data format; new optional fields and fx types, all backwards compatible. Every operation that
+the brief did not touch keeps its v2.2 animation (tracks compared step by step). Open engineering items are in the
+[engineering report](unit-engineering-report.md).
+
+**CAD additions (`cad_extras.py`, `merge_cad.py`).** 225 parts (223 + 2):
+
+* **Connector Hood** — `connector_cover_approx.step` (approximate faceted model reconstructed from a photograph),
+  largest shell only, sewn into a solid, scaled non-uniformly to the photographed envelope so that it encloses the
+  CSHM 06 insert (body 1.30 × 2.10, cable gland round, Ø×1.40). Flagged as approximate.
+* **Data Tag** — 100.4 × 50.4 × 0.8 mm plate with two Ø4.5 mm holes under back panel screws (10)/(11), size and
+  position from the BackSticker photographs.
+* The four L-connector parts are coloured black (face colours, kept by the converter).
+* The CSHM 06 insert now sits inside the hood at the lower left of the back panel (CableDisposition photographs).
+
+**Sequence (40 steps).**
+
+| Step | Operation | What changed |
+|---|---|---|
+| 2, 11, 25 | Clip nuts | Text ends with the seating / alignment / holding check. Clip Nut / Clip Nut (1) pre-installed (step 1). |
+| 3 | Seal and fit the L-connector | Black body; O-ring and sealing nut come fitted (they move with the body, no O-ring operation); HT200 wound in a helix onto the **thread** with the caulking gun while the body is held outside the unit (bead attached to the body). |
+| 5 | Set the motorized impeller on the worktable | Motor + impeller wheel as one manufacturer sub-assembly on a worktable (`prop` fx) beside the unit. Bench sub-assemblies may now be **rotated** (`bench_begin(..., rot, pivot)`). |
+| 6 | Install the motorized impeller in the motor mounting bracket | Bracket lowered onto the motor; lock washers + bolts started by hand. |
+| 7 | Tighten the motor mounting bolts | **Torque wrench** (Sketchfab model + supplied deep socket) on each bolt in turn, socket depth checked against the bracket; the text refers to the *approved torque specification* — no value is shown. |
+| 8–10 | Marks, arrow sticker, cable tie | Red tightening marks; yellow rotation-arrow sticker (26 × 77 mm, `extract_labels.py`); motor cable (black jacket, rigid on the bracket) tied to the bracket tab: the tie wraps, is pulled tight and its tail cut (`ziptie` fx). |
+| 11–13 | Into the unit, route, fasten | Assembly lifted into the unit; the cable is routed through the L-connector (**before** the bracket is fastened — reordered); then the bracket bolts. |
+| 14 | Hood on, jacket stripped | Hood threaded onto the cable; outer jacket cut and slid off (`trim`), the nine leads appear. |
+| 15 | Leads stripped, pairs twisted | Insulation slugs pulled off (`core`), copper shown only afterwards; orange **0.50 in min** dimension; winding pairs twisted (`twist`). |
+| 16 | Crimp | Ferrules (GND, White, White) and one splice per twisted pair — 6 crimps with the supplied crimper. |
+| 17 | Wire the insert | As v2.2; the step label is placed **beside** the model (`camera.callout = 'outside'`); connector lock flagged *pending*. |
+| 18 | Hood over the insert | Hood slid down the cable over the wired insert. |
+| 20–22 | Bellmouth | Bellmouth fitted to its plate on the worktable (plate turned over) with the six **machine screws**; plate assembly installed; plate fastened. |
+| 23–24 | Stage filters | `camera.highlight = 'soft'`: lighter tint, no x-ray overlay — labels stay readable. |
+| 26 | Door gasket | Four rubber tape strips (25.4 × 4.76 mm, long sides first) then a black silicone bead along the tape's inner edge and over the corner joints. |
+| 29 | Back panel | Data tag fastened with the two screws; motor information, WARNING and CAUTION labels (`extract_labels.py`, serial number blank). |
+| 30–32 | Filter clamp bolt brackets | Tapped on the worktable (bench, ±90° about x), then positioned and fastened. |
+| 33 | Cable coil | Cable coiled on the back panel (jacket `morph`), connector to its photographed position, two cable ties. |
+| 34–36 | Gauge, verification | Gauge hole tapped; gauge + box cover; electrical verification with a **listen** check (`meta.check`, icon in the step card). |
+
+**Runtime.** `UnitRig.js`: `prop` fx (worktable, transient); `ziptie` fx (wrap / tight / cut, attached);
+`cable` fx with `rigid`, `base` keys, `morph`, `trim`, `show`, `growFrom`, `core` (copper + insulation slug) and
+`twist`; gasket strips with a rectangular section; tool visibility resolved active-track-last (several tracks of one
+tool in a step). `Appearance.js`: `SOFT` state. `Callout.js`: `outside` placement. `main.js`: soft highlight,
+callout placement and the step-check line. New torque wrench tool (`tools/torquewrench.glb`).
+
+**Regeneration (v2.3 additions).**
+
+```bash
+python3 pipeline/unit/merge_cad.py MF-550-210-B_GROUPED_ASSEMBLY_03.step MF-550-210-B_GROUPED_ASSEMBLY.step cshm_06.stp \
+        /tmp/cad3/MF-550-210-B_GROUPED_ASSEMBLY.step connector_cover_approx.step      # 5th argument: the hood
+python3 pipeline/convert_step.py /tmp/cad3/MF-550-210-B_GROUPED_ASSEMBLY.step --out /tmp/unit3
+cp /tmp/unit3/MF-550-210-B_GROUPED_ASSEMBLY.glb public/assets/unit/
+python3 pipeline/unit/analyse_unit.py /tmp/cad3/MF-550-210-B_GROUPED_ASSEMBLY.step --keep
+python3 pipeline/unit/extract_labels.py BackSticker1.jpg BackSticker2.jpg MarksArrow.jpg public/assets/unit/decals
+python3 pipeline/unit/build_torque_wrench.py torque_wrench/scene.gltf public/assets/unit/tools Drill_with_9-16_Deep_Socket.step
+python3 pipeline/unit/build_unit.py /tmp/unit3/assembly.json      # first build after a CAD change; then npm run unit:build
+```
+
+**Validation.** `npm run unit:build`: 40 steps, 174 checks, 172 clear (2 flagged CAD items, unchanged from v2.2).
+`npm test`: see the PR. `npm run unit:review` frames of every new or changed step were inspected.
 
 ## v2.2 — main-unit assembly process update
 

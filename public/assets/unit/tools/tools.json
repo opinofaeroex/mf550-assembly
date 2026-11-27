@@ -380,6 +380,42 @@
      0.0145
     ]
    ]
+  },
+  "torquewrench": {
+   "file": "torquewrench.glb",
+   "source": "torque_wrench/scene.gltf (Sketchfab)",
+   "credit": "\"Torque Wrench\" (https://sketchfab.com/3d-models/torque-wrench-6c03d41877604eeba06f316666728f3c) by Pollymeowth (https://sketchfab.com/pollymeowth42), CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+   "note": "Torque wrench (Sketchfab model, CC-BY-4.0, not a supplied engineering model) with the deep socket of the supplied drill model, resized radially to the bolt",
+   "movingParts": {
+    "socket": {
+     "nodes": [
+      "Deep_Socket"
+     ],
+     "kind": "spin",
+     "axis": [
+      0.0,
+      1.0,
+      0.0
+     ],
+     "pivot": [
+      0.0,
+      0.0,
+      0.0
+     ]
+    }
+   },
+   "boundsM": [
+    [
+     -0.0137,
+     0.0,
+     -0.0176
+    ],
+    [
+     0.3653,
+     0.0741,
+     0.0176
+    ]
+   ]
   }
  }
 }

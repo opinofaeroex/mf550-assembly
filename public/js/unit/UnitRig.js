@@ -26,8 +26,19 @@ import { AIRFLOW, CABLE, DIMS, GASKET, KIT_VIEW, RIVET_GUN_STYLE, SPIN_ARROW } f
  * (main.js), so materials, x-ray and selection keep working as in the parts tutorial.
  */
 const ease = (u) => (u < 0.5 ? 4 * u * u * u : 1 - (-2 * u + 2) ** 3 / 2);
+/** v2.3: eased vector / number keys [[t, x, y, z] …] / [[t, v] …] (t = Infinity: last key). */
+function keyVec(k, t, out) {
+  if (t === Infinity) { const l = k[k.length - 1]; return out.set(l[1], l[2], l[3]); }
+  const [i, u0] = seg(k, t); const a = k[i], b = k[Math.min(i + 1, k.length - 1)]; const u = ease(u0);
+  return out.set(a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u);
+}
+function keyNum(k, t) {
+  if (t === Infinity) return k[k.length - 1][1];
+  const [i, u0] = seg(k, t); const a = k[i], b = k[Math.min(i + 1, k.length - 1)];
+  return a[1] + (b[1] - a[1]) * ease(u0);
+}
 const _m = new THREE.Matrix4(), _m2 = new THREE.Matrix4(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion();
-const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _s = new THREE.Vector3(1, 1, 1), _Y = new THREE.Vector3(0, 1, 0);
+const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _v3 = new THREE.Vector3(), _s = new THREE.Vector3(1, 1, 1), _Y = new THREE.Vector3(0, 1, 0);
 
 /** Interpolate a keyed channel; returns [index, u] of the segment containing t. */
 function seg(keys, t) {
@@ -119,15 +130,16 @@ function segMesh(a, b, r, mat) {
   return m;
 }
 
-/** Square-section strip swept along a closed path on a face (door gasket). */
-function gasketGeometry(points, normal, section) {
+/** Rectangular-section strip swept along a path on a face (door gasket; v2.3: tape strips, open paths). */
+function gasketGeometry(points, normal, section, width = section, closed = true) {
   const P = points.map((p) => new THREE.Vector3().fromArray(p)); const n = new THREE.Vector3().fromArray(normal).normalize();
-  const N = P.length, h = section / 2, pos = [], idx = [];
+  const N = P.length, h = section / 2, hw = width / 2, pos = [], idx = [];
   for (let i = 0; i < N; i++) {
-    const t = P[(i + 1) % N].clone().sub(P[(i - 1 + N) % N]).normalize();
+    const a = closed ? P[(i - 1 + N) % N] : P[Math.max(0, i - 1)], c = closed ? P[(i + 1) % N] : P[Math.min(N - 1, i + 1)];
+    const t = c.clone().sub(a).normalize();
     const b = new THREE.Vector3().crossVectors(t, n).normalize();
     for (const [u, v] of [[1, 1], [1, -1], [-1, -1], [-1, 1]]) {
-      const q = P[i].clone().addScaledVector(n, u * h).addScaledVector(b, v * h); pos.push(q.x, q.y, q.z);
+      const q = P[i].clone().addScaledVector(n, u * h).addScaledVector(b, v * hw); pos.push(q.x, q.y, q.z);
     }
   }
   for (let i = 0; i < N - 1; i++) for (let k = 0; k < 4; k++) {
@@ -329,13 +341,25 @@ export class UnitRig {
         if (f.attach !== undefined) mesh.matrixAutoUpdate = false;
         out.push(mesh);
       } else if (f.type === 'gasket') {
-        const { g, segs } = gasketGeometry(f.points, f.normal, f.section);
+        const { g, segs } = gasketGeometry(f.points, f.normal, f.section, f.width ?? f.section, f.closed !== false);
         const mesh = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: GASKET.roughness, metalness: 0 }));
         mesh.raycast = () => {}; mesh.matrixAutoUpdate = false;
         mesh.userData = { fx: f, segs };
         out.push(mesh);
       } else if (f.type === 'cable') {
         out.push(this.#buildCable(f));
+      } else if (f.type === 'prop') {
+        // v2.3: presentation element (worktable, supports) — shown only while its step plays, never assembled
+        const g = new THREE.Group(); g.userData = { fx: f };
+        for (const b of f.boxes) {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(b.max[0] - b.min[0], b.max[1] - b.min[1], b.max[2] - b.min[2]),
+            new THREE.MeshStandardMaterial({ color: new THREE.Color(b.colour), roughness: b.rough ?? 0.85, metalness: b.metal ?? 0.05 }));
+          m.position.set((b.min[0] + b.max[0]) / 2, (b.min[1] + b.max[1]) / 2, (b.min[2] + b.max[2]) / 2);
+          m.raycast = () => {}; m.receiveShadow = true; g.add(m);
+        }
+        out.push(g);
+      } else if (f.type === 'ziptie') {
+        out.push(this.#buildZipTie(f));
       } else if (f.type === 'dims') {
         const g = new THREE.Group(); g.userData = { fx: f };
         const mat = new THREE.MeshBasicMaterial({ color: DIMS.colour, transparent: true, opacity: 1, depthWrite: false });
@@ -419,26 +443,87 @@ export class UnitRig {
     return out;
   }
 
-  /** v2.2 motor lead: tube along the routed path; its free end follows end-offset keys or the part holding it. */
+  /** v2.3 cable tie: band wrapped round the cable(s) and the support, pulled tight, tail cut off. */
+  #buildZipTie(f) {
+    const g = new THREE.Group(); g.userData = { fx: f };
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: 0.55, metalness: 0 });
+    const segs = f.segs || 48;
+    const tube = (pts) => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map((p) => new THREE.Vector3().fromArray(p)), true, 'centripetal'), segs, f.band / 2, 4, true);
+    const gl = tube(f.loose), gt = tube(f.tight);
+    const band = new THREE.Mesh(gl, mat); band.raycast = () => {};
+    band.userData = { A: gl.attributes.position.array.slice(), B: gt.attributes.position.array.slice(), u: NaN };
+    const head = new THREE.Mesh(new THREE.BoxGeometry(...f.headSize), mat); head.raycast = () => {};
+    head.position.fromArray(f.head); head.quaternion.fromArray(f.headQ);
+    const tl = new THREE.BoxGeometry(f.band, 1, f.band * 0.45); tl.translate(0, 0.5, 0);
+    const tail = new THREE.Mesh(tl, mat); tail.raycast = () => {};
+    tail.position.fromArray(f.tail[0]); tail.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().fromArray(f.tail[1]).normalize());
+    g.add(band, head, tail); g.userData.band = band; g.userData.head = head; g.userData.tail = tail; g.userData.segs = segs;
+    if (f.attach !== undefined) g.matrixAutoUpdate = false;
+    return g;
+  }
+
+  #zipTieAt(o, t) {
+    const f = o.userData.fx, [t0, t1, t2, t3] = f.t, U = o.userData;
+    const c = (a, b) => Math.max(0, Math.min(1, (t - a) / Math.max(1e-6, b - a)));
+    const wrap = t === Infinity ? 1 : c(t0, t1), tight = t === Infinity ? 1 : ease(c(t1, t2)), cut = t === Infinity || t >= t3;
+    o.visible = wrap > 0;
+    U.band.geometry.setDrawRange(0, Math.ceil(wrap * U.segs) * 4 * 6);
+    U.head.visible = wrap >= 1;
+    U.tail.visible = wrap >= 1;
+    const b = U.band.userData;
+    if (b.u !== tight) {
+      b.u = tight; const arr = U.band.geometry.attributes.position.array;
+      for (let i = 0; i < arr.length; i++) arr[i] = b.A[i] + (b.B[i] - b.A[i]) * tight;
+      U.band.geometry.attributes.position.needsUpdate = true; U.band.geometry.computeBoundingSphere();
+    }
+    U.tail.scale.set(1, cut ? f.tail[3] : f.tail[2] + (f.tail[2] * 0.15) * tight, 1);
+  }
+
+  /**
+   * v2.2 motor lead / v2.3 cable jacket: tube along the routed path. Its free end follows end-offset keys (or the
+   * part holding it) with a smooth weight; v2.3: `rigid` (the whole tube follows), `base` keys (rigid translation
+   * of the whole tube), `morph` (second path, same tube, blended over morph.t — the cable is laid out anew),
+   * `trim` keys (length cut back from the free end — outer jacket stripped), `show` (hidden before), `core`
+   * (stripped conductor + insulation slug pulled off) and `twist` (pair conductors twisted round their common axis).
+   */
   #buildCable(f) {
-    const pts = f.points.map((p) => new THREE.Vector3().fromArray(p));
+    const V = (p) => new THREE.Vector3().fromArray(p);
+    const pts = f.points.map(V);
     const curve = new THREE.CatmullRomCurve3(pts, false, 'centripetal');
     const len = curve.getLength();
     const segs = Math.max(16, Math.round(len * 1000 / CABLE.segMm)), radial = CABLE.radial;
     const geo = new THREE.TubeGeometry(curve, segs, f.diameter / 2, radial, false);
     const base = geo.attributes.position.array.slice();
+    let baseB = null, endB = null, endDirB = null;
+    if (f.morph) {
+      const cB = new THREE.CatmullRomCurve3(f.morph.points.map(V), false, 'centripetal');
+      baseB = new THREE.TubeGeometry(cB, segs, f.diameter / 2, radial, false).attributes.position.array.slice();
+      endB = V(f.morph.points[f.morph.points.length - 1]); endDirB = cB.getTangentAt(1).normalize();
+    }
     const w = new Float32Array(segs + 1);                  // follow weight per ring (smoothstep over the last `follow` m)
-    for (let j = 0; j <= segs; j++) { const x = Math.min(1, Math.max(0, (j / segs * len - (len - f.follow)) / f.follow)); w[j] = x * x * (3 - 2 * x); }
-    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: CABLE.roughness, metalness: 0 });
+    for (let j = 0; j <= segs; j++) {
+      const x = f.rigid ? 1 : Math.min(1, Math.max(0, (j / segs * len - (len - f.follow)) / f.follow)); w[j] = x * x * (3 - 2 * x);
+    }
+    const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: f.rough ?? CABLE.roughness, metalness: 0 });
     const mesh = new THREE.Mesh(geo, mat); mesh.raycast = () => {};
-    mesh.userData = { fx: f, segs, radial, base, w, off: new THREE.Vector3(NaN, 0, 0), endDir: curve.getTangentAt(1).normalize(), end: pts[pts.length - 1].clone() };
+    mesh.userData = { fx: f, segs, radial, len, base, baseB, endB, endDirB, w, off: new THREE.Vector3(NaN, 0, 0), bo: new THREE.Vector3(),
+      mu: NaN, endDir: curve.getTangentAt(1).normalize(), end: pts[pts.length - 1].clone(), fOff: new THREE.Vector3() };
     if (f.ferrule) {
       const fr = f.ferrule;
       const g = new THREE.CylinderGeometry(fr.od / 2, fr.od / 2, fr.length, 12); g.translate(0, fr.length / 2, 0);
       const fm = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: new THREE.Color(fr.colour), metalness: CABLE.ferrule.metalness, roughness: CABLE.ferrule.roughness }));
       fm.raycast = () => {}; fm.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), mesh.userData.endDir);
       mesh.add(fm); mesh.userData.ferrule = fm;
-      mesh.userData.fOff = new THREE.Vector3().fromArray(fr.offset ?? [0, 0, 0]);   // splice: centred between the pair
+      mesh.userData.fOff.fromArray(fr.offset ?? [0, 0, 0]);   // splice: centred between the pair
+    }
+    if (f.core) {
+      const C = f.core;
+      const core = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshStandardMaterial({ color: new THREE.Color(C.colour), metalness: 0.7, roughness: 0.35 }));
+      core.raycast = () => {}; mesh.add(core); mesh.userData.core = core; mesh.userData.coreKey = '';
+      const sg = new THREE.CylinderGeometry(f.diameter / 2, f.diameter / 2, C.length, CABLE.radial); sg.translate(0, C.length / 2, 0);
+      const slug = new THREE.Mesh(sg, new THREE.MeshStandardMaterial({ color: new THREE.Color(f.colour), roughness: CABLE.roughness, metalness: 0, transparent: true }));
+      slug.raycast = () => {}; slug.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), mesh.userData.endDir);
+      mesh.add(slug); mesh.userData.slug = slug;
     }
     return mesh;
   }
@@ -449,27 +534,61 @@ export class UnitRig {
     if (f.attach && (t === Infinity || t >= f.attach.t)) {
       const e = this.followOf(f.attach.node).elements; return _v2.set(e[12], e[13], e[14]);
     }
-    const k = f.end;
-    if (t === Infinity) { const l = k[k.length - 1]; return _v2.set(l[1], l[2], l[3]); }
-    const [i, u0] = seg(k, t); const a = k[i], b = k[Math.min(i + 1, k.length - 1)]; const u = ease(u0);
-    return _v2.set(a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u, a[3] + (b[3] - a[3]) * u);
+    return keyVec(f.end, t, _v2);
   }
 
   #cableTail(o, t = o.userData.t) {
-    const off = this.#cableOffset(o, t ?? Infinity);
-    const U = o.userData;
-    if (U.off.equals(off)) return;
-    U.off.copy(off);
+    const T = t ?? Infinity, f = o.userData.fx, U = o.userData;
+    const off = this.#cableOffset(o, T);
+    const bo = f.base ? keyVec(f.base, T, _v3) : _v3.set(0, 0, 0);
+    const mu = f.morph ? (T === Infinity ? 1 : ease(Math.max(0, Math.min(1, (T - f.morph.t[0]) / Math.max(1e-6, f.morph.t[1] - f.morph.t[0]))))) : 0;
+    if (U.off.equals(off) && U.bo.equals(bo) && U.mu === mu) return;
+    U.off.copy(off); U.bo.copy(bo); U.mu = mu;
     const pos = o.geometry.attributes.position, arr = pos.array, ring = U.radial + 1;
     for (let j = 0; j <= U.segs; j++) {
-      const w = U.w[j]; if (w === 0 && !U.dirty) continue;
+      const w = U.w[j];
       for (let r = 0; r < ring; r++) {
         const i = (j * ring + r) * 3;
-        arr[i] = U.base[i] + off.x * w; arr[i + 1] = U.base[i + 1] + off.y * w; arr[i + 2] = U.base[i + 2] + off.z * w;
+        const bx = U.baseB ? U.base[i] + (U.baseB[i] - U.base[i]) * mu : U.base[i];
+        const by = U.baseB ? U.base[i + 1] + (U.baseB[i + 1] - U.base[i + 1]) * mu : U.base[i + 1];
+        const bz = U.baseB ? U.base[i + 2] + (U.baseB[i + 2] - U.base[i + 2]) * mu : U.base[i + 2];
+        arr[i] = bx + bo.x + off.x * w; arr[i + 1] = by + bo.y + off.y * w; arr[i + 2] = bz + bo.z + off.z * w;
       }
     }
     pos.needsUpdate = true; o.geometry.computeBoundingSphere();
-    if (U.ferrule) U.ferrule.position.copy(U.end).add(off).add(U.fOff);
+    if (U.endB) U.end.copy(f.points[f.points.length - 1].length ? _v.fromArray(f.points[f.points.length - 1]) : U.end).lerp(U.endB, mu);
+    U.tip = (U.tip || new THREE.Vector3()).copy(U.end).add(bo).add(off);
+    if (U.ferrule) U.ferrule.position.copy(U.tip).add(U.fOff);
+  }
+
+  /** Stripped conductor of a lead: straight, or twisted with its pair partner round their common axis. */
+  #cableCore(o, t) {
+    const f = o.userData.fx, U = o.userData, C = f.core;
+    const shown = t === Infinity || C.show < 0 || t >= C.show;
+    const pull = t === Infinity || C.show < 0 ? 1 : Math.max(0, Math.min(1, (t - C.show) / C.slide));
+    U.slug.visible = pull < 1 && (f.show === undefined || t >= f.show);
+    if (U.slug.visible) { U.slug.position.copy(U.tip).addScaledVector(U.endDir, 0.015 * ease(pull)); U.slug.material.opacity = 1 - pull * pull; }
+    U.core.visible = shown;
+    if (!shown) return;
+    const W = f.twist;
+    const prog = !W ? 0 : t === Infinity || W.t[0] < 0 ? 1 : Math.max(0, Math.min(1, (t - W.t[0]) / Math.max(1e-6, W.t[1] - W.t[0])));
+    const key = prog.toFixed(3);
+    if (U.coreKey !== key) {
+      U.coreKey = key;
+      const d = U.endDir, L = C.length, n = 24, P = [];
+      const c = W ? new THREE.Vector3().fromArray(W.c) : new THREE.Vector3();
+      const r0 = c.length(), rad = c.clone().negate().normalize();
+      for (let i = 0; i <= n; i++) {
+        const s = L * i / n;
+        if (!W || r0 < 1e-6) { P.push(d.clone().multiplyScalar(s)); continue; }
+        const conv = Math.min(1, s / (0.3 * L)); const rr = r0 + (C.d / 2 - r0) * conv * conv * (3 - 2 * conv) * ease(prog);
+        const ang = prog * W.turns * 2 * Math.PI * (s / L);
+        P.push(c.clone().add(d.clone().multiplyScalar(s)).add(rad.clone().applyAxisAngle(d, ang).multiplyScalar(rr)));
+      }
+      U.core.geometry.dispose();
+      U.core.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(P), 32, C.d / 2, 6, false);
+    }
+    U.core.position.copy(U.tip);
   }
 
   /** Effects of one step at time t (t = Infinity: completed state, for earlier steps / the overview). */
@@ -488,21 +607,27 @@ export class UnitRig {
         const u = Math.max(0, Math.min(1, (t - t0) / Math.max(1e-6, t1 - t0)));
         o.visible = u > 0;
         o.geometry.setDrawRange(0, Math.ceil(u * o.userData.segs) * 24);
+      } else if (f.type === 'prop') {
+        o.visible = t !== Infinity;                      // presentation only: never part of the completed state
+      } else if (f.type === 'ziptie') {
+        this.#zipTieAt(o, t);
       } else if (f.type === 'cable') {
-        const g = f.grow;
-        const u = !g || t === Infinity ? 1 : Math.max(0, Math.min(1, (t - g[0]) / Math.max(1e-6, g[1] - g[0])));
-        o.visible = u > 0;
+        const g = f.grow, g0 = f.growFrom ?? 0;
+        let u = !g || t === Infinity ? 1 : g0 + (1 - g0) * Math.max(0, Math.min(1, (t - g[0]) / Math.max(1e-6, g[1] - g[0])));
+        if (f.trim) u = Math.min(u, 1 - keyNum(f.trim, t) / o.userData.len);
+        o.visible = u > 0 && (f.show === undefined || t === Infinity || f.show < 0 || t >= f.show);
         o.geometry.setDrawRange(0, Math.ceil(u * o.userData.segs) * o.userData.radial * 6);
         o.userData.t = t;
         this.#cableTail(o, t);
+        if (o.userData.core) this.#cableCore(o, t);
         const fr = o.userData.ferrule;
         if (fr) {
           const F = f.ferrule;
           const shown = t === Infinity || F.show < 0 || t >= F.show;
-          fr.visible = shown && u >= 1;
+          fr.visible = shown && u >= 1 && o.visible;
           if (fr.visible) {
             const slide = t === Infinity || F.show < 0 ? 0 : Math.max(0, 1 - (t - F.show) / F.slide);
-            fr.position.copy(o.userData.end).add(o.userData.off).add(o.userData.fOff).addScaledVector(o.userData.endDir, 0.012 * slide);
+            fr.position.copy(o.userData.tip).add(o.userData.fOff).addScaledVector(o.userData.endDir, 0.012 * slide);
             const crimped = F.crimp !== null && F.crimp !== undefined && (t === Infinity || F.crimp < 0 || t >= F.crimp);
             const k = crimped ? F.odCrimped / F.od : 1;
             fr.scale.set(k, 1, k);
@@ -664,7 +789,10 @@ export class UnitRig {
       this.#setLocal(p, this.#delta(tr, t, D, F)); this.moved.add(tr.node);
       this.follow.set(tr.node, F);
     }
-    for (const tr of s.tracks.tools) this.#toolPose(tr.tool, tr, t);
+    // several tracks may drive the same tool (one per fastener): the one working at t is applied last (shown)
+    const on = (tr) => t >= tr.keys[0][0] - 1e-6 && t <= tr.keys[tr.keys.length - 1][0] + 1e-6;
+    for (const tr of s.tracks.tools) if (!on(tr)) this.#toolPose(tr.tool, tr, t);
+    for (const tr of s.tracks.tools) if (on(tr)) this.#toolPose(tr.tool, tr, t);
     this.#applyFx(index, t);
     this.#updateFollowers(index);
     this.viewer.requestRender();

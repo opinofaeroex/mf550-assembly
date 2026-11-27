@@ -57,6 +57,12 @@ function chooseTutorial() {
 
 const $ = (id) => document.getElementById(id);
 
+/** v2.3: operator-check icons for the step card (inline SVG, current colour). */
+const CHECK_ICONS = {
+  listen: '<svg class="check-icon" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'
+    + '<path d="M4 9.5h3.2L12 5.5v13l-4.8-4H4z"/><path d="M15.5 9a4.2 4.2 0 0 1 0 6"/><path d="M18.2 6.3a8 8 0 0 1 0 11.4"/></svg>',
+};
+
 class App {
   constructor() {
     // v1.5 performance profile (perf/Profiles.js): URL ?profile= > saved choice > automatic
@@ -554,6 +560,10 @@ class App {
     const comps = $('step-components');
     comps.hidden = !t.components;
     comps.innerHTML = t.components || '';
+    const chk = $('step-check');            // v2.3: operator check with an icon (e.g. listen to the impeller)
+    const st2 = seq.isStep ? model.steps[pos] : null;
+    chk.hidden = !(st2 && st2.check);
+    if (st2 && st2.check) chk.innerHTML = `${CHECK_ICONS[st2.check.icon] || ''}<span>${esc(st2.check.text)}</span>`;
     const note = $('step-note');
     note.hidden = !t.note;
     if (t.note) note.innerHTML = `<span>${esc(t.note)}</span>`;     // v2.1: neutral note, no warning icon
@@ -595,7 +605,7 @@ class App {
     if (this.unit) {
       const ids = s.nodes.length ? s.nodes : s.focus;
       if (!ids.length || ids.length > 40) { this.stepCallout.hide(); return; }
-      this.stepCallout.set(ids.map((id) => this.loaded.objects.get(id)), null, s.title);
+      this.stepCallout.set(ids.map((id) => this.loaded.objects.get(id)), null, s.title, s.camera && s.camera.callout);
       return;
     }
     if (this.selection && this.selection.row.item === s.item) { this.stepCallout.hide(); return; }
@@ -637,6 +647,7 @@ class App {
     const pos = seq.pos;
     const active = seq.isStep ? this.activeParts[pos] : null;
     const xray = seq.isStep && model.steps[pos].camera && model.steps[pos].camera.xray;
+    const soft = seq.isStep && model.steps[pos].camera && model.steps[pos].camera.highlight === 'soft';   // v2.3
     const sel = this.selection ? this.selection.partSet : null;
     if (this.rig) this.rig.setDecalAlpha(xray && this.opts.ghost ? XRAY.decalAlpha : 1);
     for (const id of model.partIds) {
@@ -644,7 +655,7 @@ class App {
       let st = STATE.NORMAL;
       if (seq.isStep) {
         if (s !== null && s > pos) st = STATE.HIDDEN;
-        else if (active.has(id)) st = STATE.ACTIVE;
+        else if (active.has(id)) st = soft ? STATE.SOFT : STATE.ACTIVE;
         else if (xray && this.opts.ghost) st = STATE.GHOST;
       }
       if (sel && st !== STATE.HIDDEN) {

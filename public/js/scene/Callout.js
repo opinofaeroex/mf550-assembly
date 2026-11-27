@@ -23,8 +23,9 @@ export class Callout {
     this.onChange = null;          // v1.5: the viewer draws (and re-projects callouts) on demand
   }
 
-  set(objects, num, text) {
+  set(objects, num, text, place = null) {
     this.objects = objects;
+    this.place = place;            // v2.3: 'outside' = label beside the model's projected box, never over it
     this.num.textContent = num ?? '';
     this.label.classList.toggle('no-num', !num);
     this.txt.textContent = text;
@@ -47,8 +48,19 @@ export class Callout {
     const y = (-p.y * 0.5 + 0.5) * height;
     // label offset toward the upper side away from the screen centre
     const dx = x < width * 0.5 ? -1 : 1;
-    const lx = Math.min(width - 90, Math.max(90, x + dx * 70));
-    const ly = Math.max(40, y - 70);
+    let lx = Math.min(width - 90, Math.max(90, x + dx * 70));
+    let ly = Math.max(40, y - 70);
+    if (this.place === 'outside') {          // v2.3: beside the projected box of the objects, with a longer leader
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity;
+      for (let i = 0; i < 8; i++) {
+        this._v.set(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z).project(camera);
+        const sx = (this._v.x * 0.5 + 0.5) * width, sy = (-this._v.y * 0.5 + 0.5) * height;
+        x0 = Math.min(x0, sx); x1 = Math.max(x1, sx); y0 = Math.min(y0, sy);
+      }
+      const right = width - x1 > x0;
+      lx = Math.min(width - 110, Math.max(110, right ? x1 + 130 : x0 - 130));
+      ly = Math.max(50, y0 - 40);
+    }
     this.dot.style.transform = `translate(${x}px, ${y}px)`;
     this.dot.style.left = '0'; this.dot.style.top = '0';
     this.label.style.left = `${lx}px`;

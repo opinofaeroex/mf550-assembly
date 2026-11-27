@@ -41,6 +41,11 @@ def quat_mul(a, b):
                      w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2, w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2])
 
 
+def quat_conj(q):
+    x, y, z, w = q
+    return np.array([-x, -y, -z, w])
+
+
 def quat_to_mat(q):
     x, y, z, w = q
     return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],

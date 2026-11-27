@@ -36,7 +36,7 @@ import numpy as np
 import trimesh
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from unitlib import (ID_Q, World, delta_matrix, frame_quat, perp_basis, quat_axis_angle, quat_mul,  # noqa: E402
+from unitlib import (ID_Q, World, delta_matrix, frame_quat, mat_to_quat, perp_basis, quat_axis_angle, quat_conj, quat_mul,  # noqa: E402
                      quat_to_mat, tool_mesh, unit)
 import standards as S  # noqa: E402  shared animation / camera / collision parameters (standards § 10)
 
@@ -154,20 +154,29 @@ class Unit:
     def group(self, g): return [n for n, p in self.A.items() if p["group"] == g]
 
     # ---------------------------------------------------------------- v2.2 bench sub-assembly
-    def bench_begin(self, names, offset=S.BENCH.offset):
+    def bench_begin(self, names, offset=S.BENCH.offset, rot=None, pivot=None):
         """Build a sub-assembly on the bench: the named parts are worked on at CAD + offset. Their facts and
         collision meshes are moved there, so every Step operation (place, fastener, drill, mark …) runs at the
         bench unchanged and is checked against the parts already on the bench AND the unit; part keys are
         written as deltas on the CAD pose (offset included). bench_end() puts them back for the move into
         the unit."""
         O = np.asarray(offset, float); self.bench = dict(O=O, A0={}, M0={})
+        # v2.3: optional rotation of the whole sub-assembly about `pivot` (default: centre of the named parts),
+        # e.g. the bellmouth plate turned over on the worktable: x_bench = R x_cad + tb
+        qb = ID_Q if rot is None else quat_axis_angle(unit(rot[0]), math.radians(rot[1]))
+        Rb = quat_to_mat(qb)
+        if pivot is None:
+            bb = np.array([self.A[n]["bbox"] for n in names]); pivot = (bb[:, :3].min(0) + bb[:, 3:].max(0)) / 2
+        tb = np.asarray(pivot, float) + O - Rb @ np.asarray(pivot, float)
         for n in names:
             p = self.A[n]; self.bench["A0"][n] = json.loads(json.dumps(p)); self.bench["M0"][n] = self.world.mesh[n]
-            p["bbox"] = [v + O[i % 3] for i, v in enumerate(p["bbox"])]
+            b = np.asarray(p["bbox"], float); C = np.array([[b[i + 3] if (k >> i) & 1 else b[i] for i in range(3)] for k in range(8)])
+            C = C @ Rb.T + tb; p["bbox"] = [*map(float, C.min(0)), *map(float, C.max(0))]
             for k in ("centre", "head", "tip"):
-                if k in p: p[k] = list(np.asarray(p[k], float) + O)
-            m = self.world.mesh[n].copy(); m.vertices = m.vertices + O; self.world.mesh[n] = m
-            self.bench_parts[n] = O
+                if k in p: p[k] = list(Rb @ np.asarray(p[k], float) + tb)
+            if "axis" in p: p["axis"] = list(Rb @ np.asarray(p["axis"], float))
+            m = self.world.mesh[n].copy(); m.vertices = m.vertices @ Rb.T + tb; self.world.mesh[n] = m
+            self.bench_parts[n] = (qb, tb)
             self.held.add(n)
 
     def bench_end(self):
@@ -191,7 +200,7 @@ class Unit:
                     tr = s.parts[n]; last[n] = (tr["keys"][-1], tr["axis"], tr["pivot"]); continue
                 if n not in last or self.installed_by.get(n, 1e9) >= s.i: continue
                 k, axis, pivot = last[n]
-                if max(abs(v) for v in k[1:4]) < 1e-6 and abs(k[8]) < 1e-9 and abs(k[7] - 1) < 1e-9: continue
+                if max(abs(v) for v in k[1:4]) < 1e-6 and abs(math.remainder(k[8], 2 * math.pi)) < 1e-4 and abs(k[7] - 1) < 1e-9: continue   # whole turns = CAD pose
                 s.parts[n] = dict(node=self.ids[n], name=n, axis=axis, pivot=pivot, hold=True,
                                   keys=[[0.0, *k[1:8], k[8], 1]])
 
@@ -228,16 +237,21 @@ class Step:
     # ---------------------------------------------------------------- tracks
     def _track(self, name, axis=None, pivot=None):
         if name not in self.parts:
-            O = self.u.bench_parts.get(name)
-            if pivot is not None and O is not None: pivot = np.asarray(pivot, float) - O    # pivots live in the CAD frame
+            B = self.u.bench_parts.get(name)
+            if B is not None:                                              # pivots / spin axes live in the CAD frame
+                Rb = quat_to_mat(B[0])
+                if pivot is not None: pivot = Rb.T @ (np.asarray(pivot, float) - B[1])
+                if axis is not None: axis = Rb.T @ np.asarray(axis, float)
             self.parts[name] = dict(node=self.u.ids[name], name=name, axis=list(unit(axis)) if axis is not None else [0, 1, 0],
                                     pivot=list(np.asarray(pivot, float)) if pivot is not None else [0, 0, 0], keys=[])
         return self.parts[name]
 
     def _last(self, name):
         """Last key of a part as a LOCAL offset (bench offset removed) — what the operations reason with."""
-        k = list(self.parts[name]["keys"][-1]); O = self.u.bench_parts.get(name)
-        if O is not None: k[1:4] = list(np.asarray(k[1:4]) - quat_to_mat(k[4:8]) @ O)
+        k = list(self.parts[name]["keys"][-1]); B = self.u.bench_parts.get(name)
+        if B is not None:
+            ql = quat_mul(k[4:8], quat_conj(B[0]))
+            k[1:4] = list(np.asarray(k[1:4]) - quat_to_mat(ql) @ B[1]); k[4:8] = list(ql)
         return k
 
     def _carried(self, name):
@@ -254,8 +268,9 @@ class Step:
 
     def _key(self, name, t, T=(0, 0, 0), q=ID_Q, ang=0.0, ease=1, raw=False):
         tr = self.parts[name]
-        O = None if raw else self.u.bench_parts.get(name)
-        if O is not None: T = np.asarray(T, float) + quat_to_mat(q) @ O        # bench: delta on the CAD pose
+        B = None if raw else self.u.bench_parts.get(name)
+        if B is not None:                                                    # bench: delta on the CAD pose
+            T = np.asarray(T, float) + quat_to_mat(q) @ B[1]; q = quat_mul(q, B[0])
         tr["keys"].append([round(t, 3), *[round(float(v), 3) for v in T], *[round(float(v), 6) for v in q], round(float(ang), 4), ease])
 
     def _install(self, names):
@@ -970,21 +985,25 @@ class Step:
         return self
 
     # ---------------------------------------------------------------- v2.2 gasket, decals on parts, dimensions
-    def gasket(self, points, normal, attach, xform, label="door gasket", corner=4.0):
+    def gasket(self, points, normal, attach, xform, label="door gasket", corner=4.0, width=None, thickness=None, closed=True,
+               shot=True, dur=None):
         """Square foam strip pressed by hand along a closed path on a face of `attach` (fx 'gasket', moves with the
         part): laid progressively from its start point as the release liner is peeled off. points / normal in
         the CAD frame on the face; xform = the part's current (staged) delta, for the camera."""
-        sec = S.GASKET.section; n = unit(normal)
-        path = rounded_polyline(points, corner, True, samples=3)
+        sec = thickness or S.GASKET.section; n = unit(normal)
+        path = rounded_polyline(points, corner, True, samples=3) if closed else [np.asarray(p, float) for p in points]
         Ls = np.cumsum([0] + [np.linalg.norm(path[i + 1] - path[i]) for i in range(len(path) - 1)])
-        dur = float(Ls[-1] / S.GASKET.lay_mm_per_s)
+        dur = dur or float(Ls[-1] / S.GASKET.lay_mm_per_s)
         R = quat_to_mat(xform[1]); T = np.asarray(xform[0], float)
         c = np.mean(points, axis=0); ext = float(np.max(np.ptp(np.asarray(points), axis=0)))
-        self._shot(self.t, R @ c + T, radius=ext / 2 + 30, kind="wide", axis=R @ n)
+        if shot: self._shot(self.t, R @ c + T, radius=ext / 2 + 30, kind="wide", axis=R @ n)
         t0 = self.t + 0.3
-        self.fx.append(dict(type="gasket", points=[list(map(float, p + n * sec / 2)) for p in path], normal=list(map(float, n)),
-                            section=sec, colour=S.GASKET.colour, liner=S.GASKET.liner, grow=[round(t0, 3), round(t0 + dur, 3)],
-                            attach=self.u.ids[attach], label=label))
+        f = dict(type="gasket", points=[list(map(float, p + n * sec / 2)) for p in path], normal=list(map(float, n)),
+                 section=sec, colour=S.GASKET.colour, liner=S.GASKET.liner, grow=[round(t0, 3), round(t0 + dur, 3)],
+                 attach=self.u.ids[attach], label=label)
+        if width: f["width"] = width
+        if not closed: f["closed"] = False
+        self.fx.append(f)
         self.t = t0 + dur + 0.3
         return self
 
@@ -1067,6 +1086,7 @@ class Step:
             if L["ferrule"]:
                 C = S.SPLICE if L["ferrule"].get("kind") == "splice" else S.FERRULE
                 f["ferrule"] = dict(L["ferrule"], length=C.length, od=C.od, odCrimped=C.od_crimped, colour=C.colour)
+            f.update(L.get("extra", {}))                       # v2.3: show / core / twist / base / follow / rigid
             self.fx.append(f)
         return self
 
@@ -1088,6 +1108,11 @@ class Step:
         """A new step starts: every lead keeps its last end offset from t = 0 (ferrule already on, already shown)."""
         for L in self.u.leads.values():
             last = L["end"][-1]; L["end"] = [[0.0, *last[1:4]]]
+            X = L.get("extra", {})
+            if "core" in X: X["core"] = dict(X["core"], show=-1.0)
+            if "twist" in X: X["twist"] = dict(X["twist"], t=[-1.0, -1.0])
+            X.pop("show", None)
+            if "base" in X: X["base"] = [[0.0, *X["base"][-1][1:4]]]
             if L["ferrule"]: L["ferrule"] = dict(L["ferrule"], show=-1.0, crimp=-1.0 if L["ferrule"]["crimp"] is not None else None)
             if L["attach"]: L["attach"] = (L["attach"][0], -1.0, L["attach"][2])
         return self
@@ -1207,15 +1232,16 @@ class Step:
         return self
 
     # ---------------------------------------------------------------- v2.2 ratchet with deep socket
-    def ratchet(self, name, side, total_deg=120, hints=((0, -1, 0), (0, 0, 1), (0, 0, -1), (0, 1, 0)), swing=S.RATCHET.swing, af=None):
+    def ratchet(self, name, side, total_deg=120, hints=((0, -1, 0), (0, 0, 1), (0, 0, -1), (0, 1, 0)), swing=S.RATCHET.swing, af=None,
+                tool="ratchet", label=None, depth=None):
         """Socket wrench (supplied 3/8 in ratchet + the supplied deep socket, resized to the nut): slid onto the nut
         along its axis, short strokes (the handle swings back without lifting: ratchet), slid off."""
         self._carried(name)
         p = self.u.A[name]; side = unit(side); a = unit(p["axis"])
         af = af or p["across_flats"][0]
         outer = np.asarray(p["tip"]) if float(unit(np.asarray(p["tip"]) - np.asarray(p["head"])) @ side) > 0 else np.asarray(p["head"])
-        eng = outer - side * max(S.DRILL.depth_min, p["length"] * S.DRILL.depth_share)
-        mesh = self._ratchet_mesh(af)
+        eng = outer - side * (depth if depth is not None else max(S.DRILL.depth_min, p["length"] * S.DRILL.depth_share))
+        mesh = self._ratchet_mesh(af, tool)
         allow = {name} | set(p.get("contacts", []))
         best = None
         for h in hints:
@@ -1232,8 +1258,8 @@ class Step:
                 if worst == 0: break
             if best[0] == 0: break
         q = best[1]; hits = best[2] or ({"(stroke)": round(best[0], 2)} if best[0] else {})
-        self.checks.append(dict(what=f"ratchet on {name}", samples=1, clear=not hits, collisions={k: round(v, 2) for k, v in hits.items()}))
-        tr = dict(tool="ratchet", keys=[], socketAF=af, socketScale=round(af / SOCKET_SUPPLIED_AF, 4))
+        self.checks.append(dict(what=f"{tool} on {name}", samples=1, clear=not hits, collisions={k: round(v, 2) for k, v in hits.items()}))
+        tr = dict(tool=tool, keys=[], socketAF=af, socketScale=round(af / SOCKET_SUPPLIED_AF, 4))
         t0 = self.t
         self._shot(t0, outer, radius=S.RATCHET.shot_radius, axis=side, kind="tool", tool=(mesh, eng, q))
         self._tool_key(tr, t0, eng + side * S.RATCHET.approach, q)
@@ -1255,13 +1281,13 @@ class Step:
         self.t = t + S.RATCHET.retract_dur
         self._check_tool_path(tr, mesh, allow)
         self.toolTracks.append(tr)
-        self._use_tool("ratchet", f"3/8 in ratchet (supplied) + {socket_label(af)} deep socket (resized from the supplied 9/16 in model)")
+        self._use_tool(tool, label or f"3/8 in ratchet (supplied) + {socket_label(af)} deep socket (resized from the supplied 9/16 in model)")
         return self
 
-    def _ratchet_mesh(self, af):
-        key = ("ratchet", round(af, 2))
+    def _ratchet_mesh(self, af, tool="ratchet"):
+        key = (tool, round(af, 2))
         if key not in self.u.tmesh:
-            m = self.u.tmesh["ratchet"].copy(); v = m.vertices.copy()
+            m = self.u.tmesh[tool].copy(); v = m.vertices.copy()
             sel = v[:, 1] < 50.6; k = af / SOCKET_SUPPLIED_AF; v[sel, 0] *= k; v[sel, 2] *= k
             m.vertices = v; self.u.tmesh[key] = m
         return self.u.tmesh[key]
@@ -1288,9 +1314,10 @@ class Step:
             self._tool_key(tr, ts[-1] + S.MARK.end, pts[-1] + ax * S.MARK.retract, q)
             fx = dict(type="line", points=[list(map(float, x)) for x in pts], width=S.MARK.width, colour=S.MARK.colour,
                       draw=[round(ts[0], 3), round(ts[-1], 3)], label=f"tightening mark on {name}")
-            O = self.u.bench_parts.get(name)
-            if O is not None:                         # v2.2: marked on the bench — the mark moves with the bolt
-                fx["points"] = [list(map(float, np.asarray(x) - O)) for x in pts]; fx["attach"] = self.u.ids[name]
+            B = self.u.bench_parts.get(name)
+            if B is not None:                         # v2.2: marked on the bench — the mark moves with the bolt
+                Rb = quat_to_mat(B[0])
+                fx["points"] = [list(map(float, Rb.T @ (np.asarray(x) - B[1]))) for x in pts]; fx["attach"] = self.u.ids[name]
             self.fx.append(fx)
             self.t = ts[-1] + S.MARK.end
             first = False
@@ -1349,6 +1376,75 @@ class Step:
     def wait(self, s): self.t += s; return self
 
     def flag(self, text): self.flags.append(text); return self
+
+    # ---------------------------------------------------------------- v2.3 presentation props, cable ties, jacket
+    def prop(self, boxes, label="worktable"):
+        """Presentation element (fx 'prop': boxes, mm in, metres out) shown while this step plays — never part
+        of the assembled machine nor of the components view."""
+        self.fx.append(dict(_si=True, type="prop", label=label,
+                            boxes=[dict(b, min=[round(v * M, 6) for v in b["min"]], max=[round(v * M, 6) for v in b["max"]]) for b in boxes]))
+        return self
+
+    def ziptie(self, centres, radii, tangent, up, extra=(), label="cable tie", attach=None, xform=None, head_dir=None,
+               wrap=0.7, tight=0.5, cut=0.45, shot=None):
+        """Cable tie (fx 'ziptie'): a band wrapped round the cable(s) (circles centres/radii, all crossing the tie
+        plane ⟂ tangent) and any support points (`extra`), pulled tight, tail cut. Points in the CAD frame of
+        `attach` (xform = its current delta, for the camera); times from self.t."""
+        band = S.ZIPTIE.band; d = unit(tangent); e1 = unit(np.asarray(up, float) - d * (np.asarray(up, float) @ d)); e2 = np.cross(d, e1)
+        O = np.mean(np.asarray(centres, float), axis=0)
+        P2 = []
+        for c, r in zip(centres, radii):
+            c2 = np.array([(np.asarray(c) - O) @ e1, (np.asarray(c) - O) @ e2]); rr = r + band / 2 + 0.15
+            P2 += [c2 + rr * np.array([math.cos(a), math.sin(a)]) for a in np.linspace(0, 2 * math.pi, 24, endpoint=False)]
+        for x in extra:
+            x2 = np.array([(np.asarray(x) - O) @ e1, (np.asarray(x) - O) @ e2]); P2.append(x2)
+        P2 = np.array(P2); hull = P2[ConvexHull2D(P2)]
+        # resample the hull evenly (smooth loop)
+        cyc = np.vstack([hull, hull[:1]]); L = np.r_[0, np.cumsum(np.linalg.norm(np.diff(cyc, axis=0), axis=1))]
+        ss = np.linspace(0, L[-1], 40, endpoint=False)
+        tight2 = np.array([[np.interp(x, L, cyc[:, 0]), np.interp(x, L, cyc[:, 1])] for x in ss])
+        cen = tight2.mean(0); loose2 = cen + (tight2 - cen) * 1.35
+        to3 = lambda q: O + e1 * q[0] + e2 * q[1]
+        hd = unit(np.asarray(head_dir if head_dir is not None else e1, float)); hd2 = np.array([hd @ e1, hd @ e2])
+        k = int(np.argmax(tight2 @ hd2)); hp = to3(tight2[k]); tan = unit(to3(tight2[(k + 1) % len(tight2)]) - to3(tight2[k - 1]))
+        out_n = unit(hp - to3(cen)); hq = mat_to_quat(np.column_stack([tan, out_n, np.cross(tan, out_n)]))
+        head = hp + out_n * S.ZIPTIE.head[1] * 0.35
+        t0 = self.t
+        f = dict(_si=True, type="ziptie", label=label, colour=S.ZIPTIE.colour, band=round(band * M, 6), segs=40,
+                 loose=[[round(v * M, 6) for v in to3(q)] for q in loose2], tight=[[round(v * M, 6) for v in to3(q)] for q in tight2],
+                 head=[round(v * M, 6) for v in head], headQ=[round(float(v), 6) for v in hq], headSize=[round(v * M, 6) for v in S.ZIPTIE.head],
+                 tail=[[round(v * M, 6) for v in head + tan * S.ZIPTIE.head[0] * 0.5], [round(float(v), 6) for v in tan],
+                       round(S.ZIPTIE.tail * M, 6), round(S.ZIPTIE.tail_cut * M, 6)],
+                 t=[round(t0, 3), round(t0 + wrap, 3), round(t0 + wrap + tight, 3), round(t0 + wrap + tight + cut, 3)])
+        if attach: f["attach"] = self.u.ids[attach]
+        self.fx.append(f)
+        if shot is not None:
+            R = quat_to_mat(xform[1]) if xform else np.eye(3); T = np.asarray(xform[0], float) if xform else np.zeros(3)
+            self._shot(t0, R @ O + T, radius=shot[0], axis=R @ np.asarray(shot[1], float), kind="detail")
+        self.t = t0 + wrap + tight + cut + 0.25
+        self._use_tool("cutter", "Small cable ties (natural nylon) + side cutter for the tail — not supplied: generic")
+        return self
+
+    def cable(self, cid, points, diameter, colour, group, label, **extra):
+        """Generic cable fx (jacket, conductor tails): mm in; keys converted by to_json (cable branch)."""
+        f = dict(type="cable", group=group, id=cid, colour=colour, diameter=diameter, points=[list(map(float, p)) for p in points],
+                 follow=extra.pop("follow", S.CABLE.follow_len), end=extra.pop("end", [[0.0, 0.0, 0.0, 0.0]]), label=label)
+        f.update(extra)
+        self.fx.append(f)
+        return f
+
+    def bead_helix(self, p0, axis, radius, length, turns, dur, bead_d, label, colour, product, sealant=None, attach=None, xform=None,
+                   start=(0, 1, 0), shot=None):
+        """Sealant bead wound round a thread (helix on the cylinder p0 + axis·s, radius) — e.g. HT200 on the
+        L-connector thread; the nozzle follows the thread surface (normals radial)."""
+        a = unit(axis); e1 = unit(np.asarray(start, float) - a * (np.asarray(start, float) @ a)); e2 = np.cross(a, e1)
+        n = max(24, int(turns * 36)); surf, nor, tg = [], [], []
+        for i in range(n + 1):
+            u = i / n; ang = 2 * math.pi * turns * u
+            r = e1 * math.cos(ang) + e2 * math.sin(ang)
+            surf.append(np.asarray(p0, float) + a * length * u + r * radius); nor.append(r)
+            tg.append(unit(np.cross(a, r) * 2 * math.pi * radius * turns + a * length))
+        return self._bead_run(surf, nor, tg, dur, bead_d, label, colour, product, sealant, attach=attach, xform=xform, shot=shot)
 
     def hw(self, names, where):
         """Hardware list entry (grouped by base name, quantity counted from the CAD)."""
@@ -1479,17 +1575,26 @@ class Step:
             tools.append(o)
         fx = []
         for f in self.fx:
+            if f.get("_si"):                                   # v2.3 helpers emit metres already
+                fx.append({k: v for k, v in f.items() if k != "_si"}); continue
             g = dict(f)
             if f["type"] in ("bead", "line"): g["points"] = [m3(p) for p in f["points"]]
             if f["type"] == "bead": g["diameter"] = f["diameter"] * M
             if f["type"] == "line": g["width"] = f["width"] * M
             if f["type"] == "mandrels": g["items"] = [dict(i, head=m3(i["head"])) for i in f["items"]]
             if f["type"] == "spinArrow": g["centre"] = m3(f["centre"]); g["radius"] = f["radius"] * M
-            if f["type"] == "gasket": g["points"] = [m3(p) for p in f["points"]]; g["section"] = f["section"] * M
+            if f["type"] == "gasket":
+                g["points"] = [m3(p) for p in f["points"]]; g["section"] = f["section"] * M
+                if "width" in f: g["width"] = f["width"] * M
             if f["type"] == "cable":
                 g["points"] = [m3(p) for p in f["points"]]; g["diameter"] = f["diameter"] * M; g["follow"] = f["follow"] * M
                 g["end"] = [[k[0], *m3(k[1:4])] for k in f["end"]]
                 if "attach" in f: g["attach"] = dict(f["attach"], base=m3(f["attach"]["base"]))
+                if "base" in f: g["base"] = [[k[0], *m3(k[1:4])] for k in f["base"]]
+                if "trim" in f: g["trim"] = [[k[0], round(k[1] * M, 6)] for k in f["trim"]]
+                if "morph" in f: g["morph"] = dict(f["morph"], points=[m3(p) for p in f["morph"]["points"]])
+                if "core" in f: g["core"] = dict(f["core"], length=f["core"]["length"] * M, d=f["core"]["d"] * M)
+                if "twist" in f: g["twist"] = dict(f["twist"], c=m3(f["twist"]["c"]))
                 if "ferrule" in f:
                     g["ferrule"] = dict(f["ferrule"], length=f["ferrule"]["length"] * M, od=f["ferrule"]["od"] * M, odCrimped=f["ferrule"]["odCrimped"] * M)
                     if "offset" in f["ferrule"]: g["ferrule"]["offset"] = m3(f["ferrule"]["offset"])
@@ -1515,6 +1620,20 @@ class Step:
             focus=[u.ids[n] for n in (self.focus or self.components)], duration=dur,
             checks=self.checks, tracks=dict(parts=parts, tools=tools, fx=fx),
         )
+
+
+def ConvexHull2D(P):
+    """Indices of the convex hull of 2-D points, counter-clockwise (monotone chain)."""
+    idx = sorted(range(len(P)), key=lambda i: (P[i][0], P[i][1]))
+    cross = lambda o, a, b: (P[a][0] - P[o][0]) * (P[b][1] - P[o][1]) - (P[a][1] - P[o][1]) * (P[b][0] - P[o][0])
+    lo, hi = [], []
+    for i in idx:
+        while len(lo) >= 2 and cross(lo[-2], lo[-1], i) <= 0: lo.pop()
+        lo.append(i)
+    for i in reversed(idx):
+        while len(hi) >= 2 and cross(hi[-2], hi[-1], i) <= 0: hi.pop()
+        hi.append(i)
+    return lo[:-1] + hi[:-1]
 
 
 def rounded_polyline(points, r, closed=True, samples=4):

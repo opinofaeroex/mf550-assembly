@@ -5,6 +5,9 @@
 tool interactions and operator interface are the **baseline**: every change must keep or exceed this quality.
 **v2.2** (main-unit process update) extends it with the techniques marked *v2.2* below: bench sub-assemblies,
 staged parts with holds, effects attached to parts, motor leads, new tools and indicators.
+**v2.3** (main-unit refinement) adds the techniques marked *v2.3*: rotated bench sub-assemblies on a worktable,
+cable ties, a jacketed cable with stripping and twisting, the torque wrench, the soft highlight, the outside step
+label and the operator check line.
 
 **Who reads this:**
 - every developer, before changing an assembly step, an animation, a tool, the camera or the interface;
@@ -458,9 +461,10 @@ Step API (`build_unit.py`, class `Step`):
 
 | Category | Methods |
 |---|---|
-| Parts | `place`, `fastener` (`bolt` / `screw` / `nut` / `washer` / `rivet` / `clip`), `drive_with_hand`, `show`, `spin`; *v2.2:* `stage`, `kit`, `Unit.bench_begin` / `bench_end` |
-| Tools | `drill`, `rivet`, `wrench`, `bead`, `mark`; *v2.2:* `bead_path`, `ratchet`, `crimp`, `tap`, `release_wrench` |
-| Effects | `decal`; *v2.2:* `sticker`, `gasket`, `dims`, motor leads (`leads_begin`, `lead_keys`, `crimp`, `leads_fx`, `check_leads`) |
+| Parts | `place`, `fastener` (`bolt` / `screw` / `nut` / `washer` / `rivet` / `clip`), `drive_with_hand`, `show`, `spin`; *v2.2:* `stage`, `kit`, `Unit.bench_begin` / `bench_end`; *v2.3:* `bench_begin(names, offset, rot, pivot)` (rotated bench work, e.g. a plate turned over) |
+| Tools | `drill`, `rivet`, `wrench`, `bead`, `mark`; *v2.2:* `bead_path`, `ratchet`, `crimp`, `tap`, `release_wrench`; *v2.3:* `ratchet(..., tool="torquewrench", depth=)`, `bead_helix` (sealant wound on a thread) |
+| Effects | `decal`; *v2.2:* `sticker`, `gasket`, `dims`, motor leads (`leads_begin`, `lead_keys`, `crimp`, `leads_fx`, `check_leads`); *v2.3:* `prop` (worktable, shown only while used), `ziptie` (wrap → tight → tail cut, attached), `cable` (jacket with `rigid` / `base` / `morph` / `trim` / `growFrom`; leads with `core` slug and `twist`), `gasket(width=, thickness=, closed=False)` tape strips |
+| Step meta *(v2.3)* | `camera.highlight = "soft"` (labels on the active part stay readable), `camera.callout = "outside"` (step label beside the model), `meta["check"] = dict(icon="listen", text=…)` (operator check line with an icon in the step card) |
 | Pacing and focus | `wait`, and the `focus` attribute (parts the step's camera frames when it has no motion of its own) |
 | Records | `hw`, `flag` |
 
@@ -506,6 +510,7 @@ nothing (byte-identical build output, identical scene fingerprints).
 | `CAULKING` | Segments, approach, nozzle tilt, knob / plunger. |
 | `MARK` | Approach, segment timing, line width and colour. |
 | `CAMERA` | Minimum radii per shot kind, candidate grid, scoring weights, line-of-sight and inside tests, merge window, overview / result framing. |
+| *v2.3* `ZIPTIE`, `STRIP`, `SPLICE`, `GASKET.tape_w / tape_t`, `SEALANT.gasket_d / joint_d` | Cable tie band / head / tail; outer jacket Ø and colour, conductor and strip lengths (0.50 in), core Ø and colour, slug slide, twist turns; splice sleeve; door gasket tape section (1 in × .187 in); silicone bead sizes. |
 | *v2.2* `BENCH`, `CABLE`, `FERRULE`, `SPLICE`, `CRIMP`, `TAP`, `RATCHET`, `GASKET`, `SEALANT`, `DIMS`, `AIRFLOW` | Bench offset and kit position; 22 AWG lead size, bundle pitch, feed rate, follow length; ferrule; splice sleeve; crimper opening and timing; tapping feed; ratchet stroke; gasket section (CAD door gap); sealant colours (incl. the black silicone door gasket); dimension call-out style; airflow arrows, path profile and stream angles. Also `DRILL.extension_mm`, `DRILL.ext_r`, `WRENCH.approach_side`. |
 
 **`public/js/unit/standards.js` (run time; m, s, rad):**
@@ -566,4 +571,5 @@ When a rule has to be broken (a real mechanical exception), keep the rule. Docum
 |---|---|
 | 2.1 (`cc98332`) | Reference implementation: per-operation camera shots, collision-free clips and tool paths, vertical-first motions, Phase 3 dependency order, pre-installed rivets, drill rotation arrow, rivet-gun materials, exploded views ×2, no yellow warnings. |
 | Standards (after 2.1, app version unchanged) | This document; shared parameters moved to `standards.py` / `standards.js` (no visible change, verified); `tools/unit-review.cjs` (contact sheet + scene fingerprints); `CLAUDE.md`. |
+| 2.3 | Main-unit refinement: rotated bench sub-assemblies on a worktable (`prop`), torque wrench (`build_torque_wrench.py`, CC-BY model + supplied socket), rotation-arrow sticker and back-panel labels (`extract_labels.py`), cable ties (`ziptie`), jacketed motor cable with hood, jacket / insulation stripping, twisted pairs and the 0.50 in minimum dimension, connector hood (approximate) and data tag in the CAD (`cad_extras.py`), door gasket tape + silicone, soft highlight (`Appearance.STATE.SOFT`), outside step label (`Callout`), operator check line with icon; tool visibility resolved active-track-last at run time. Unaffected steps keep identical part and tool tracks (compared against v2.2). |
 | 2.2 | Main-unit process update: `_03` CAD (L-connector) + connector insert (`merge_cad.py`, `analyse_unit.py --keep`); bench sub-assembly, staging + holds, kit positions; effects attached to parts; motor leads (`cable` fx, group supersede, end follow), crimper, ratchet, tap drill, drill extension, wrench hold / sideways / exact turn; gasket, sealant colours, stickers, dimension call-outs, airflow indicator; removed operations shown with the main body. Engineering review: 230/3/60 wiring with spliced pairs, black silicone door gasket by caulking gun, filter labels extracted from the photograph (`extract_stickers.py`), airflow along the real air path. |

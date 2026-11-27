@@ -13,7 +13,7 @@ import * as THREE from 'three';
  * on demand); helper objects are frozen (`freeze`: their transform never changes); CAD edges
  * can be limited to non-hardware parts and are built in small slices between frames.
  */
-export const STATE = { NORMAL: 0, GHOST: 1, ACTIVE: 2, SELECTED: 3, HIDDEN: 4 };
+export const STATE = { NORMAL: 0, GHOST: 1, ACTIVE: 2, SELECTED: 3, HIDDEN: 4, SOFT: 5 };   // v2.3: SOFT = light active tint, no x-ray
 
 const ACTIVE_COLOR = new THREE.Color(0xff7a1a);
 const SELECT_COLOR = new THREE.Color(0x3aa0ff);
@@ -71,7 +71,11 @@ export class Appearance {
     selected.color = base.color.clone().lerp(SELECT_COLOR, 0.6);
     selected.emissive = SELECT_COLOR.clone();
     selected.emissiveIntensity = 0.3;
-    return [base, ghost, active, selected];
+    const soft = base.clone();             // v2.3: active, but its labels must stay readable
+    soft.color = base.color.clone().lerp(ACTIVE_COLOR, 0.22);
+    soft.emissive = ACTIVE_COLOR.clone();
+    soft.emissiveIntensity = 0.07;
+    return [base, ghost, active, selected, null, soft];
   }
 
   /**
